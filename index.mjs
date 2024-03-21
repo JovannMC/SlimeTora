@@ -1,10 +1,16 @@
-const { app, BrowserWindow, ipcMain, screen } = require('electron');
+import { app, BrowserWindow, ipcMain, screen } from 'electron';
+import { HaritoraXWireless } from 'haritorax-interpreter';
+import dgram from 'dgram';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-const dgram = require('dgram');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const sock = dgram.createSocket('udp4');
-const fs = require('fs');
-const path = require('path');
-
+const dongle = new HaritoraXWireless();
 
 const mainPath = app.isPackaged
     ? path.dirname(app.getPath('exe'))
@@ -44,6 +50,20 @@ ipcMain.on('connection', (event, value) => {
         connectedDevices = [];
         last_connected_device_id = "";
     }
+});
+
+const eventNames = ['imu', 'tracker', 'settings', 'button', 'battery', 'info'];
+ipcMain.handle('call-dongle-function', (event, functionName, ...args) => {
+    console.log(`Calling function ${functionName} with args:`, args);
+    if (typeof dongle[functionName] === 'function') {
+        return dongle[functionName](...args);
+    }
+});
+
+eventNames.forEach(eventName => {
+    dongle.on(eventName, (...eventData) => {
+        mainWindow.webContents.send(`dongle-event-${eventName}`, ...eventData);
+    });
 });
 
 

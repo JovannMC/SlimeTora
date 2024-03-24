@@ -18,6 +18,8 @@ const mainPath = app.isPackaged
 
 const jsonFilePath = path.join(mainPath, 'store.json');
 
+var last_connected_device_id = null;
+
 let inMemoryStore = {};
 updateData();
 ipcMain.handle('get-data', async (event, key) => {
@@ -178,7 +180,6 @@ function createWindow() {
 
     }
     //fake user gesture
-    var last_connected_device_id = "";
 
     if (mainWindow) {
         mainWindow.webContents.on('select-bluetooth-device', async (event, deviceList, callback) => {
@@ -269,7 +270,15 @@ app.on('ready', createWindow);
 let lastTimestamp = Date.now();
 let tpsCounter = 0;
 ipcMain.on('sendData', (event, postData) => {
-    const deviceid = connectedDevices.indexOf(postData["deviceName"]);
+    let deviceid = null;
+    if (connectedDevices.includes(postData["deviceName"])) {
+        deviceid = connectedDevices.indexOf(postData["deviceName"]);
+    } else {
+        deviceid = postData["deviceId"];
+    }
+
+    if (deviceid == null) return console.error("Device ID is null");
+    
     buildAccelAndSend(postData["acceleration"], deviceid);
     PACKET_COUNTER += 1;
     buildRotationAndSend(postData["rotation"], deviceid);

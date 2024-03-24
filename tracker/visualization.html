@@ -139,6 +139,7 @@
         window.addEventListener('message', (event) => {
             if(cube == null) return;
             if (event.data.type === 'rotate') {
+                //console.log(`Received rotation data for ${event.data.name}: ${JSON.stringify(event.data)}`);
                 // Create a quaternion from the components
                 const quaternion = new THREE.Quaternion(
                     event.data.rotationX,

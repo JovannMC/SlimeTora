@@ -287,10 +287,6 @@ function sleep(ms) {
 
 async function connectToDevice() {
     const trackerData = {};
-
-    /*var device = null
-    var mag = false;
-    let magnetometerelement = null;*/
     
     if (dongleEnabled) {
         const MINIMUM_DEVICES = 2;
@@ -356,7 +352,6 @@ async function connectToDevice() {
                 sensor_rotation: null,
                 sensor_gravity: null,
                 battery_value: null,
-                // ...
             };
 
             var lastMagValue = null;
@@ -400,6 +395,7 @@ async function connectToDevice() {
                     }
                     if (trackerName === device) {
                         trackerData[device].battery_value = batteryRemaining;
+                        console.log(`Received battery data for device ${device} aka ${trackerName}:`, batteryRemaining, batteryVoltage, chargeStatus);
                     }
     
                     if (Date.now() - lastTimestamp >= 1000) {
@@ -417,7 +413,42 @@ async function connectToDevice() {
             // Start the update loop
             updateValues();
     
-            //writeValues();
+            // TODO allow user to change their settings, currently we keep FPS the same and ankle disabled
+            const writeValues = async () => {
+                console.log('writeValues was called');
+                if (trackers[device] == null) return console.error(`${device} in trackers is null.`);
+                try {
+                    const currentTrackerSettings = await ipcRenderer.invoke('call-dongle-function', 'getTrackerSettings', device);
+                    if (currentTrackerSettings) {
+                        const { sensorMode, fpsMode, sensorAutoCorrection, ankleMotionDetection } = currentTrackerSettings;
+                        console.log('Current settings for device:', currentTrackerSettings);
+                        if (sensorMode === null || fpsMode === null || sensorAutoCorrection === null || ankleMotionDetection === null) return console.error('Invalid settings received from dongle:', currentTrackerSettings);
+
+                        // Update the tracker settings
+                        const newSensorMode = mag ? 1 : 2;
+                        const newFpsMode = parseInt(fpsMode);
+                        const newAnkleMotionDetection = false;
+                        const newSensorAutoCorrection = [];
+                        if (correction_value_target & 1) newSensorAutoCorrection.push('accel');
+                        if (correction_value_target & 2) newSensorAutoCorrection.push('gyro');
+                        if (correction_value_target & 4) newSensorAutoCorrection.push('mag');
+
+                        ipcRenderer.invoke('call-dongle-function', 'setTrackerSettings', device, newSensorMode, newFpsMode, newSensorAutoCorrection, newAnkleMotionDetection);
+                        last_target_value = correction_value_target;
+                        console.log(`New settings for tracker ${device}: sensorMode: ${sensorMode}, fpsMode: ${fpsMode}, sensorAutoCorrection: ${sensorAutoCorrection}, ankleMotionDetection: ${ankleMotionDetection}`);
+                    } else {
+                        console.error('Failed to get current settings for device:', device);
+                    }
+    
+                    // what is this for? is this meant to set the settings every 100ms..?
+                    // can replace with some sort of event listener for when the settings change, or just.. don't do this and apply settings when changing the checkboxes
+                    // if (connecting) setTimeout(writeValues, 100);
+                } catch (error) {
+                    console.log("Error while trying to write to GX6 trackers: ", error);
+                }
+            }
+
+            writeValues();
     
             const trackercheck = setInterval(async () => {
                 const { sensor_rotation, sensor_gravity, battery_value } = trackerData[device];
@@ -458,6 +489,11 @@ async function connectToDevice() {
                 }
                 if (postDataCurrent && postData && sensor_rotation && sensor_gravity) {
                     postDataCurrent = interpolateIMU(postDataCurrent, postData, smooth_val);
+                }
+
+                if (!postDataCurrent || !postDataCurrent.rotation || !postDataCurrent.acceleration) {
+                    console.log('Skipping frame due to missing data:', postDataCurrent);
+                    return;
                 }
 
                 ipc.send('sendData', postDataCurrent);

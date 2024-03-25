@@ -58,7 +58,13 @@ const eventNames = ['imu', 'tracker', 'settings', 'button', 'battery', 'info'];
 ipcMain.handle('call-dongle-function', (event, functionName, ...args) => {
     console.log(`Calling function ${functionName} with args:`, args);
     if (typeof dongle[functionName] === 'function') {
-        return dongle[functionName](...args);
+        const result = dongle[functionName](...args);
+        if (typeof result === 'object' && result !== null) {
+            console.log(JSON.stringify(result));
+        } else {
+            console.log(result);
+        }
+        return result;
     }
 });
 
@@ -277,7 +283,19 @@ ipcMain.on('sendData', (event, postData) => {
         deviceid = postData["deviceId"];
     }
 
+    const nullKeys = Object.entries(postData)
+        .filter(([key, value]) => key !== 'battery' && value === null)
+        .map(([key, value]) => key);
+
+    if (nullKeys.length > 0) {
+        return console.error("The following postData keys have null values:", nullKeys);
+    }
+
     if (deviceid == null) return console.error("Device ID is null");
+    if (deviceid == 0 && last_connected_device_id != postData["deviceName"]) {
+        last_connected_device_id = postData["deviceName"];
+        addIMU(deviceid);
+    }
     
     buildAccelAndSend(postData["acceleration"], deviceid);
     PACKET_COUNTER += 1;

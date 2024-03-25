@@ -238,17 +238,16 @@ function lerp(start, end, amt) {
     return (1 - amt) * start + amt * end
 }
 
-function interpolateIMU(currentData, newData, t) {
+function interpolateIMU(data, t) {
     if (t == 1) {
-        return newData;
+        return data;
     }
 
-    const currentrot = new Quaternion(currentData["rotation"]);
-    const newrot = new Quaternion(newData["rotation"]);
-    const interpolatedQuaternion = currentrot.slerp(newrot)(t);
+    const currentrot = new Quaternion(data["rotation"]);
+    const interpolatedQuaternion = currentrot.slerp(currentrot)(t);
     const interpolatedData = {
-        deviceName: newData.deviceName,
-        deviceId: newData.deviceId,
+        deviceName: data.deviceName,
+        deviceId: data.deviceId,
         rotation: {
             x: interpolatedQuaternion.x,
             y: interpolatedQuaternion.y,
@@ -256,12 +255,12 @@ function interpolateIMU(currentData, newData, t) {
             w: interpolatedQuaternion.w,
         },
         acceleration: {
-            x: lerp(currentData.acceleration.x, newData.acceleration.x, t),
-            y: lerp(currentData.acceleration.y, newData.acceleration.y, t),
-            z: lerp(currentData.acceleration.z, newData.acceleration.z, t),
+            x: lerp(data.acceleration.x, data.acceleration.x, t),
+            y: lerp(data.acceleration.y, data.acceleration.y, t),
+            z: lerp(data.acceleration.z, data.acceleration.z, t),
         },
-        battery: newData.battery,
-        yawReset: newData.yawReset
+        battery: data.battery,
+        yawReset: data.yawReset
     };
 
     return interpolatedData;
@@ -284,6 +283,10 @@ async function getService(server, serviceId) {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+ipcRenderer.on('dongle-event-imu', (event, trackerName, sensorMode, fpsMode, sensorAutoCorrection, ankleMotionDetection) => {
+    
+});
 
 async function connectToDevice() {
     const trackerData = {};
@@ -484,26 +487,22 @@ async function connectToDevice() {
                     yawReset: yawreset
                 };
     
-                if (postDataCurrent == null) {
-                    postDataCurrent = postData;
-                }
-                if (postDataCurrent && postData && sensor_rotation && sensor_gravity) {
-                    postDataCurrent = interpolateIMU(postDataCurrent, postData, smooth_val);
+                if (postData && sensor_rotation && sensor_gravity) {
+                    postDataCurrent = interpolateIMU(postData, smooth_val);
                 }
 
-                if (!postDataCurrent || !postDataCurrent.rotation || !postDataCurrent.acceleration) {
-                    console.log('Skipping frame due to missing data:', postDataCurrent);
-                    return;
+                if (!postData.rotation || !postData.acceleration) {
+                    return console.log('Skipping frame due to missing data:', postData);
                 }
 
-                ipc.send('sendData', postDataCurrent);
+                ipc.send('sendData', postData);
                 if (iframe) {
                     iframe.contentWindow.postMessage({
                         type: 'rotate',
-                        rotationX: postDataCurrent["rotation"].x,
-                        rotationY: postDataCurrent["rotation"].y,
-                        rotationZ: postDataCurrent["rotation"].z,
-                        rotationW: postDataCurrent["rotation"].w,
+                        rotationX: postData["rotation"].x,
+                        rotationY: postData["rotation"].y,
+                        rotationZ: postData["rotation"].z,
+                        rotationW: postData["rotation"].w,
                         gravityX: trackerData[device].sensor_gravity.x,
                         gravityY: trackerData[device].sensor_gravity.y,
                         gravityZ: trackerData[device].sensor_gravity.z,
@@ -511,7 +510,7 @@ async function connectToDevice() {
                 }
     
                 // rotation is given in radians
-                const rotation = new Quaternion([postDataCurrent["rotation"].w, postDataCurrent["rotation"].x, postDataCurrent["rotation"].y, postDataCurrent["rotation"].z]);
+                const rotation = new Quaternion([postData["rotation"].w, postData["rotation"].x, postData["rotation"].y, postData["rotation"].z]);
                 const rotation_Euler_raw = rotation.toEuler("XYZ");
     
                 // Convert radians to degrees
@@ -521,10 +520,10 @@ async function connectToDevice() {
                     z: rotation_Euler_raw[2] * (180 / Math.PI)
                 };
     
-                const deviceName = postDataCurrent["deviceName"];
-                const deviceId = postDataCurrent["deviceId"];
+                const deviceName = postData["deviceName"];
+                const deviceId = postData["deviceId"];
                 const { x: rotX, y: rotY, z: rotZ } = rotation_Euler;
-                const { x: accelX, y: accelY, z: accelZ } = postDataCurrent["acceleration"];
+                const { x: accelX, y: accelY, z: accelZ } = postData["acceleration"];
                 const batteryPercentage = (battery[device] * 100);
     
                 // Build the HTML content
@@ -679,7 +678,6 @@ async function connectToDevice() {
             var lastMagValue = null;
             var last_target_value = null;
             var button_enabled = false;
-            var postDataCurrent = null;
             var postData = null;
             var allowyawreset = false;
     

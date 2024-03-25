@@ -56,14 +56,14 @@ ipcMain.on('connection', (event, value) => {
 
 const eventNames = ['imu', 'tracker', 'settings', 'button', 'battery', 'info'];
 ipcMain.handle('call-dongle-function', (event, functionName, ...args) => {
-    console.log(`Calling function ${functionName} with args:`, args);
+    //console.log(`Calling function ${functionName} with args:`, args);
     if (typeof dongle[functionName] === 'function') {
         const result = dongle[functionName](...args);
-        if (typeof result === 'object' && result !== null) {
+        /*if (typeof result === 'object' && result !== null) {
             console.log(JSON.stringify(result));
         } else {
             console.log(result);
-        }
+        }*/
         return result;
     }
 });
@@ -118,7 +118,7 @@ function addIMU(trackerID) {
     view.setInt8(12, trackerID);       // tracker id (shown as IMU Tracker #x in SlimeVR)
     view.setInt8(13, 0);                            // sensor status
     view.setInt8(14, 0);                    // imu type
-    imuBuffer = new Uint8Array(buffer);
+    var imuBuffer = new Uint8Array(buffer);
 
     sock.send(imuBuffer, SLIME_PORT, SLIME_IP, (err) => {
         if (err) {
@@ -129,6 +129,67 @@ function addIMU(trackerID) {
         }
     });
 }
+
+dongle.on('connect', (trackerName) => {
+    console.log(`Connected to tracker: ${trackerName}`);
+    if (connectedDevices.length == 0) {
+        console.log("Adding IMU for device 0 // Handshake");
+        const fw_string = "Haritora";
+
+        function buildHandshake() {
+            var buffer = new ArrayBuffer(128);
+            var view = new DataView(buffer);
+            var offset = 0;
+
+            view.setInt32(offset, 3);                                   // packet 3 header
+            offset += 4;
+            view.setBigInt64(offset, BigInt(PACKET_COUNTER));         // packet counter
+            offset += 8;
+            view.setInt32(offset, 0);                        // Board type
+            offset += 4;
+            view.setInt32(offset, 0);                          // IMU type
+            offset += 4;
+            view.setInt32(offset, 0);                          // MCU type
+            offset += 4;
+            for (var i = 0; i < 3; i++) {
+                view.setInt32(offset, 0);               // IMU info (unused)
+                offset += 4;
+            }
+            view.setInt32(offset, 0);                       // Firmware build
+            offset += 4;
+            view.setInt8(offset, fw_string.length);               // Length of fw string
+            offset += 1;
+            for (var i = 0; i < fw_string.length; i++) {
+                view.setInt8(offset, fw_string.charCodeAt(i));   // fw string
+                offset += 1;
+            }
+            var macAddress = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06];
+            for (var i = 0; i < macAddress.length; i++) {
+                view.setInt8(offset, macAddress[i]); // MAC address
+                offset += 1;
+            }
+
+            return new Uint8Array(buffer);
+        }
+        const handshake = buildHandshake();
+        sock.send(handshake, 0, handshake.length, SLIME_PORT, SLIME_IP, (err) => {
+            if (err) {
+                console.error("Error sending handshake:", err);
+            } else {
+                console.log("Handshake sent successfully");
+                PACKET_COUNTER += 1;
+            }
+        });
+
+        connectedDevices.push(trackerName);
+        connectedDevices.sort();
+    } else {
+        console.log(`Adding IMU for device ${connectedDevices.length}`)
+        addIMU(connectedDevices.length);
+        connectedDevices.push(trackerName);
+        connectedDevices.sort();
+    }
+});
 
 let mainWindow;
 
@@ -295,6 +356,7 @@ ipcMain.on('sendData', (event, postData) => {
     if (deviceid == 0 && last_connected_device_id != postData["deviceName"]) {
         last_connected_device_id = postData["deviceName"];
         addIMU(deviceid);
+        console.log("Added IMU for deviceid " + deviceid);
     }
     
     buildAccelAndSend(postData["acceleration"], deviceid);
@@ -329,7 +391,7 @@ function sendYawReset() {
     view.setInt32(0, 21);
     view.setBigInt64(4, BigInt(PACKET_COUNTER));
     view.setInt8(12, 3);
-    sendBuffer = new Uint8Array(buffer);
+    var sendBuffer = new Uint8Array(buffer);
     sock.send(sendBuffer, 0, sendBuffer.length, SLIME_PORT, SLIME_IP, (err) => {
         if (err) {
             console.error(`Error sending packet for sensor ${trackerId}:`, err);
@@ -346,7 +408,7 @@ function sendBatteryLevel(batteryLevel) {
     view.setBigInt64(4, BigInt(PACKET_COUNTER));
     view.setFloat32(12, 5);
     view.setFloat32(16, batteryLevel);
-    sendBuffer = new Uint8Array(buffer);
+    var sendBuffer = new Uint8Array(buffer);
     sock.send(sendBuffer, 0, sendBuffer.length, SLIME_PORT, SLIME_IP, (err) => {
         if (err) {
             console.error(`Error sending packet for sensor ${trackerId}:`, err);

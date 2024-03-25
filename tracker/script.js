@@ -284,10 +284,6 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-ipcRenderer.on('dongle-event-imu', (event, trackerName, sensorMode, fpsMode, sensorAutoCorrection, ankleMotionDetection) => {
-    
-});
-
 async function connectToDevice() {
     const trackerData = {};
     
@@ -376,7 +372,7 @@ async function connectToDevice() {
                         trackerData[device] = {};
                     }
                     if (trackerName === device) {
-                        console.log(`Received IMU data for device ${device} aka ${trackerName}:`, rotation, gravity, ankle);
+                        //console.log(`Received IMU data for device ${device} aka ${trackerName}:`, rotation, gravity, ankle);
                         trackerData[device].sensor_rotation = rotation;
                         trackerData[device].sensor_gravity = gravity;
                     }
@@ -541,7 +537,7 @@ async function connectToDevice() {
             setInterval(async () => {
                 // check local trackers and compare to active trackers
                 const result = await ipcRenderer.invoke('call-dongle-function', 'getActiveTrackers');
-                console.log('Received result from dongle:', result);
+                //console.log('Received result from dongle:', result);
 
                 if (result.length < activeTrackers) {
                     // device disconnected

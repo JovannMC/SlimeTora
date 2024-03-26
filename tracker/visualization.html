@@ -125,12 +125,20 @@
         outlinePass.hiddenEdgeColor.set("#ffffff"); 
         composer.addPass(outlinePass);
 
-        const animate = () => {
+        let then = 0;
+        const fps = 15;
+        const interval = 1000 / fps;
+
+        const animate = (now = 0) => {
             requestAnimationFrame(animate);
-            if (cube != null) {
-                outlinePass.selectedObjects = [cube];
+            const elapsed = now - then;
+            if (elapsed > interval) {
+                then = now - (elapsed % interval);
+                if (cube != null) {
+                    outlinePass.selectedObjects = [cube];
+                }
+                composer.render();
             }
-            composer.render();
         };
 
 

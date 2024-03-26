@@ -1,4 +1,5 @@
 const { ipcRenderer } = require('electron');
+const SerialPort = require('serialport');
 
 let bluetoothEnabled = false;
 let dongleEnabled = false;
@@ -152,6 +153,40 @@ document.addEventListener("DOMContentLoaded", async function () {
             smooth_val = 1;
         }
     });
+
+    // Populate COM ports checkboxes
+
+    const ports = await ipcRenderer.invoke('get-ports');
+    const gx6Switch = document.getElementById('gx6');
+    const container = document.createElement('div');
+
+    ports.forEach(port => {
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = "com";
+        checkbox.name = port;
+        checkbox.value = port;
+    
+        checkbox.addEventListener('change', () => {
+            const checkedCheckboxes = container.querySelectorAll('input[type=checkbox]:checked');
+            const uncheckedCheckboxes = container.querySelectorAll('input[type=checkbox]:not(:checked)');
+            if (checkedCheckboxes.length >= 3) {
+                uncheckedCheckboxes.forEach(cb => cb.setAttribute('disabled', ''));
+            } else {
+                uncheckedCheckboxes.forEach(cb => cb.removeAttribute('disabled'));
+            }
+        });
+    
+        const label = document.createElement('label');
+        label.htmlFor = port;
+        label.appendChild(document.createTextNode(port));
+    
+        container.appendChild(document.createElement('br'));  // Line break for readability
+        container.appendChild(checkbox);
+        container.appendChild(label);
+    });
+
+    gx6Switch.parentNode.parentNode.insertBefore(container, gx6Switch.parentNode.nextSibling);
 });
 
 function justNumbers(string) {
@@ -192,7 +227,23 @@ async function connectToTrackers() {
 
 async function disconnectAllDevices() {
     if (dongleEnabled) {
-        //dongle.stopConnection(); 
+        ipcRenderer.invoke("call-dongle-function", "stopConnection", "gx6");
+        if (connecting) { 
+            const status = document.getElementById("status");
+            status.innerHTML = "Status: Not searching.";
+            const devicelist = document.getElementById("devicelist");
+            trackercount.innerHTML = "Connected Trackers: " + 0;
+            devicelist.innerHTML = "<br><h1>Trackers: </h1><br></br>";
+            ipc.send('connection', false);
+            clearInterval(connecting);
+        }
+        for (const deviceId in trackerdevices) {
+            const device = trackerdevices[deviceId][0];
+            await disconnectDevice(device);
+        }
+        trackerdevices = {};
+        allowconnection = true;
+        connecting = null;
     } else {
         if (connecting) {
             const status = document.getElementById("status");
@@ -292,7 +343,11 @@ async function connectToDevice() {
         let trackers = null;
         let activeTrackers = 0;
 
-        ipcRenderer.invoke('call-dongle-function', 'startConnection', "gx6");
+        const comPorts = Array.from(document.querySelectorAll('input[type=checkbox][id^="com"]:checked')).map(cb => cb.value);
+        comPorts.sort();
+        console.log('Connecting to ports:', comPorts);
+        ipcRenderer.invoke('call-dongle-function', 'startConnection', 'gx6', comPorts);
+
 
         while (activeTrackers < MINIMUM_DEVICES) {
             console.log(`Waiting for at least ${MINIMUM_DEVICES} devices to connect. Connected devices: ${activeTrackers}`);
@@ -539,7 +594,8 @@ async function connectToDevice() {
                 const result = await ipcRenderer.invoke('call-dongle-function', 'getActiveTrackers');
                 //console.log('Received result from dongle:', result);
 
-                if (result.length < activeTrackers) {
+                // TODO add method to check if connection is active in interpreter
+                if (dongleEnabled && result && result.length < activeTrackers) {
                     // device disconnected
                     clearInterval(trackers[device][1]);
                     deviceelement.remove();

@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, screen } from 'electron';
 import { HaritoraXWireless } from 'haritorax-interpreter';
+import { SerialPort } from 'serialport';
 import dgram from 'dgram';
 import fs from 'fs';
 import path from 'path';
@@ -35,6 +36,11 @@ ipcMain.on('set-data', (event, { key, value }) => {
 ipcMain.on('delete-data', (event, key) => {
     delete inMemoryStore[key];
     saveToJSON();
+});
+
+ipcMain.handle('get-ports', async () => {
+    const ports = await SerialPort.list();
+    return ports.map(port => port.path);
 });
 
 
@@ -184,6 +190,7 @@ dongle.on('connect', (trackerName) => {
         connectedDevices.push(trackerName);
         connectedDevices.sort();
     } else {
+        if (connectedDevices.includes(trackerName)) return;
         console.log(`Adding IMU for device ${connectedDevices.length}`)
         addIMU(connectedDevices.length);
         connectedDevices.push(trackerName);

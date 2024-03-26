@@ -1,16 +1,15 @@
-# SlimeTora (GX6 fork)
+# SlimeTora (GX6 only fork)
 ## **This fork includes basic support for the GX6 dongle. This is NOT production ready at all and you W I L L experience bugs.**
 
-A program that connects the HaritoraX Wireless trackers to the [SlimeVR server](https://docs.slimevr.dev/server/index.html), supporting Bluetooth and the GX6 communication dongle*
+A program that connects the HaritoraX Wireless trackers to the [SlimeVR server](https://docs.slimevr.dev/server/index.html), supporting the GX6 communication dongle
 
-\* **if you haven't noticed already, read the huge notices**
+This fork adds support for the GX6 communication dongle, opening up the software to everyone! **Bluetooth support has been removed from this fork, if that's needed use the original repo.**
 
 ## A rewrite of SlimeTora is in the works which will improve stability and performance *massively*.
 
 # Known issues
 - **Literally everything, this is NOT production ready.**
   - When you actually connect the trackers, the program should work flawlessly
-- **Bluetooth has NOT been tested and may be broken by this fork**
 - Connecting is very finicky (e.g. trackers connect on SlimeTora but not show in SlimeVR)
   - Usually fixed by restarting the trackers or reconnecting the GX6 dongle
 - Trackers may not be assigned correctly in SlimeTora
@@ -30,8 +29,7 @@ A program that connects the HaritoraX Wireless trackers to the [SlimeVR server](
 - Install the [SlimeVR server](https://docs.slimevr.dev/server/index.html)
 - Download the latest [SlimeTora](https://github.com/OCSYT/SlimeTora/releases/latest) release
 - Extract the zip file and run `SlimeTora.exe`
-- Select the mode to connect to trackers (you're on this fork.. so GX6)
-- (GX6) Select the 3 COM ports that your trackers are on
+- Select the 3 COM ports that your trackers are on
   - Usually, this is the first three (consecutive) available ports. COM1-COM3 are usually already used by other programs, so they are likely COM4, COM5, and COM6.
   - Check `Device Manager` to see what ports are being used by the trackers.
 - Turn on your trackers and press `Connect to trackers`

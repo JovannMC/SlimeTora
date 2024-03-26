@@ -198,6 +198,11 @@ dongle.on('connect', (trackerName) => {
     }
 });
 
+dongle.on('disconnect', (trackerName) => {
+    if (!connectedDevices.includes(trackerName)) return;
+    console.log(`Disconnected from tracker: ${trackerName}`);
+});
+
 let mainWindow;
 
 let connectedDevices = [];
@@ -335,6 +340,8 @@ function createWindow() {
     // Emitted when the window is closed.
     mainWindow.on('closed', function () {
         mainWindow = null;
+        dongle.stopConnection("gx6");
+        dongle.stopConnection("bluetooth");
     });
 }
 
@@ -363,7 +370,6 @@ ipcMain.on('sendData', (event, postData) => {
     if (deviceid == 0 && last_connected_device_id != postData["deviceName"]) {
         last_connected_device_id = postData["deviceName"];
         addIMU(deviceid);
-        console.log("Added IMU for deviceid " + deviceid);
     }
     
     buildAccelAndSend(postData["acceleration"], deviceid);
@@ -497,15 +503,18 @@ function buildRotationAndSend(rotation, trackerId) {
 
 
 
+ipcMain.on('disconnect', (event) => {
+    console.log("Removing all listeners");
+    dongle.removeAllListeners();
+});
 
-ipcMain.on('disconnect', (event, deviceName) => {
+/*ipcMain.on('disconnect', (event, deviceName) => {
     console.log(`Device disconnected in main process: ${deviceName}`);
 
     // Remove the device ID from the connected devices
     connectedDevices = connectedDevices.filter(name => name !== deviceName);
     console.log(connectedDevices);
-
-});
+});*/
 
 
 // Quit when all windows are closed, except on macOS.

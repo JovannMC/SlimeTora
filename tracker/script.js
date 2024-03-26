@@ -154,39 +154,51 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
     });
 
-    // Populate COM ports checkboxes
-
-    const ports = await ipcRenderer.invoke('get-ports');
-    const gx6Switch = document.getElementById('gx6');
-    const container = document.createElement('div');
-
-    ports.forEach(port => {
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.id = "com";
-        checkbox.name = port;
-        checkbox.value = port;
+        // Populate COM ports checkboxes
+        const ports = await ipcRenderer.invoke('get-ports');
+        const gx6Switch = document.getElementById('gx6');
+        const container = document.createElement('div');
     
-        checkbox.addEventListener('change', () => {
-            const checkedCheckboxes = container.querySelectorAll('input[type=checkbox]:checked');
-            const uncheckedCheckboxes = container.querySelectorAll('input[type=checkbox]:not(:checked)');
-            if (checkedCheckboxes.length >= 3) {
-                uncheckedCheckboxes.forEach(cb => cb.setAttribute('disabled', ''));
-            } else {
-                uncheckedCheckboxes.forEach(cb => cb.removeAttribute('disabled'));
-            }
+        // Create two new line break elements
+        const lineBreak1 = document.createElement('br');
+        const lineBreak2 = document.createElement('br');
+    
+        // Append the line breaks to the container
+        container.appendChild(lineBreak1);
+        container.appendChild(lineBreak2);
+    
+        const labelTop = document.createElement('label');
+        labelTop.textContent = "Select COM ports to use";
+        container.appendChild(labelTop);
+        container.appendChild(lineBreak2);
+    
+        ports.forEach(port => {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = "com";
+            checkbox.name = port;
+            checkbox.value = port;
+        
+            checkbox.addEventListener('change', () => {
+                const checkedCheckboxes = container.querySelectorAll('input[type=checkbox]:checked');
+                const uncheckedCheckboxes = container.querySelectorAll('input[type=checkbox]:not(:checked)');
+                if (checkedCheckboxes.length >= 3) {
+                    uncheckedCheckboxes.forEach(cb => cb.setAttribute('disabled', ''));
+                } else {
+                    uncheckedCheckboxes.forEach(cb => cb.removeAttribute('disabled'));
+                }
+            });
+        
+            const label = document.createElement('label');
+            label.htmlFor = port;
+            label.appendChild(document.createTextNode(port));
+        
+            container.appendChild(document.createElement('br'));
+            container.appendChild(checkbox);
+            container.appendChild(label);
         });
     
-        const label = document.createElement('label');
-        label.htmlFor = port;
-        label.appendChild(document.createTextNode(port));
-    
-        container.appendChild(document.createElement('br'));  // Line break for readability
-        container.appendChild(checkbox);
-        container.appendChild(label);
-    });
-
-    gx6Switch.parentNode.parentNode.insertBefore(container, gx6Switch.parentNode.nextSibling);
+        gx6Switch.parentNode.parentNode.insertBefore(container, gx6Switch.parentNode.nextSibling);
 });
 
 function justNumbers(string) {
@@ -367,16 +379,8 @@ async function connectToDevice() {
 
             const devicelist = document.getElementById("devicelist");
             const deviceelement = document.createElement("div");
-            const iframe = document.createElement('iframe');
 
-            // Set attributes for the iframe
-            iframe.id = device + "threejs";
-            iframe.src = './visualization.html';
-            iframe.width = '200px';
-            iframe.height = '200px';
 
-            // Append the iframe to the body or any other container
-            devicelist.appendChild(iframe);
 
             deviceelement.id = device;
             devicelist.appendChild(deviceelement);
@@ -518,7 +522,6 @@ async function connectToDevice() {
                     }
                 }
     
-                const iframe = document.getElementById(device + "threejs");
     
                 postData = {
                     deviceName: device,
@@ -547,18 +550,6 @@ async function connectToDevice() {
                 }
 
                 ipc.send('sendData', postData);
-                if (iframe) {
-                    iframe.contentWindow.postMessage({
-                        type: 'rotate',
-                        rotationX: postData["rotation"].x,
-                        rotationY: postData["rotation"].y,
-                        rotationZ: postData["rotation"].z,
-                        rotationW: postData["rotation"].w,
-                        gravityX: trackerData[device].sensor_gravity.x,
-                        gravityY: trackerData[device].sensor_gravity.y,
-                        gravityZ: trackerData[device].sensor_gravity.z,
-                    }, '*');
-                }
     
                 // rotation is given in radians
                 const rotation = new Quaternion([postData["rotation"].w, postData["rotation"].x, postData["rotation"].y, postData["rotation"].z]);
@@ -674,16 +665,8 @@ async function connectToDevice() {
     
             const devicelist = document.getElementById("devicelist");
             const deviceelement = document.createElement("div");
-            const iframe = document.createElement('iframe');
     
-            // Set attributes for the iframe
-            iframe.id = device.id + "threejs";
-            iframe.src = './visualization.html';
-            iframe.width = '200px';
-            iframe.height = '200px';
     
-            // Append the iframe to the body or any other container
-            devicelist.appendChild(iframe);
     
             deviceelement.id = device.name;
             devicelist.appendChild(deviceelement);
@@ -829,7 +812,6 @@ async function connectToDevice() {
                 const lowestbattery = Math.min(...Object.values(battery));
     
                 const IMUData = decodeIMUPacket(device, sensor_value);
-                const iframe = document.getElementById(device.id + "threejs");
     
                 postData = {
                     deviceName: IMUData[0].name,
@@ -857,18 +839,6 @@ async function connectToDevice() {
                 //remove lag
     
                 ipc.send('sendData', postDataCurrent);
-                if (iframe) {
-                    iframe.contentWindow.postMessage({
-                        type: 'rotate',
-                        rotationX: postDataCurrent["rotation"].x,
-                        rotationY: postDataCurrent["rotation"].y,
-                        rotationZ: postDataCurrent["rotation"].z,
-                        rotationW: postDataCurrent["rotation"].w,
-                        gravityX: IMUData[2].x,
-                        gravityY: IMUData[2].y,
-                        gravityZ: IMUData[2].z,
-                    }, '*');
-                }
     
                 // rotation is given in radians
                 const rotation = new Quaternion([postDataCurrent["rotation"].w, postDataCurrent["rotation"].x, postDataCurrent["rotation"].y, postDataCurrent["rotation"].z]);
@@ -906,7 +876,6 @@ async function connectToDevice() {
                 deviceelement.remove();
                 delete trackerdevices[device.id];
                 delete battery[device.id];
-                iframe.remove();
                 magnetometerelement.delete();
                 ipc.send("disconnect", device.name);
                 trackercount.innerHTML = "Connected Trackers: " + Object.values(trackerdevices).length;

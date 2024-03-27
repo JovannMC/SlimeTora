@@ -19,8 +19,6 @@ const mainPath = app.isPackaged
 
 const jsonFilePath = path.join(mainPath, 'store.json');
 
-var last_connected_device_id = null;
-
 let inMemoryStore = {};
 updateData();
 ipcMain.handle('get-data', async (event, key) => {
@@ -106,26 +104,43 @@ sock.on('message', (data, src) => {
 
 
 function addIMU(trackerID) {
-    var buffer = new ArrayBuffer(128);
-    var view = new DataView(buffer);
-    view.setInt32(0, 15);                           // packet 15 header
-    view.setBigInt64(4, BigInt(PACKET_COUNTER)); // packet counter
-    view.setInt8(12, trackerID);       // tracker id (shown as IMU Tracker #x in SlimeVR)
-    view.setInt8(13, 0);                            // sensor status
-    view.setInt8(14, 0);                    // imu type
-    var imuBuffer = new Uint8Array(buffer);
+    return new Promise((resolve, reject) => {
+        var buffer = new ArrayBuffer(128);
+        var view = new DataView(buffer);
+        view.setInt32(0, 15);                           // packet 15 header
+        view.setBigInt64(4, BigInt(PACKET_COUNTER)); // packet counter
+        view.setInt8(12, trackerID);       // tracker id (shown as IMU Tracker #x in SlimeVR)
+        view.setInt8(13, 0);                            // sensor status
+        view.setInt8(14, 0);                    // imu type
+        var imuBuffer = new Uint8Array(buffer);
 
-    sock.send(imuBuffer, SLIME_PORT, SLIME_IP, (err) => {
-        if (err) {
-            console.error('Error sending IMU packet:', err);
-        } else {
-            console.log(`Add IMU: ${trackerID}`);
-            PACKET_COUNTER += 1;
-        }
+        sock.send(imuBuffer, SLIME_PORT, SLIME_IP, (err) => {
+            if (err) {
+                console.error('Error sending IMU packet:', err);
+            } else {
+                console.log(`Add IMU: ${trackerID}`);
+                PACKET_COUNTER += 1;
+                resolve();
+            }
+        });
     });
 }
 
-dongle.on('connect', (trackerName) => {
+let isHandlingTracker = false;
+
+// Create a queue of tracker names
+const trackerQueue = [];
+
+// Function to handle the next tracker name in the queue
+async function handleNextTracker() {
+    // If the queue is empty, do nothing
+    if (trackerQueue.length === 0 || isHandlingTracker) return;
+
+    isHandlingTracker = true;
+
+    // Take the next tracker name from the queue
+    const trackerName = trackerQueue.shift();
+
     console.log(`Connected to tracker: ${trackerName}`);
     if (connectedDevices.length == 0) {
         console.log("Adding IMU for device 0 // Handshake");
@@ -181,10 +196,21 @@ dongle.on('connect', (trackerName) => {
     } else {
         if (connectedDevices.includes(trackerName)) return;
         console.log(`Adding IMU for device ${connectedDevices.length}`)
-        addIMU(connectedDevices.length);
+        await addIMU(connectedDevices.length);
         connectedDevices.push(trackerName);
         connectedDevices.sort();
     }
+
+    isHandlingTracker = false;
+
+    // Handle the next tracker name in the queue
+    handleNextTracker();
+}
+
+// When a 'connect' event is emitted, add the tracker name to the queue
+dongle.on('connect', (trackerName) => {
+    trackerQueue.push(trackerName);
+    handleNextTracker();
 });
 
 dongle.on('disconnect', (trackerName) => {
@@ -260,14 +286,9 @@ app.on('ready', createWindow);
 
 let lastTimestamp = Date.now();
 let tpsCounter = 0;
-ipcMain.on('sendData', (event, postData) => {
+ipcMain.on('sendData', async (event, postData) => {
     let deviceid = null;
-    if (connectedDevices.includes(postData["deviceName"])) {
-        deviceid = connectedDevices.indexOf(postData["deviceName"]);
-    } else {
-        deviceid = postData["deviceId"];
-    }
-
+    
     const nullKeys = Object.entries(postData)
         .filter(([key, value]) => key !== 'battery' && value === null)
         .map(([key, value]) => key);
@@ -276,11 +297,13 @@ ipcMain.on('sendData', (event, postData) => {
         return console.error("The following postData keys have null values:", nullKeys);
     }
 
-    if (deviceid == null) return console.error("Device ID is null");
-    if (deviceid == 0 && last_connected_device_id != postData["deviceName"]) {
-        last_connected_device_id = postData["deviceName"];
-        addIMU(deviceid);
+    if (!connectedDevices.includes(postData["deviceName"])){
+        await addIMU(connectedDevices.length);
+        connectedDevices.push(trackerName);
+        connectedDevices.sort();
+        console.log(`Adding IMU for device ${connectedDevices.length} (deviceName ${postData["deviceName"]})`)
     }
+    deviceid = connectedDevices.indexOf(postData["deviceName"]);
     
     buildAccelAndSend(postData["acceleration"], deviceid);
     PACKET_COUNTER += 1;

@@ -141,9 +141,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
 
     const portsElement = document.getElementById('ports');
-    console.log(portsElement);
     portsElement.appendChild(container);
-    console.log(portsElement);
 });
 
 function justNumbers(string) {

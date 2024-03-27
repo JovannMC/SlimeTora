@@ -211,11 +211,14 @@ async function handleNextTracker() {
 dongle.on('connect', (trackerName) => {
     trackerQueue.push(trackerName);
     handleNextTracker();
+    mainWindow.webContents.send('connect', trackerName);
 });
 
 dongle.on('disconnect', (trackerName) => {
     if (!connectedDevices.includes(trackerName)) return;
     console.log(`Disconnected from tracker: ${trackerName}`);
+    mainWindow.webContents.send('disconnect', trackerName);
+    connectedDevices = connectedDevices.filter(name => name !== trackerName);
 });
 
 let mainWindow;
@@ -290,31 +293,21 @@ ipcMain.on('sendData', async (event, postData) => {
     let deviceid = null;
     
     const nullKeys = Object.entries(postData)
-        .filter(([key, value]) => key !== 'battery' && value === null)
+        .filter(([key, value]) => key !== 'battery' && key !== 'voltage' && value === null)
         .map(([key, value]) => key);
 
     if (nullKeys.length > 0) {
         return console.error("The following postData keys have null values:", nullKeys);
     }
 
-    if (!connectedDevices.includes(postData["deviceName"])){
-        await addIMU(connectedDevices.length);
-        connectedDevices.push(trackerName);
-        connectedDevices.sort();
-        console.log(`Adding IMU for device ${connectedDevices.length} (deviceName ${postData["deviceName"]})`)
-    }
     deviceid = connectedDevices.indexOf(postData["deviceName"]);
     
     buildAccelAndSend(postData["acceleration"], deviceid);
     PACKET_COUNTER += 1;
     buildRotationAndSend(postData["rotation"], deviceid);
     PACKET_COUNTER += 1;
-    if (postData["yawReset"] == true) {
-        sendYawReset();
-        PACKET_COUNTER += 1;
-    }
-    if (deviceid == 0) {
-        sendBatteryLevel(postData["battery"]);
+    if (deviceid == 0 && postData["battery"] !== null) {
+        sendBatteryLevel(postData["battery"], deviceid);
         PACKET_COUNTER += 1;
     }
     const currentTimestamp = Date.now();
@@ -331,29 +324,14 @@ ipcMain.on('sendData', async (event, postData) => {
     }
 });
 
-function sendYawReset() {
-    var buffer = new ArrayBuffer(128);
-    var view = new DataView(buffer);
-    view.setInt32(0, 21);
-    view.setBigInt64(4, BigInt(PACKET_COUNTER));
-    view.setInt8(12, 3);
-    var sendBuffer = new Uint8Array(buffer);
-    sock.send(sendBuffer, 0, sendBuffer.length, SLIME_PORT, SLIME_IP, (err) => {
-        if (err) {
-            console.error(`Error sending packet for sensor ${trackerId}:`, err);
-        } else {
-
-        }
-    });
-}
-
-function sendBatteryLevel(batteryLevel) {
-    var buffer = new ArrayBuffer(128);
+// TODO: fix voltage, figure out how to send battery per tracker
+function sendBatteryLevel(percentage, voltage, trackerid) {
+    var buffer = new ArrayBuffer(20);
     var view = new DataView(buffer);
     view.setInt32(0, 12);
     view.setBigInt64(4, BigInt(PACKET_COUNTER));
-    view.setFloat32(12, 5);
-    view.setFloat32(16, batteryLevel);
+    view.setFloat32(12, voltage / 100); // 0.0v-whateverv
+    view.setFloat32(16, percentage / 100); // 0.0-1.0
     var sendBuffer = new Uint8Array(buffer);
     sock.send(sendBuffer, 0, sendBuffer.length, SLIME_PORT, SLIME_IP, (err) => {
         if (err) {
@@ -436,17 +414,9 @@ function buildRotationAndSend(rotation, trackerId) {
 
 
 
-ipcMain.on('disconnect', (event) => {
+/*ipcMain.on('disconnect', (event) => {
     console.log("Removing all listeners");
     dongle.removeAllListeners();
-});
-
-/*ipcMain.on('disconnect', (event, deviceName) => {
-    console.log(`Device disconnected in main process: ${deviceName}`);
-
-    // Remove the device ID from the connected devices
-    connectedDevices = connectedDevices.filter(name => name !== deviceName);
-    console.log(connectedDevices);
 });*/
 
 

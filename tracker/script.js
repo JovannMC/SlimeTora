@@ -218,7 +218,6 @@ function interpolateIMU(data, t) {
             z: lerp(data.acceleration.z, data.acceleration.z, t),
         },
         battery: data.battery,
-        yawReset: data.yawReset
     };
 
     return interpolatedData;
@@ -227,12 +226,16 @@ function interpolateIMU(data, t) {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
-
+let trackers = null;
+/**
+ * Connects to the devices and initializes the data for each tracker.
+ * @returns {Promise<void>} A promise that resolves when the connection is established and the data is initialized.
+ */
 async function connectToDevice() {
     const trackerData = {};
     
     const MINIMUM_DEVICES = 2;
-    let trackers = null;
+    
     let activeTrackers = 0;
 
     const comPorts = Array.from(document.querySelectorAll('input[type=checkbox][id^="com"]:checked')).map(cb => cb.value);
@@ -259,8 +262,6 @@ async function connectToDevice() {
 
         const devicelist = document.getElementById("devicelist");
         const deviceelement = document.createElement("div");
-
-
 
         deviceelement.id = device;
         devicelist.appendChild(deviceelement);
@@ -290,13 +291,10 @@ async function connectToDevice() {
             sensor_rotation: null,
             sensor_gravity: null,
             battery_value: null,
+            battery_voltage: null
         };
 
-        var last_target_value = null;
-        var button_enabled = false;
-        var postDataCurrent = null;
         var postData = null;
-        var allowyawreset = false;
 
         var tpsCounter = 0;
         var lastTimestamp = 0;
@@ -332,6 +330,7 @@ async function connectToDevice() {
                 }
                 if (trackerName === device) {
                     trackerData[device].battery_value = batteryRemaining;
+                    trackerData[device].battery_voltage = batteryVoltage;
                     console.log(`Received battery data for device ${device} aka ${trackerName}:`, batteryRemaining, batteryVoltage, chargeStatus);
                 }
 
@@ -388,19 +387,7 @@ async function connectToDevice() {
         writeValues();
 
         const trackercheck = setInterval(async () => {
-            const { sensor_rotation, sensor_gravity, battery_value } = trackerData[device];
-
-            var yawreset = false;
-            if (button_enabled == true && allowyawreset == true) {
-                allowyawreset = false;
-                yawreset = true;
-            }
-            else {
-                if (button_enabled == false) {
-                    allowyawreset = true;
-                }
-            }
-
+            const { sensor_rotation, sensor_gravity, battery_value, battery_voltage } = trackerData[device];
 
             postData = {
                 deviceName: device,
@@ -417,7 +404,7 @@ async function connectToDevice() {
                     z: trackerData[device].sensor_gravity.z
                 } : null,
                 battery: battery_value,
-                yawReset: yawreset
+                voltage: battery_voltage
             };
 
             if (postData && sensor_rotation && sensor_gravity) {
@@ -459,24 +446,34 @@ async function connectToDevice() {
         }, 10);
         trackers[device][1] = trackercheck;
 
-        setInterval(async () => {
-            const result = await ipcRenderer.invoke('call-dongle-function', 'getActiveTrackers');
-            //console.log('Received result from dongle:', result);
-
-            // TODO add method to check if connection is active in interpreter
-            if (result && result.length < activeTrackers) {
-                // device disconnected
-                clearInterval(trackers[device][1]);
+        ipcRenderer.on('disconnect', (event, trackerName) => {
+            if (trackerName === device) {
+                //clearInterval(trackers[device][1]);
                 deviceelement.remove();
                 delete trackers[device];
-                delete battery[device];
+                //delete battery[device];
+                //delete trackerdevices[device];
+                //delete trackerData[device];
                 ipc.send("disconnect", device);
-                trackercount.innerHTML = "Connected Trackers: " + Object.values(trackers).length;
+                Object.keys(trackers).forEach(key => {
+                    if (!isNaN(key)) {
+                        delete trackers[key];
+                    }
+                });
+                trackercount.innerHTML = "Connected Trackers: " + parseInt(Object.values(trackers).length);
+                console.log(`Device length: ${Object.values(trackers).length}`);
+                console.log(`devices: ${Object.values(trackers)}`);
+                console.log(`Removing device ${device} from trackers and removing elements.`);
+                return;
             }
-        }, 1000);
+        });
+
+        ipcRenderer.on('connect', (event, trackerName) => {
+            trackercount.innerHTML = "Connected Trackers: " + parseInt((Object.values(trackers).length) + 1);
+        });
     }
-   
 }
+
 
 battery = {};
 trackerdevices = {};

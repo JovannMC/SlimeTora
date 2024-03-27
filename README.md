@@ -10,10 +10,12 @@ This fork adds support for the GX6 communication dongle, opening up the software
 # Known issues
 - **Literally everything, this is NOT production ready.**
   - When you actually connect the trackers, the program should work flawlessly
-- Connecting is very finicky (e.g. trackers connect on SlimeTora but not show in SlimeVR)
-  - Usually fixed by restarting the trackers or reconnecting the GX6 dongle
-- Trackers may not be assigned correctly in SlimeTora
-  - Not too much of a problem as you can identify the actual tracker by shaking it
+- ~~Connecting is very finicky (e.g. trackers connect on SlimeTora but not show in SlimeVR)~~
+  - ~~Usually fixed by restarting the trackers or reconnecting the GX6 dongle~~
+  - **Hopefully fixed with v0.2.1**
+- ~~Trackers may not be assigned correctly in SlimeTora~~
+  - ~~Not too much of a problem as you can identify the actual tracker by shaking it~~
+  - **Fixed with v0.2.1**
 - Higher CPU usage
   - Temporarily mediated with this fork by removing the tracker visualization code, will be fixed in rewrite and given option to toggle it
 - UI incomplete
@@ -22,7 +24,8 @@ This fork adds support for the GX6 communication dongle, opening up the software
   - Rewrite will use webpack and other tools to prevent this
 - COM ports not saved on restart
 - Tapping on trackers aren't detected (for gesture resets) in SlimeVR
-- Battery level is inaccurate
+- ~~Battery level is inaccurate~~
+  - **Fixed with v0.2.1**
 - Using "Disconnect all devices" and reconnecting causes data to not be submitted correctly
 
 # How to use

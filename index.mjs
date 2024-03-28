@@ -41,7 +41,6 @@ ipcMain.handle('get-ports', async () => {
     return ports.map(port => port.path);
 });
 
-
 ipcMain.handle('has-data', async (event, key) => {
     updateData();
     return inMemoryStore.hasOwnProperty(key);

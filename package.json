@@ -1,24 +1,35 @@
 {
   "name": "slimetora",
-  "version": "0.2.1",
+  "productName": "slimetora",
+  "version": "1.0.0-alpha1",
   "description": "A program that connects the HaritoraX Wireless trackers to the SlimeVR server",
-  "main": "index.mjs",
+  "main": "src/main.js",
   "scripts": {
-    "start": "electron .",
-    "build": "electron-packager . SlimeTora --platform=win32 --arch=x64 --overwrite --out='dist/'"
-  },
-  "dependencies": {
-    "ahrs": "^1.3.3",
-    "bufferpack": "^0.0.6",
-    "electron-store": "^8.1.0",
-    "haritorax-interpreter": "^1.4.3",
-    "kalman-filter": "^2.3.0",
-    "python-struct": "^1.1.3",
-    "serialport": "^12.0.0"
+    "start": "electron-forge start",
+    "build": "electron-forge make",
+    "build-bulma": "npx sass --watch ./src/index.scss ./src/index.css",
+    "lint": "eslint **/*.js"
   },
   "devDependencies": {
-    "electron": "^29.0.1",
-    "electron-packager": "^17.1.2",
-    "node-key-sender": "^1.0.11"
+    "@electron-forge/cli": "^7.3.1",
+    "@electron-forge/maker-zip": "^7.3.1",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.3.1",
+    "@electron-forge/plugin-fuses": "^7.3.1",
+    "electron": "29.1.6",
+    "electron-rebuild": "^3.2.9",
+    "eslint": "^8.57.0"
+  },
+  "keywords": [],
+  "author": {
+    "name": "JovannMC",
+    "email": "jovannmc@femboyfurry.net"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "bulma": "^1.0.0",
+    "electron-squirrel-startup": "^1.0.0",
+    "haritorax-interpreter": "^1.4.4",
+    "quaternion": "^1.5.1",
+    "sass": "^1.72.0"
   }
 }

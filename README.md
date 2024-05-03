@@ -4,6 +4,7 @@
 
 
 # SlimeTora
+## The rewrite is now complete. Future updates will now be in the parent repo, thank you all for the support! https://github.com/OCSYT/SlimeTora
 A program that connects the HaritoraX trackers to the [SlimeVR server](https://docs.slimevr.dev/server/index.html), currently supporting the `HaritoraX Wireless` with other trackers coming soon. Supports `Bluetooth` and the `GX(6/2)` communication dongles.
 
 </div>

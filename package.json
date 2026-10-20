@@ -1,0 +1,54 @@
+{
+    "name": "slimetora",
+    "productName": "SlimeTora",
+    "version": "2.0.0-dev.0",
+    "description": "Connects the HaritoraX full body trackers to the SlimeVR server",
+    "private": true,
+    "type": "module",
+    "main": "dist/main/index.js",
+    "license": "MIT",
+    "workspaces": [
+        "src/renderer"
+    ],
+    "engines": {
+        "node": ">=22.17"
+    },
+    "scripts": {
+        "dev": "concurrently -k -n renderer,desktop -c cyan,magenta \"npm:dev:renderer\" \"npm:dev:desktop\"",
+        "dev:renderer": "npm run dev --workspace slimetora-renderer",
+        "dev:desktop": "node scripts/dev-desktop.mjs",
+        "build": "npm run build:renderer && npm run build:node",
+        "build:renderer": "npm run build --workspace slimetora-renderer",
+        "build:node": "node scripts/build-node.mjs",
+        "start": "npm run build && electron .",
+        "typecheck": "npm run typecheck:node && npm run typecheck:renderer",
+        "typecheck:node": "tsc -p tsconfig.node.json --noEmit",
+        "typecheck:renderer": "npm run typecheck --workspace slimetora-renderer",
+        "lint": "eslint .",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "package": "npm run build && electron-builder --dir",
+        "dist": "npm run build && electron-builder"
+    },
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "@types/node": "^24.10.1",
+        "concurrently": "^10.0.6",
+        "electron": "^44.9.1",
+        "esbuild": "^0.28.2",
+        "eslint": "^10.13.0",
+        "eslint-config-prettier": "^10.1.8",
+        "globals": "^17.13.0",
+        "prettier": "^3.9.10",
+        "prettier-plugin-organize-imports": "^4.3.0",
+        "prettier-plugin-svelte": "^4.1.1",
+        "prettier-plugin-tailwindcss": "^0.8.1",
+        "typescript": "^6.0.3",
+        "typescript-eslint": "^8.72.0",
+        "wait-on": "^9.5.1"
+    },
+    "allowScripts": {
+        "electron@44.9.1": true,
+        "esbuild@0.28.2": true
+    }
+}

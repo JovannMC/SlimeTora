@@ -1,0 +1,15 @@
+{
+    "extends": "$app/tsconfig",
+    "compilerOptions": {
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "skipLibCheck": true,
+        "paths": {
+            "$shared/*": ["../shared/*"],
+            "#lib": ["./src/lib"],
+            "#lib/*": ["./src/lib/*"]
+        }
+    },
+    "include": ["src", "test", "*"],
+    "exclude": ["src/service-worker"]
+}

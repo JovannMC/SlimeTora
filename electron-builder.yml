@@ -1,0 +1,34 @@
+appId: me.jovann.slimetora
+productName: SlimeTora
+copyright: Copyright © JovannMC
+
+directories:
+    output: release
+    buildResources: build
+
+files:
+    - dist/**/*
+    - package.json
+
+asar: true
+npmRebuild: true
+
+win:
+    target:
+        - nsis
+
+mac:
+    category: public.app-category.utilities
+    target:
+        - dmg
+        - zip
+
+linux:
+    category: Utility
+    target:
+        - AppImage
+        - deb
+
+nsis:
+    oneClick: false
+    allowToChangeInstallationDirectory: true

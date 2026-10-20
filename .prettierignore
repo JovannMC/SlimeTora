@@ -1,0 +1,14 @@
+dist
+release
+build
+
+node_modules
+src/renderer/node_modules
+
+src/renderer/.svelte-kit
+**/.vite
+*.tsbuildinfo
+
+package-lock.json
+
+docs/icon.png

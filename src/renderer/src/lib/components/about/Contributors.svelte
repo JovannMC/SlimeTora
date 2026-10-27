@@ -19,7 +19,7 @@
 		<Icon icon="ri:id-card-line" class="text-secondary" width={20} />
 		{$t("about.contributors.title")}
 	</div>
-	<div class="bg-panel rounded-xl p-4 shadow flex flex-col gap-4 min-w-[338px]">
+	<div class="bg-panel rounded-xl p-4 shadow flex flex-col gap-4 min-w-84.5">
 		{#each contributors as c}
 			<div class="flex items-center gap-3">
 				<img src={c.pfp} alt={c.name} class="w-10 h-10 rounded-full bg-black object-cover" />

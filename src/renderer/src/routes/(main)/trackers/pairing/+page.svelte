@@ -276,7 +276,7 @@
 			<!-- Paired devices row -->
 			<div class="bg-quaternary rounded-lg p-4">
 				<div class="flex items-center justify-between mb-3">
-					<h3 class="text-base font-medium flex-grow">{$t("trackers.pairing.bluetooth.paired_devices")}</h3>
+					<h3 class="text-base font-medium grow">{$t("trackers.pairing.bluetooth.paired_devices")}</h3>
 					{#if pairedDevices.length > 0}
 						<div class="text-sm">
 							<Button
@@ -298,14 +298,14 @@
 						{#each pairedDevices as device}
 							<div class="bg-tertiary rounded-md p-2 flex flex-col gap-1.5">
 								<div class="flex items-center gap-1.5">
-									<Icon icon="mdi:bluetooth" width={14} class="text-blue-400 flex-shrink-0" />
+									<Icon icon="mdi:bluetooth" width={14} class="text-blue-400 shrink-0" />
 									<span class="font-medium text-xs truncate">{device.deviceName}</span>
 									{#if device.connected}
-										<span class="bg-green-500 text-white text-xs px-1 py-0.5 rounded flex-shrink-0">
+										<span class="bg-green-500 text-white text-xs px-1 py-0.5 rounded shrink-0">
 											{$t("trackers.pairing.bluetooth.connected")}
 										</span>
 									{:else}
-										<span class="bg-gray-500 text-white text-xs px-1 py-0.5 rounded flex-shrink-0">
+										<span class="bg-gray-500 text-white text-xs px-1 py-0.5 rounded shrink-0">
 											{$t("trackers.pairing.bluetooth.disconnected")}
 										</span>
 									{/if}
@@ -313,7 +313,7 @@
 								<div class="flex items-center justify-between">
 									<div class="text-xs font-mono truncate">{device.macAddress}</div>
 									{#if device.trackerType}
-										<span class="bg-blue-500 text-white text-xs px-1 py-0.5 rounded flex-shrink-0">
+										<span class="bg-blue-500 text-white text-xs px-1 py-0.5 rounded shrink-0">
 											{device.trackerType}
 										</span>
 									{/if}
@@ -333,7 +333,7 @@
 			<!-- Discovered devices row -->
 			<div class="bg-quaternary rounded-lg p-4">
 				<div class="flex items-center justify-between mb-3">
-					<h3 class="text-base font-medium flex-grow">
+					<h3 class="text-base font-medium grow">
 						{$t("trackers.pairing.bluetooth.discovered_devices")}
 					</h3>
 					<div class="text-sm">
@@ -363,10 +363,10 @@
 						{#each discoveredDevices as device}
 							<div class="bg-tertiary rounded-md p-2 flex flex-col gap-1.5">
 								<div class="flex items-center gap-1.5">
-									<Icon icon="mdi:bluetooth" width={14} class="text-blue-400 flex-shrink-0" />
+									<Icon icon="mdi:bluetooth" width={14} class="text-blue-400 shrink-0" />
 									<span class="font-medium text-xs truncate">{device.deviceName}</span>
 									{#if device.rssi}
-										<div class="flex items-center gap-1 flex-shrink-0">
+										<div class="flex items-center gap-1 shrink-0">
 											<Icon
 												icon="mdi:wifi"
 												width={10}

@@ -14,7 +14,7 @@
 		<Icon icon="ri:instance-line" class="text-secondary" width={20} />
 		{$t("about.other_credits")}
 	</div>
-	<div class="bg-panel rounded-xl p-4 shadow flex flex-col gap-1 min-w-[338px] text-sm">
+	<div class="bg-panel rounded-xl p-4 shadow flex flex-col gap-1 min-w-84.5 text-sm">
 		{#each others as o}
 			<p>
 				<a href={o.link} target="_blank" rel="noopener noreferrer" class="text-secondary-alt hover:underline"

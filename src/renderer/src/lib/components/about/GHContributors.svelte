@@ -18,7 +18,7 @@
 		<Icon icon="ri:github-line" class="text-secondary" width={20} />
 		{$t("about.gh_contributors")}
 	</div>
-	<div class="bg-panel rounded-xl p-4 shadow flex flex-col gap-4 min-w-[338px]">
+	<div class="bg-panel rounded-xl p-4 shadow flex flex-col gap-4 min-w-84.5">
 		{#each ghContribs as c}
 			<div class="flex items-center gap-3">
 				<a href={c.link} target="_blank" rel="noopener noreferrer">

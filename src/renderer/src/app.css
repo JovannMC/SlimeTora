@@ -60,7 +60,7 @@ h6 {
 }
 
 .button {
-	@apply text-white min-w-[200px] min-h-12 px-6 py-2 rounded-lg;
+	@apply text-white min-w-50 min-h-12 px-6 py-2 rounded-lg;
 }
 
 .mag-status-very_bad {

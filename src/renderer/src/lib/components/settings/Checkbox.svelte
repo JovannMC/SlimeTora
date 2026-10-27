@@ -29,7 +29,7 @@
 			peer-checked:border-panel
 		"
 	>
-		<div class="w-[18px] h-[18px] rounded bg-background flex items-center justify-center">
+		<div class="w-4.5 h-4.5 rounded bg-background flex items-center justify-center">
 			<div
 				class="w-full h-full rounded flex items-center justify-center
 					border-2

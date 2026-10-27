@@ -43,6 +43,6 @@
 	}
 
 	.selected {
-		@apply bg-secondary/24 pl-[2px] border-r-2 border-secondary;
+		@apply bg-secondary/24 pl-0.5 border-r-2 border-secondary;
 	}
 </style>

@@ -7,7 +7,7 @@
 
 <div class="flex flex-col h-full min-h-screen">
 	<Header />
-	<div class="flex flex-row flex-grow">
+	<div class="flex flex-row grow">
 		<div>
 			<Navbar />
 		</div>

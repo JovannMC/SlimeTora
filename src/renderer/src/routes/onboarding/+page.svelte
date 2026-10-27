@@ -30,14 +30,14 @@
 		</div>
 		<div class="flex flex-col gap-3">
 			<h1 class="text-[40px]">{$t("onboarding.title")}</h1>
-			<p class="w-[600px] text-text-alt">
+			<p class="w-150 text-text-alt">
 				{$t("onboarding.welcome")}
 			</p>
 		</div>
 	</div>
 
 	<div class="w-full p-8 flex flex-col items-center gap-6 bg-panel">
-		<p class="w-[600px] text-text-alt">
+		<p class="w-150 text-text-alt">
 			{$t("onboarding.setup")}
 		</p>
 		<div class="flex flex-row gap-4">
@@ -55,7 +55,7 @@
 <style>
 	@reference "../../app.css";
 	.logo-bg {
-		@apply absolute w-[384px] h-[384px] z-[-10];
+		@apply absolute w-[384px] h-96 -z-10;
 		background: linear-gradient(135deg, #9a48ee 0%, #f05d38 100%);
 		filter: blur(175px);
 	}

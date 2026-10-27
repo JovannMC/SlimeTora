@@ -42,13 +42,13 @@
 	@reference "../../app.css";
 
 	.power-button-bg {
-		@apply absolute w-[200px] h-[200px] z-[-10];
+		@apply absolute w-50 h-50 -z-10;
 		background: linear-gradient(135deg, #9a48ee 0%, #f05d38 100%);
 		filter: blur(100px);
 	}
 
 	.power-button {
-		@apply w-[200px] h-[200px] flex justify-center items-center rounded-full shadow-lg relative hover:bg-secondary/24 active:bg-secondary/12;
+		@apply w-50 h-50 flex justify-center items-center rounded-full shadow-lg relative hover:bg-secondary/24 active:bg-secondary/12;
 		background: var(--slimetora-gradient-alt);
 	}
 

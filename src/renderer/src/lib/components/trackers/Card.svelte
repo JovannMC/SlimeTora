@@ -65,7 +65,7 @@
 
 <!-- TODO: add tracker connection mode (maybe part assignment too?) -->
 <div
-	class={`w-[338px] h-auto bg-card rounded-xl shadow-card flex flex-col transition-all duration-300 overflow-hidden`}
+	class={`w-84.5 h-auto bg-card rounded-xl shadow-card flex flex-col transition-all duration-300 overflow-hidden`}
 	id="tracker-card-{id}"
 >
 	<!-- Unexpanded card info / button -->
@@ -88,10 +88,10 @@
 					<Icon
 						icon="ri:compass-3-fill"
 						width={14}
-						class={`!bg-transparent ${magStatusClass(magStatus)}`}
+						class={`bg-transparent! ${magStatusClass(magStatus)}`}
 						id="mag-icon"
 					/>
-					<span class={`!bg-transparent uppercase ${magStatusClass(magStatus)}`} id="mag-text"
+					<span class={`bg-transparent! uppercase ${magStatusClass(magStatus)}`} id="mag-text"
 						>{magStatus}</span
 					>
 				</p>
@@ -155,11 +155,11 @@
 							<Icon
 								icon="ri:compass-3-fill"
 								width={16}
-								class={`!bg-transparent ${magStatusClass(magStatus)}`}
+								class={`bg-transparent! ${magStatusClass(magStatus)}`}
 								id="mag-icon"
 							/>
 						</Tooltip>
-						<span class={`!bg-transparent uppercase ${magStatusClass(magStatus)}`} id="mag-text">
+						<span class={`bg-transparent! uppercase ${magStatusClass(magStatus)}`} id="mag-text">
 							{magStatus === "N/A"
 								? $t("trackers.card.status.unknown")
 								: $t(`trackers.card.status.${magStatus}`)}

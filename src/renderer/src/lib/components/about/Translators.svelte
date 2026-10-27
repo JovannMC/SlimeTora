@@ -22,7 +22,7 @@
 		<Icon icon="ri:translate-2" class="text-secondary" width={20} />
 		{$t("about.translators")}
 	</div>
-	<div class="bg-panel rounded-xl p-4 shadow flex flex-col gap-5 text-text-alt min-w-[338px]">
+	<div class="bg-panel rounded-xl p-4 shadow flex flex-col gap-5 text-text-alt min-w-84.5">
 		{#each translators as t}
 			<div>
 				<h3 class="font-heading text-base mb-2">{t.language}</h3>

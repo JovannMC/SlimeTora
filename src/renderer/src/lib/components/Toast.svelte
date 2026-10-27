@@ -65,7 +65,7 @@
 	<div class="flex items-center gap-4">
 		<Icon
 			icon={iconName}
-			class="w-6 h-6 text-black flex-shrink-0"
+			class="w-6 h-6 text-black shrink-0"
 			width="32"
 			stroke="2"
 			fill="none"
@@ -73,7 +73,7 @@
 		<p class="text-black font-normal whitespace-pre-wrap">{message}</p>
 	</div>
 	<button
-		class="text-gray-600 hover:text-black flex-shrink-0"
+		class="text-gray-600 hover:text-black shrink-0"
 		onclick={() => removeToast(id)}
 	>
 		<Icon width="16" icon="ri:close-line" />

@@ -89,7 +89,7 @@
 	{#if showTooltip}
 		<div
 			bind:this={tooltipEl}
-			class="fixed z-[9999]"
+			class="fixed z-9999"
 			style="top: {tooltipStyle.top}px; left: {tooltipStyle.left}px; width: {width};"
 			role="tooltip"
 			transition:fade={{ duration: 150 }}

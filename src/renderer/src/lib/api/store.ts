@@ -1,6 +1,3 @@
-// Stand-in for the Tauri store plugin. Settings are kept in localStorage until
-// persistence moves to the Electron main process.
-
 export interface Store {
 	get<T = unknown>(key: string): Promise<T | undefined>;
 	set(key: string, value: unknown): Promise<void>;

@@ -143,3 +143,4 @@ release/
 .pnp.*
 
 testing
+.DS_Store

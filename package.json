@@ -1,7 +1,7 @@
 {
     "name": "slimetora",
     "productName": "SlimeTora",
-    "version": "2.0.0-dev.0",
+    "version": "2.0.0",
     "description": "Connects the HaritoraX full body trackers to the SlimeVR server",
     "private": true,
     "type": "module",
@@ -32,6 +32,7 @@
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
+        "@iconify/svelte": "^5.2.3",
         "@types/node": "^24.10.1",
         "concurrently": "^10.0.6",
         "electron": "^44.9.1",
@@ -50,5 +51,14 @@
     "allowScripts": {
         "electron@44.9.1": true,
         "esbuild@0.28.2": true
+    },
+    "dependencies": {
+        "@fontsource/chakra-petch": "^5.3.0",
+        "@slimevr/common": "^0.1.3",
+        "@slimevr/firmware-protocol": "^0.6.6",
+        "@slimevr/tracker-emulation": "^0.2.6",
+        "haritorax-interpreter": "file:../haritorax-interpreter",
+        "overlayscrollbars": "^2.17.0",
+        "rand-seed": "^3.0.0"
     }
 }

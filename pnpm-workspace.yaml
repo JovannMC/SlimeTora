@@ -1,0 +1,4 @@
+packages:
+  - src/renderer
+allowBuilds:
+  esbuild: true

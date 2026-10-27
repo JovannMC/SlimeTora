@@ -1,62 +1,28 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
-	import { trackerOpenStates, connectedTrackers } from "#lib/store/index.js";
-	import { derived } from "svelte/store";
 	import { goto } from "$app/navigation";
-	import { info } from "#lib/log/index.js";
+	import { connectedTrackers, trackerOpenStates } from "#lib/store/index.js";
 	import { program } from "#lib/store/settings.js";
-	// import TrackerVisualization from "./TrackerVisualization.svelte"; // disabled, Three.js
-	import Tooltip from "../settings/Tooltip.svelte";
+	import { info } from "#lib/log/index.js";
 	import { t } from "#lib/lang/index.js";
+	import { ChargeStatus } from "#lib/types/tracker.js";
+	import Tooltip from "../settings/Tooltip.svelte";
+	// import TrackerVisualization from "./TrackerVisualization.svelte"; // temporarily
 
-	let { name, id, type } = $props();
-	let isOpen = $state(false);
+	let { name, id, type }: { name: string; id: string; type: string } = $props();
 
-	const trackerData = derived(connectedTrackers, ($trackers) => $trackers.find((t) => t.id === id));
-	let preciseData = $state($program.preciseData);
-	let visualization = $state($program.visualization);
-	let visualizationFPS = $state($program.visualizationFPS);
+	const tracker = $derived($connectedTrackers.find((t) => t.id === id));
+	const isOpen = $derived($trackerOpenStates[id] ?? false);
+	const decimals = $derived($program.preciseData ? 2 : 0);
 
-	let rotation = $state([0, 0, 0]);
-	let acceleration = $state([0, 0, 0]);
-	let batteryPercent = $state(-1);
-	let batteryVoltage = $state(-1);
-	let batteryStatus = $state("discharging");
-	let magStatus = $state("N/A");
-	let rssi = $state(1);
-
-	function magStatusClass(status: string) {
-		return `mag-status-${status?.toLowerCase().replace(/\s/g, "_")}`;
-	}
-
-	$effect(() => {
-		const t = $trackerData;
-		if (t) {
-			rotation = t.data.rotation?.map((v) => Number(v.toFixed(preciseData ? 2 : 0))) ?? [0, 0, 0];
-			acceleration = t.data.acceleration?.map((v) => Number(v.toFixed(preciseData ? 2 : 0))) ?? [0, 0, 0];
-			batteryPercent = t.data.battery?.remaining ?? -1;
-			batteryVoltage = t.data.battery?.voltage ?? -1;
-			batteryStatus = t.data.battery?.status ?? "discharging";
-			magStatus = t.data.magnetometer ?? "N/A";
-			rssi = t.data.rssi ?? 1;
-		}
-	});
-
-	$effect(() => {
-		const p = $program;
-		if (p) {
-			preciseData = p.preciseData;
-			visualization = p.visualization;
-			visualizationFPS = p.visualizationFPS;
-		}
-	});
-
-	$effect(() => {
-		const states = $trackerOpenStates;
-		if (states) {
-			isOpen = states[id] ?? false;
-		}
-	});
+	const rotation = $derived(tracker?.data.rotation?.map((v) => Number(v.toFixed(decimals))) ?? [0, 0, 0]);
+	const acceleration = $derived(tracker?.data.acceleration?.map((v) => Number(v.toFixed(decimals))) ?? [0, 0, 0]);
+	const batteryPercent = $derived(tracker?.data.battery?.remaining ?? -1);
+	const batteryVoltage = $derived(tracker?.data.battery?.voltage ?? -1);
+	const batteryStatus = $derived(tracker?.data.battery?.status ?? ChargeStatus.Discharging);
+	const magStatus = $derived(tracker?.data.magnetometer ?? "N/A");
+	const rssi = $derived(tracker?.data.rssi ?? 1);
+	const magClass = $derived(`mag-status-${magStatus.toLowerCase().replace(/\s/g, "_")}`);
 
 	function toggleOpen() {
 		trackerOpenStates.update((states) => ({ ...states, [id]: !isOpen }));
@@ -65,12 +31,12 @@
 
 <!-- TODO: add tracker connection mode (maybe part assignment too?) -->
 <div
-	class={`w-84.5 h-auto bg-card rounded-xl shadow-card flex flex-col transition-all duration-300 overflow-hidden`}
+	class="flex h-auto w-84.5 flex-col overflow-hidden rounded-xl bg-card shadow-card transition-all duration-300"
 	id="tracker-card-{id}"
 >
-	<!-- Unexpanded card info / button -->
+	<!-- collapsed header -->
 	<div
-		class="flex items-center justify-between px-4 h-14 hoverable"
+		class="hoverable flex h-14 items-center justify-between px-4"
 		role="button"
 		aria-expanded={isOpen}
 		tabindex="0"
@@ -85,15 +51,8 @@
 					<p class="text-sm text-text-alt" id="battery-small">{batteryPercent}%</p>
 				</div>
 				<p class="flex items-center gap-1 text-sm text-text-alt" id="mag-small">
-					<Icon
-						icon="ri:compass-3-fill"
-						width={14}
-						class={`bg-transparent! ${magStatusClass(magStatus)}`}
-						id="mag-icon"
-					/>
-					<span class={`bg-transparent! uppercase ${magStatusClass(magStatus)}`} id="mag-text"
-						>{magStatus}</span
-					>
+					<Icon icon="ri:compass-3-fill" width={14} class="bg-transparent! {magClass}" id="mag-icon" />
+					<span class="bg-transparent! uppercase {magClass}" id="mag-text">{magStatus}</span>
 				</p>
 				<div class="flex items-center gap-1" id="rssi-status">
 					<Icon icon="ri:signal-wifi-fill" width={14} class="text-text-alt" />
@@ -103,7 +62,7 @@
 		</div>
 		<div class="flex items-center gap-1">
 			<button
-				class="p-1 rounded-md hover:bg-secondary/20 active:bg-secondary/10"
+				class="rounded-md p-1 hover:bg-secondary/20 active:bg-secondary/10"
 				aria-label={$t("trackers.card.power_off", { name })}
 				onclick={(e) => {
 					e.stopPropagation();
@@ -113,7 +72,7 @@
 				<Icon icon="ri:shut-down-line" width={18} class="text-text-alt" />
 			</button>
 			<button
-				class="p-1 rounded-md hover:bg-secondary/20 active:bg-secondary/10"
+				class="rounded-md p-1 hover:bg-secondary/20 active:bg-secondary/10"
 				aria-label={$t("trackers.card.settings", { name })}
 				onclick={(e) => {
 					e.stopPropagation();
@@ -123,31 +82,26 @@
 			>
 				<Icon icon="ri:settings-3-line" width={18} class="text-text-alt" />
 			</button>
-			{#if isOpen}
-				<Icon icon="ri:arrow-up-s-line" width={24} class="text-text-alt" />
-			{:else}
-				<Icon icon="ri:arrow-down-s-line" width={24} class="text-text-alt" />
-			{/if}
+			<Icon icon={isOpen ? "ri:arrow-up-s-line" : "ri:arrow-down-s-line"} width={24} class="text-text-alt" />
 		</div>
 	</div>
 
 	{#if isOpen}
-		<!-- Expanded content -->
-		<div class="p-4 bg-panel rounded-lg m-4 mt-0 flex flex-col gap-2">
+		<div class="m-4 mt-0 flex flex-col gap-2 rounded-lg bg-panel p-4">
 			<p><b>{$t("trackers.card.device")}</b> <span id="device-type">{id} ({type})</span></p>
 			<p>
 				<b>{$t("trackers.card.imu")}</b> <span id="imu">{rotation.join(", ")} ({acceleration.join(", ")})</span>
 			</p>
 			<p class="flex flex-row items-center">
 				<b>{$t("trackers.card.battery")}</b>
-				<span class="flex flex-row items-center justify-center gap-1 ml-1" id="battery-main">
+				<span class="ml-1 flex flex-row items-center justify-center gap-1" id="battery-main">
 					<span>{batteryPercent}% ({batteryVoltage / 1000}V)</span>
-					{#if batteryStatus === "Charging"}
-						<Icon icon="ri:flashlight-fill" width={16} class="text-yellow-500 inline-block ml-1" />
+					{#if batteryStatus === ChargeStatus.Charging}
+						<Icon icon="ri:flashlight-fill" width={16} class="ml-1 inline-block text-yellow-500" />
 					{/if}
 				</span>
 			</p>
-			<div id="status" class="flex items-center text-center gap-1">
+			<div id="status" class="flex items-center gap-1 text-center">
 				<b>{$t("trackers.card.status.text")}</b>
 				<div class="flex items-center gap-2" id="battery-status">
 					<div class="flex items-center gap-1" id="mag-status">
@@ -155,11 +109,11 @@
 							<Icon
 								icon="ri:compass-3-fill"
 								width={16}
-								class={`bg-transparent! ${magStatusClass(magStatus)}`}
+								class="bg-transparent! {magClass}"
 								id="mag-icon"
 							/>
 						</Tooltip>
-						<span class={`bg-transparent! uppercase ${magStatusClass(magStatus)}`} id="mag-text">
+						<span class="bg-transparent! uppercase {magClass}" id="mag-text">
 							{magStatus === "N/A"
 								? $t("trackers.card.status.unknown")
 								: $t(`trackers.card.status.${magStatus}`)}
@@ -174,12 +128,12 @@
 				</div>
 			</div>
 
-			{#if visualization}
+			<!-- {#if visualization} -->
 				<!-- <TrackerVisualization {rotation} {acceleration} fps={visualizationFPS} /> -->
-			{:else}
+			<!-- {:else} -->
 				<!-- <img src="/tracker.png" alt="Tracker" class="mx-auto mt-2" style="width: 150px;" /> -->
 				<!-- TODO: maybe a fallback? like an image of the tracker? -->
-			{/if}
+			<!-- {/if} -->
 		</div>
 	{/if}
 </div>

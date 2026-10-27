@@ -1,74 +1,69 @@
 <script lang="ts">
 	import { page } from "$app/state";
 	import { goto } from "$app/navigation";
-	import { connectedTrackers } from "#lib/store/index.js";
+	import { untrack } from "svelte";
 	import Icon from "@iconify/svelte";
+	import { error, info } from "#lib/log/index.js";
+	import { t } from "#lib/lang/index.js";
+	import { connectedTrackers, type Tracker } from "#lib/store/index.js";
+	import Button from "#lib/components/settings/Button.svelte";
 	import Select from "#lib/components/settings/Select.svelte";
 	import Switch from "#lib/components/settings/Switch.svelte";
-	import Button from "#lib/components/settings/Button.svelte";
-	import { error, info } from "#lib/log/index.js";
 	import Tooltip from "#lib/components/settings/Tooltip.svelte";
-	import { t } from "#lib/lang/index.js";
 
-	// TODO: finish this
+	// TODO: finish this (the settings below are not saved yet)
 
-	let trackerId: string | null = null;
-	let trackerData: any = $state(null);
+	const trackerId = $derived(page.url.searchParams.get("trackerId"));
+	let trackerData: Tracker | undefined = $state();
 
-	// Get tracker ID from the route parameter
+	// look the tracker up once per id, and go back to the list if it can't be found
 	$effect(() => {
-		const newId = page.url.searchParams.get("trackerId");
-		if (!newId) {
+		const id = trackerId;
+		if (!id) {
 			error("Tracker ID is undefined. Redirecting to trackers list.");
 			goto("/trackers");
 			return;
 		}
-		if (trackerId !== newId) {
-			trackerId = newId;
-			trackerData = $connectedTrackers.find((tracker) => tracker.id === trackerId);
 
-			if (!trackerData) {
-				error(`Tracker with ID ${trackerId} not found. Redirecting to trackers list.`);
-				goto("/trackers");
-			}
+		trackerData = untrack(() => $connectedTrackers.find((t) => t.id === id));
+		if (!trackerData) {
+			error(`Tracker with ID ${id} not found. Redirecting to trackers list.`);
+			goto("/trackers");
 		}
 	});
 
-	// State for settings
 	let fps = $state("50");
 	let sensorMode = $state("2");
-	let sensorCorrections = $state({
-		accelerometer: true,
-		gyroscope: false,
-		magnetometer: false,
-	});
+	let accelerometer = $state(true);
+	let gyroscope = $state(false);
+	let magnetometer = $state(false);
+	let emulatedFeet = $state(false);
 
 	function getTrackerSettings() {
 		info(`Getting settings for tracker ${trackerId}`);
-		// Add logic to fetch tracker settings
 	}
 
 	function resetSettings() {
 		info(`Resetting settings for tracker ${trackerId}`);
-		// Add logic to reset tracker settings
 	}
 </script>
 
-<div class="flex flex-col p-4 gap-8">
-	<div class="bg-panel rounded-lg p-6 shadow">
-		<h1 class="text-2xl font-heading mb-4">{$t("trackers.per_tracker.title", { name: trackerData?.name })}</h1>
-		<p class="text-text-alt mb-6">
+<div class="flex flex-col gap-8 p-4">
+	<div class="rounded-lg bg-panel p-6 shadow">
+		<h1 class="mb-4 font-heading text-2xl">
+			{$t("trackers.per_tracker.title", { name: trackerData?.name ?? "" })}
+		</h1>
+		<p class="mb-6 text-text-alt">
 			{$t("trackers.per_tracker.description")}
 		</p>
 
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+		<div class="grid grid-cols-1 gap-8 md:grid-cols-2">
 			<div class="flex flex-col gap-4">
-				<h3 class="text-lg font-heading flex items-center gap-2 pb-2 border-b border-secondary/50">
+				<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
 					{$t("trackers.per_tracker.fps.name")}
 					<Tooltip
 						content={$t("trackers.per_tracker.fps.tooltip")}
 						icon="ri:information-line"
-						position="up"
 						width="300px"
 					/>
 				</h3>
@@ -77,18 +72,16 @@
 						{ value: "50", label: "50 FPS" },
 						{ value: "100", label: "100 FPS" },
 					]}
-					selected={fps}
-					onChange={(value) => (fps = value)}
+					bind:selected={fps}
 				/>
 			</div>
 
 			<div class="flex flex-col gap-4">
-				<h3 class="text-lg font-heading flex items-center gap-2 pb-2 border-b border-secondary/50">
+				<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
 					{$t("trackers.per_tracker.sensor_mode.name")}
 					<Tooltip
 						content={$t("trackers.per_tracker.sensor_mode.tooltip")}
 						icon="ri:information-line"
-						position="up"
 						width="300px"
 					/>
 				</h3>
@@ -97,71 +90,60 @@
 						{ value: "2", label: "Mode 2" },
 						{ value: "1", label: "Mode 1" },
 					]}
-					selected={sensorMode}
-					onChange={(value) => (sensorMode = value)}
+					bind:selected={sensorMode}
 				/>
 			</div>
 
 			<div class="flex flex-col gap-4">
-				<h3 class="text-lg font-heading flex items-center gap-2 pb-2 border-b border-secondary/50">
+				<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
 					{$t("trackers.per_tracker.sensor_auto_correction.name")}
 					<Tooltip
 						content={$t("trackers.per_tracker.sensor_auto_correction.tooltip")}
 						icon="ri:information-line"
-						position="up"
 						width="300px"
 					/>
 				</h3>
 				<div class="flex flex-col gap-3 pl-1">
-					<Switch
-						label="Accelerometer"
-						selected={sensorCorrections.accelerometer}
-						onChange={(value) => (sensorCorrections.accelerometer = value)}
-					/>
-					<Switch
-						label="Gyroscope"
-						selected={sensorCorrections.gyroscope}
-						onChange={(value) => (sensorCorrections.gyroscope = value)}
-					/>
-					<Switch
-						label="Magnetometer"
-						selected={sensorCorrections.magnetometer}
-						onChange={(value) => (sensorCorrections.magnetometer = value)}
-					/>
+					<Switch label="Accelerometer" bind:selected={accelerometer} />
+					<Switch label="Gyroscope" bind:selected={gyroscope} />
+					<Switch label="Magnetometer" bind:selected={magnetometer} />
 				</div>
 			</div>
 
 			<div class="flex flex-col gap-4">
-				<h3 class="text-lg font-heading flex items-center gap-2 pb-2 border-b border-secondary/50">
+				<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
 					{$t("trackers.per_tracker.virtual_feet.name")}
 					<Tooltip
 						content={$t("trackers.per_tracker.virtual_feet.tooltip")}
 						icon="ri:information-line"
-						position="up"
 						width="250px"
 					/>
 				</h3>
-				<Switch
-					label={$t("trackers.per_tracker.virtual_feet.name")}
-					selected={trackerData?.emulatedFeet}
-					onChange={(value) => (trackerData.emulatedFeet = value)}
-				/>
+				<Switch label={$t("trackers.per_tracker.virtual_feet.name")} bind:selected={emulatedFeet} />
 			</div>
 
-			<div class="flex flex-col gap-4 col-span-2">
+			<div class="col-span-2 flex flex-col gap-4">
 				<h3
-					class="text-lg font-heading flex items-center gap-2 pb-2 mb-4 border-b border-secondary/50 text-warning"
+					class="text-warning mb-4 flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg"
 				>
 					{$t("trackers.per_tracker.debugging")}
 					<Icon
 						icon="ri:information-line"
 						width={20}
-						class="text-text-alt hover:text-white transition-colors"
+						class="text-text-alt transition-colors hover:text-white"
 					/>
 				</h3>
 				<div class="flex flex-col gap-4">
-					<Button label={$t("trackers.per_tracker.get_settings")} background="primary" onClick={getTrackerSettings} />
-					<Button label={$t("trackers.per_tracker.reset_settings")} background="primary" onClick={resetSettings} />
+					<Button
+						label={$t("trackers.per_tracker.get_settings")}
+						background="primary"
+						onClick={getTrackerSettings}
+					/>
+					<Button
+						label={$t("trackers.per_tracker.reset_settings")}
+						background="primary"
+						onClick={resetSettings}
+					/>
 				</div>
 			</div>
 		</div>

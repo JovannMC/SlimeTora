@@ -31,7 +31,7 @@
 	--card: var(--quaternary);
 	--primary: #9a48ee;
 	--secondary: #f05d38;
-	--secondary-alt: #F9B5A4;
+	--secondary-alt: #f9b5a4;
 	--tertiary: #62656a;
 	--quaternary: #45464a;
 
@@ -43,7 +43,7 @@
 }
 
 body {
-	@apply bg-body font-body text-white overflow-x-hidden;
+	@apply overflow-x-hidden bg-body font-body text-white;
 }
 
 h1,
@@ -56,11 +56,11 @@ h6 {
 }
 
 .hoverable {
-	@apply transition duration-200 ease-in-out cursor-pointer;
+	@apply cursor-pointer transition duration-200 ease-in-out;
 }
 
 .button {
-	@apply text-white min-w-50 min-h-12 px-6 py-2 rounded-lg;
+	@apply min-h-12 min-w-50 rounded-lg px-6 py-2 text-white;
 }
 
 .mag-status-very_bad {

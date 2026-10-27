@@ -5,13 +5,13 @@
 	let { children } = $props();
 </script>
 
-<div class="flex flex-col h-full min-h-screen">
+<div class="flex h-full min-h-screen flex-col">
 	<Header />
-	<div class="flex flex-row grow">
+	<div class="flex grow flex-row">
 		<div>
 			<Navbar />
 		</div>
-		<div class="flex-1 mt-16 ml-16">
+		<div class="mt-16 ml-16 flex-1">
 			{@render children()}
 		</div>
 	</div>

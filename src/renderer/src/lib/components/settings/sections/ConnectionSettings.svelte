@@ -1,189 +1,147 @@
 <script lang="ts">
+	import Icon from "@iconify/svelte";
+	import { onMount } from "svelte";
+	import { goto } from "$app/navigation";
 	import { connection } from "#lib/store/settings.js";
 	import { ConnectionMode } from "#lib/types/connection.js";
 	import { TrackerModel } from "#lib/types/tracker.js";
-	import Icon from "@iconify/svelte";
 	import { invoke } from "#lib/api/backend.js";
-	import { onMount } from "svelte";
-	import Switch from "#lib/components/settings/Switch.svelte";
-	import Input from "#lib/components/settings/Input.svelte";
-	import Checkbox from "#lib/components/settings/Checkbox.svelte";
 	import { error, info, warn } from "#lib/log/index.js";
-	import Tooltip from "../Tooltip.svelte";
 	import { t } from "#lib/lang/index.js";
-	import { goto } from "$app/navigation";
-	import Button from "../Button.svelte";
+	import Button from "#lib/components/settings/Button.svelte";
+	import Checkbox from "#lib/components/settings/Checkbox.svelte";
+	import Input from "#lib/components/settings/Input.svelte";
+	import Switch from "#lib/components/settings/Switch.svelte";
+	import Tooltip from "#lib/components/settings/Tooltip.svelte";
 
-	const tip = $t("settings.connection.connection_mode.tip");
-	let portsInitialized = $state(false);
+	const MODELS = [
+		{ model: TrackerModel.X2, label: "HaritoraX 2" },
+		{ model: TrackerModel.Wireless, label: "HaritoraX Wireless" },
+		{ model: TrackerModel.Wired, label: "HaritoraX 1.1b/1.1/1.0" },
+	];
+
+	const MODES = [
+		{ mode: ConnectionMode.BLE, label: "Bluetooth (LE)" },
+		{ mode: ConnectionMode.Serial, label: "Serial / GX(6/2)" },
+	];
+
+	let availablePorts: string[] = $state([]);
 	let haritoraPorts: string[] = $state([]);
-	let serialPorts: Record<string, boolean> = $state({});
-
-	let trackerModels = $state({
-		X2: $connection.models?.includes(TrackerModel.X2),
-		Wireless: $connection.models?.includes(TrackerModel.Wireless),
-		Wired: $connection.models?.includes(TrackerModel.Wired),
-	});
-	let connectionModes = $state({
-		ble: $connection.modes?.includes(ConnectionMode.BLE),
-		serial: $connection.modes?.includes(ConnectionMode.Serial),
-	});
-	let slimevrIP = $state($connection.slimevrIP);
-	let slimevrPort = $state($connection.slimevrPort);
 
 	onMount(async () => {
 		try {
-			serialPorts = {};
+			const ports = (await invoke<string[]>("get_serial_ports")).sort();
+			availablePorts = ports;
+			info(`Available serial ports: ${ports}`);
 
-			let ports: string[] = [];
-			let filteredPorts: string[] = [];
-
-			await invoke("get_serial_ports")
-				.then((result) => {
-					ports = (result as string[]).sort();
-					info(`Available serial ports: ${ports}`);
-					return invoke("filter_ports", { ports });
-				})
-				.then((result) => {
-					filteredPorts = result as string[];
-					info(`Filtered Haritora ports: ${filteredPorts}`);
-				})
-				.catch((err) => {
-					warn(`Error occurred: ${err}`);
-				});
-
-			haritoraPorts = filteredPorts.sort();
-
-			const originalPorts = $connection.ports || [];
-
-			const portsState: Record<string, boolean> = {};
-			ports.forEach((port) => {
-				portsState[port] = originalPorts.includes(port);
-			});
-
-			serialPorts = portsState;
-			portsInitialized = true;
+			const filtered = (await invoke<string[]>("filter_ports", { ports })).sort();
+			haritoraPorts = filtered;
+			info(`Filtered Haritora ports: ${filtered}`);
 		} catch (err) {
-			error(`Failed to fetch serial ports: ${err}`);
-			portsInitialized = true;
+			warn(`Error occurred: ${err}`);
 		}
 	});
 
-	$effect(() => {
-		if (!portsInitialized) {
-			return;
-		}
+	// keeps the order of `order`, so the stored lists are always in a stable order
+	function toggleListed<T>(current: T[], item: T, on: boolean, order: T[]): T[] {
+		return order.filter((value) => (value === item ? on : current.includes(value)));
+	}
 
-		const models: TrackerModel[] = [];
-		if (trackerModels.X2) models.push(TrackerModel.X2);
-		if (trackerModels.Wireless) models.push(TrackerModel.Wireless);
-		if (trackerModels.Wired) models.push(TrackerModel.Wired);
+	function setModel(model: TrackerModel, on: boolean) {
+		connection.update((s) => ({
+			...s,
+			models: toggleListed(
+				s.models,
+				model,
+				on,
+				MODELS.map((m) => m.model),
+			),
+		}));
+	}
 
-		const modes: string[] = [];
-		if (connectionModes.ble) modes.push(ConnectionMode.BLE);
-		if (connectionModes.serial) modes.push(ConnectionMode.Serial);
+	function setMode(mode: ConnectionMode, on: boolean) {
+		connection.update((s) => ({
+			...s,
+			modes: toggleListed(
+				s.modes,
+				mode,
+				on,
+				MODES.map((m) => m.mode),
+			),
+		}));
+	}
 
-		const activePorts = Object.entries(serialPorts).reduce((acc, [port, isActive]) => {
-			if (isActive) acc.push(port);
-			return acc;
-		}, [] as string[]);
-
-		connection.update((prev) => {
-			return {
-				...prev,
-				models,
-				modes,
-				ports: activePorts,
-				slimevrIP,
-				slimevrPort,
-			};
-		});
-	});
+	function setPort(port: string, on: boolean) {
+		connection.update((s) => ({ ...s, ports: toggleListed(s.ports, port, on, availablePorts) }));
+	}
 </script>
 
-<div class="bg-panel rounded-lg p-6 shadow">
-	<h2 class="text-2xl font-heading mb-6 flex items-center gap-2">
+<div class="rounded-lg bg-panel p-6 shadow">
+	<h2 class="mb-6 flex items-center gap-2 font-heading text-2xl">
 		<Icon icon="ri:link" class="text-secondary" width={28} />
 		{$t("settings.connection.title")}
 	</h2>
 
-	<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+	<div class="grid grid-cols-1 gap-8 md:grid-cols-2">
 		<div class="flex flex-col gap-4">
-			<h3 class="text-lg font-heading flex items-center gap-2 pb-2 border-b border-secondary/50">
+			<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
 				{$t("settings.connection.tracker_model.name")}
 				<Tooltip
 					content={$t("settings.connection.tracker_model.tooltip")}
 					icon="ri:information-line"
-					position="up"
 					width="250px"
 				/>
 			</h3>
 			<div class="flex flex-col gap-3 pl-1">
-				<Checkbox
-					label="HaritoraX 2"
-					checked={trackerModels.X2}
-					onChange={(value) => (trackerModels.X2 = value)}
-				/>
-				<Checkbox
-					label="HaritoraX Wireless"
-					checked={trackerModels.Wireless}
-					onChange={(value) => (trackerModels.Wireless = value)}
-				/>
-				<Checkbox
-					label="HaritoraX 1.1b/1.1/1.0"
-					checked={trackerModels.Wired}
-					onChange={(value) => (trackerModels.Wired = value)}
-				/>
+				{#each MODELS as { model, label }}
+					<Checkbox
+						{label}
+						bind:checked={() => $connection.models.includes(model), (on) => setModel(model, on)}
+					/>
+				{/each}
 			</div>
 
-			<h3 class="text-lg font-heading flex items-center gap-2 pb-2 border-b border-secondary/50">
+			<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
 				{$t("settings.connection.connection_mode.name")}
 				<Tooltip
 					content={$t("settings.connection.connection_mode.tooltip")}
 					icon="ri:information-line"
-					position="up"
 					width="250px"
 				/>
 			</h3>
 			<div class="flex flex-col gap-3 pl-1">
-				<Checkbox
-					label="Bluetooth (LE)"
-					checked={connectionModes.ble}
-					onChange={(value) => (connectionModes.ble = value)}
-				/>
-				<Checkbox
-					label="Serial / GX(6/2)"
-					checked={connectionModes.serial}
-					onChange={(value) => (connectionModes.serial = value)}
-				/>
+				{#each MODES as { mode, label }}
+					<Checkbox
+						{label}
+						bind:checked={() => $connection.modes.includes(mode), (on) => setMode(mode, on)}
+					/>
+				{/each}
 			</div>
+
 			<Button
 				label={$t("trackers.settings.pairing")}
 				icon="ri:bluetooth-connect-line"
-				iconPosition="left"
 				background="quaternary"
 				onClick={() => goto("/trackers/pairing")}
 			/>
 		</div>
 
 		<div class="flex flex-col gap-4">
-			<h3 class="text-lg font-heading flex items-center gap-2 pb-2 border-b border-secondary/50">
+			<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
 				{$t("settings.connection.serial_ports.name")}
 				<Tooltip
 					content={$t("settings.connection.serial_ports.tooltip")}
 					icon="ri:information-line"
-					position="up"
 					width="250px"
 				/>
 			</h3>
-			{#if Object.keys(serialPorts).length > 0}
+			{#if availablePorts.length > 0}
 				<div class="grid grid-cols-2 gap-3 pl-1">
-					{#each Object.entries(serialPorts) as [port, _isActive]}
+					{#each availablePorts as port (port)}
 						<Switch
 							label={port}
-							selected={serialPorts[port]}
-							onChange={(value) => (serialPorts[port] = value)}
 							className={haritoraPorts.includes(port) ? "text-secondary" : ""}
+							bind:selected={() => $connection.ports.includes(port), (on) => setPort(port, on)}
 						/>
 					{/each}
 				</div>
@@ -191,12 +149,11 @@
 				<p class="text-text-alt italic">{$t("settings.connection.serial_ports.none")}</p>
 			{/if}
 
-			<h3 class="text-lg font-heading flex items-center gap-2 pb-2 border-b border-secondary/50">
+			<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
 				{$t("settings.connection.slimevr_server.name")}
 				<Tooltip
 					content={$t("settings.connection.slimevr_server.tooltip")}
 					icon="ri:information-line"
-					position="up"
 					width="300px"
 				/>
 			</h3>
@@ -204,21 +161,18 @@
 				<div class="col-span-2">
 					<Input
 						label={$t("settings.connection.server_ip")}
-						type="text"
-						value={slimevrIP}
-						onChange={(value) => (slimevrIP = String(value))}
 						icon="ri:global-line"
-						placeholder={"255.255.255.255"}
+						placeholder="255.255.255.255"
+						bind:value={$connection.slimevrIP}
 					/>
 				</div>
 				<div>
 					<Input
 						label={$t("settings.connection.server_port")}
 						type="number"
-						value={slimevrPort}
-						onChange={(value) => (slimevrPort = Number(value))}
 						icon="ri:door-line"
-						placeholder={"6969"}
+						placeholder="6969"
+						bind:value={$connection.slimevrPort}
 					/>
 				</div>
 			</div>

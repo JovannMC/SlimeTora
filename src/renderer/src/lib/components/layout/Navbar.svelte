@@ -1,25 +1,20 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
 	import { currentPath, externalNavLinks, navLinks } from "#lib/store/index.js";
-
-	let path = $currentPath;
-	currentPath.subscribe((value) => {
-		path = value;
-	});
 </script>
 
-<nav class="fixed w-16 h-[calc(100vh-64px)] top-16 bg-panel drop-shadow-xl flex flex-col justify-between">
+<nav class="fixed top-16 flex h-[calc(100vh-64px)] w-16 flex-col justify-between bg-panel drop-shadow-xl">
 	<div>
-		{#each navLinks as { name, icon, link }}
-			{@const same = path === link}
-			<a href={link} class="link {same ? 'selected' : ''}">
-				<Icon class={same ? "text-white" : "text-text-alt"} {icon} width={28} />
+		{#each navLinks as { icon, link }}
+			{@const selected = $currentPath === link}
+			<a href={link} class="link" class:selected>
+				<Icon class={selected ? "text-white" : "text-text-alt"} {icon} width={28} />
 			</a>
 		{/each}
 	</div>
 
 	<div>
-		{#each externalNavLinks as { name, icon, link }}
+		{#each externalNavLinks as { icon, link }}
 			<a href={link} target="_blank" rel="noopener noreferrer" class="link">
 				<Icon class="text-text-alt" {icon} width={28} />
 			</a>
@@ -31,7 +26,7 @@
 	@reference "../../../app.css";
 
 	.link {
-		@apply flex flex-col items-center justify-center h-16;
+		@apply flex h-16 flex-col items-center justify-center;
 	}
 
 	.link:hover {
@@ -42,7 +37,7 @@
 		@apply bg-secondary/6;
 	}
 
-	.selected {
-		@apply bg-secondary/24 pl-0.5 border-r-2 border-secondary;
+	.link.selected {
+		@apply border-r-2 border-secondary bg-secondary/24 pl-0.5;
 	}
 </style>

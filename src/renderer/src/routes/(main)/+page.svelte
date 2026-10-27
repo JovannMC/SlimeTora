@@ -1,40 +1,25 @@
 <script lang="ts">
-	import { isOn } from "#lib/store/index.js";
 	import Icon from "@iconify/svelte";
-	import { onMount } from "svelte";
-	import { connectedTrackers } from "#lib/store/index.js";
+	import { isOn, connectedTrackers } from "#lib/store/index.js";
 	import { t } from "#lib/lang/index.js";
 
-	let trackerCount = $state(0);
-
-	onMount(() => {
-		connectedTrackers.subscribe((value) => (trackerCount = value.length));
-
-		isOn.subscribe((value) => {
-			const status = document.getElementById("tracker-status");
-			const button = document.querySelector(".power-button");
-
-			if (value) {
-				if (status) status.innerText = $t("home.connected");
-				if (button) button.classList.add("connected");
-			} else if (value === false) {
-				if (status) status.innerText = $t("home.disconnected");
-				if (button) button.classList.remove("connected");
-				connectedTrackers.update(() => []);
-			}
-		});
+	// turning off clears the tracker list (null means the app just started, so leave it alone)
+	$effect(() => {
+		if ($isOn === false) connectedTrackers.set([]);
 	});
 </script>
 
-<div class="flex flex-col justify-center items-center w-full h-full gap-12">
+<div class="flex h-full w-full flex-col items-center justify-center gap-12">
 	<div class="power-button-bg"></div>
 
-	<p class="text-2xl font-heading" id="tracker-status">{$t("home.disconnected")}</p>
-	<button class="power-button hoverable" onclick={() => isOn.update((value) => !value)}>
-		<Icon class="icon text-white" icon="ri:shut-down-line" width={78} />
+	<p class="font-heading text-2xl">
+		{$isOn ? $t("home.connected") : $t("home.disconnected")}
+	</p>
+	<button class="power-button hoverable" class:connected={$isOn === true} onclick={() => isOn.update((on) => !on)}>
+		<Icon class="text-white" icon="ri:shut-down-line" width={78} />
 	</button>
-	<p class="text-xl text-text-alt font-heading">
-		{$t("home.count", { value: trackerCount })}
+	<p class="font-heading text-xl text-text-alt">
+		{$t("home.count", { value: $connectedTrackers.length })}
 	</p>
 </div>
 
@@ -42,27 +27,27 @@
 	@reference "../../app.css";
 
 	.power-button-bg {
-		@apply absolute w-50 h-50 -z-10;
+		@apply absolute -z-10 h-50 w-50;
 		background: linear-gradient(135deg, #9a48ee 0%, #f05d38 100%);
 		filter: blur(100px);
 	}
 
 	.power-button {
-		@apply w-50 h-50 flex justify-center items-center rounded-full shadow-lg relative hover:bg-secondary/24 active:bg-secondary/12;
+		@apply relative flex h-50 w-50 items-center justify-center rounded-full shadow-lg hover:bg-secondary/24 active:bg-secondary/12;
 		background: var(--slimetora-gradient-alt);
 	}
 
-	.power-button:global(.connected) {
+	.power-button.connected {
 		background: var(--slimetora-gradient);
 		z-index: 0;
 	}
 
-	.power-button:global(.connected)::before {
+	.power-button.connected::before {
 		background: rgba(0, 0, 0, 0.2);
 	}
 
 	.power-button::before {
-		@apply absolute inset-0 rounded-full p-1 z-[-1];
+		@apply absolute inset-0 z-[-1] rounded-full p-1;
 		content: "";
 		background: linear-gradient(180deg, #f05d38 0%, #9a48ee 100%);
 		mask:

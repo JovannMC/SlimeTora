@@ -7,88 +7,51 @@
 	import { trackerOpenStates, connectedTrackers } from "#lib/store/index.js";
 	import { program } from "#lib/store/settings.js";
 
-	let preciseData = $state($program.preciseData);
-	let fastData = $state($program.fastData);
-	let visualization = $state($program.visualization);
+	const leftColumn = $derived($connectedTrackers.filter((_, i) => i % 2 === 0));
+	const rightColumn = $derived($connectedTrackers.filter((_, i) => i % 2 === 1));
 
-	function toggleTrackers() {
-		let anyOpen = Object.values($trackerOpenStates).some((isOpen) => isOpen);
+	function toggleAll() {
+		const anyOpen = Object.values($trackerOpenStates).some(Boolean);
+		trackerOpenStates.update((states) => Object.fromEntries(Object.keys(states).map((id) => [id, !anyOpen])));
 
-		trackerOpenStates.update((states: any) => {
-			const newStates = { ...states };
-			for (const id in newStates) {
-				newStates[id] = anyOpen ? false : true;
-			}
-			return newStates;
-		});
-
-		setTimeout(() => {
-			window.scrollTo({
-				top: document.body.scrollHeight,
-				behavior: "instant",
-			});
-		}, 0);
+		setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" }), 0);
 	}
-
-	$effect(() => {
-		program.update((prev) => ({
-			...prev,
-			preciseData,
-			fastData,
-			visualization,
-		}));
-	});
 </script>
 
 <div class="flex flex-col p-4">
 	{#if $connectedTrackers.length === 0}
-		<div class="text-center bg-panel rounded-lg py-8">{$t("trackers.none")}</div>
+		<div class="rounded-lg bg-panel py-8 text-center">{$t("trackers.none")}</div>
 	{:else}
 		<div class="flex flex-row gap-x-4">
-			<div class="flex flex-col gap-y-4 flex-1" id="left-column">
-				{#each $connectedTrackers.filter((_, i) => i % 2 === 0) as tracker}
+			<div class="flex flex-1 flex-col gap-y-4">
+				{#each leftColumn as tracker (tracker.id)}
 					<Card name={tracker.name} id={tracker.id} type={tracker.tracker_type} />
 				{/each}
 			</div>
-			<div class="flex flex-col gap-y-4 flex-1" id="right-column">
-				{#each $connectedTrackers.filter((_, i) => i % 2 === 1) as tracker}
+			<div class="flex flex-1 flex-col gap-y-4">
+				{#each rightColumn as tracker (tracker.id)}
 					<Card name={tracker.name} id={tracker.id} type={tracker.tracker_type} />
 				{/each}
 			</div>
 		</div>
 	{/if}
 
-	<div class="bg-panel w-full mt-8 p-6 rounded-lg shadow">
-		<h2 class="text-lg font-semibold mb-4">{$t("trackers.settings.title")}</h2>
-		<div class="flex flex-row gap-4">
-			<div class="flex flex-col gap-4 flex-1">
-				<div class="flex flex-row gap-2">
-					<Button label={$t("trackers.settings.collapse_expand")} onClick={() => toggleTrackers()} />
-					<Button
-						label={$t("trackers.settings.pairing")}
-						icon="ri:bluetooth-connect-line"
-						iconPosition="left"
-						background="quaternary"
-						onClick={() => goto("/trackers/pairing")}
-					/>
-				</div>
-				<div class="flex flex-row items-center justify-evenly gap-2">
-					<Switch
-						label={$t("trackers.settings.precise_data")}
-						selected={preciseData}
-						onChange={(value) => (preciseData = value)}
-					/>
-					<Switch
-						label={$t("trackers.settings.fast_data")}
-						selected={fastData}
-						onChange={(value) => (fastData = value)}
-					/>
-					<Switch
-						label="Show tracker visualization"
-						selected={visualization}
-						onChange={(value) => (visualization = value)}
-					/>
-				</div>
+	<div class="mt-8 w-full rounded-lg bg-panel p-6 shadow">
+		<h2 class="mb-4 text-lg font-semibold">{$t("trackers.settings.title")}</h2>
+		<div class="flex flex-col gap-4">
+			<div class="flex flex-row gap-2">
+				<Button label={$t("trackers.settings.collapse_expand")} onClick={toggleAll} />
+				<Button
+					label={$t("trackers.settings.pairing")}
+					icon="ri:bluetooth-connect-line"
+					background="quaternary"
+					onClick={() => goto("/trackers/pairing")}
+				/>
+			</div>
+			<div class="flex flex-row items-center justify-evenly gap-2">
+				<Switch label={$t("trackers.settings.precise_data")} bind:selected={$program.preciseData} />
+				<Switch label={$t("trackers.settings.fast_data")} bind:selected={$program.fastData} />
+				<Switch label="Show tracker visualization" bind:selected={$program.visualization} />
 			</div>
 		</div>
 	</div>

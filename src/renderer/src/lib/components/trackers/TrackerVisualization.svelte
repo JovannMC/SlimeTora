@@ -1,5 +1,4 @@
 <!-- based off code on pre-v2 SlimeTora by BracketProto -->
-<!-- Disabled for now (Three.js). Restore by removing the comment wrapper and re-enabling the import in Card.svelte. -->
 <!--
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
@@ -266,4 +265,3 @@
 	}
 </style>
 -->
-

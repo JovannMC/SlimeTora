@@ -1,10 +1,10 @@
-import { writable, type Writable } from "svelte/store";
-import type { ConnectionMode } from "#lib/types/connection.js";
-import { startInterpreting, stopInterpreting } from "#lib/backend/index.js";
-import type { ChargeStatus, MagStatus, TrackerModel } from "#lib/types/tracker.js";
-import { error, info } from "#lib/log/index.js";
-import { connection, type TrackerSettings } from "./settings";
 import { load } from "#lib/api/store.js";
+import { startInterpreting, stopInterpreting } from "#lib/backend/index.js";
+import { error, info } from "#lib/log/index.js";
+import type { ConnectionMode } from "#lib/types/connection.js";
+import type { ChargeStatus, MagStatus, TrackerModel } from "#lib/types/tracker.js";
+import { writable, type Writable } from "svelte/store";
+import { connection, type TrackerSettings } from "./settings";
 
 export * as settings from "./settings";
 
@@ -61,7 +61,7 @@ export const trackerOpenStates = writable<Record<string, boolean>>({});
 				console.log(`Loaded MAC addresses of paired BT trackers: ${macAddresses}`);
 
 				// update connection settings with loaded mac addresses
-				connection.update(settings => ({ ...settings, macAddresses }));
+				connection.update((settings) => ({ ...settings, macAddresses }));
 			}
 			info(`Loaded settings from trackers.json: ${JSON.stringify(loaded, null, 2)}`);
 		} catch (e) {
@@ -149,7 +149,7 @@ export const externalNavLinks = [
 	{
 		name: "GitHub",
 		icon: "ri:github-line",
-		link: "https://github.com/OCSYT/SlimeTora",
+		link: "https://github.com/JovannMC/SlimeTora",
 	},
 	{
 		name: "Discord",
@@ -159,6 +159,6 @@ export const externalNavLinks = [
 	{
 		name: "Help",
 		icon: "ri:question-line",
-		link: "https://github.com/OCSYT/SlimeTora/wiki/",
+		link: "https://github.com/JovannMC/SlimeTora/wiki/",
 	},
 ];

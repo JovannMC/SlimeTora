@@ -12,3 +12,5 @@ src/renderer/.svelte-kit
 package-lock.json
 
 docs/icon.png
+
+pnpm-lock.yaml

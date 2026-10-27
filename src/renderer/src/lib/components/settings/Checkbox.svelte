@@ -2,56 +2,39 @@
 	import Icon from "@iconify/svelte";
 	import Tooltip, { type TooltipPosition } from "./Tooltip.svelte";
 
-	interface Props {
+	type Props = {
 		label: string;
-		checked: boolean;
-		onChange: (checked: boolean) => void;
+		checked?: boolean;
 		tooltip?: string;
 		tooltipPosition?: TooltipPosition;
 		tooltipWidth?: string;
-	}
+	};
 
-	let { label, checked = $bindable(), onChange, tooltip, tooltipPosition, tooltipWidth }: Props = $props();
-
-	function handleChange(event: Event) {
-		const target = event.target as HTMLInputElement;
-		onChange(target.checked);
-	}
+	let { label, checked = $bindable(false), tooltip, tooltipPosition, tooltipWidth }: Props = $props();
 </script>
 
-<label class="relative flex items-center gap-3 cursor-pointer">
-	<input type="checkbox" class="peer sr-only" bind:checked onchange={handleChange} />
+<label class="relative flex cursor-pointer items-center gap-3">
+	<input type="checkbox" class="peer sr-only" bind:checked />
 	<div
-		class="w-5 h-5 rounded flex items-center justify-center transition
-			bg-panel
-			border-4 border-panel
-			peer-checked:bg-primary
-			peer-checked:border-panel
-		"
+		class="flex h-5 w-5 items-center justify-center rounded border-4 border-panel bg-panel transition peer-checked:bg-primary"
 	>
-		<div class="w-4.5 h-4.5 rounded bg-background flex items-center justify-center">
+		<div class="flex h-4.5 w-4.5 items-center justify-center rounded">
 			<div
-				class="w-full h-full rounded flex items-center justify-center
-					border-2
-					{checked ? 'border-secondary' : 'border-secondary/60'}
-					transition"
+				class="flex h-full w-full items-center justify-center rounded border-2 transition {checked
+					? 'border-secondary'
+					: 'border-secondary/60'}"
 			>
 				<Icon
 					icon="ri:check-fill"
-					class="text-white w-4 h-4 {checked ? 'opacity-100' : 'opacity-0'} transition-opacity"
+					class="h-4 w-4 text-white transition-opacity {checked ? 'opacity-100' : 'opacity-0'}"
 				/>
 			</div>
 		</div>
 	</div>
-	<span class="font-medium flex items-center gap-2">
+	<span class="flex items-center gap-2 font-medium">
 		{label}
 		{#if tooltip}
-			<Tooltip
-				content={tooltip}
-				icon="ri:information-line"
-				position={tooltipPosition}
-				width={tooltipWidth}
-			/>
+			<Tooltip content={tooltip} icon="ri:information-line" position={tooltipPosition} width={tooltipWidth} />
 		{/if}
 	</span>
 </label>

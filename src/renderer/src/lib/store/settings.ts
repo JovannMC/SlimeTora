@@ -1,10 +1,7 @@
-import { TrackerModel, FPSMode, SensorAutoCorrection, SensorMode } from "#lib/types/tracker.js";
-import { writable } from "svelte/store";
-import { load } from "#lib/api/store.js";
-import { derived } from "svelte/store";
+import { load, type Store } from "#lib/api/store.js";
 import { error, info } from "#lib/log/index.js";
-
-let config: Awaited<ReturnType<typeof load>>;
+import { FPSMode, SensorAutoCorrection, SensorMode, TrackerModel } from "#lib/types/tracker.js";
+import { derived, writable } from "svelte/store";
 
 export type LoggingMode = "minimal" | "debug" | "all";
 
@@ -45,6 +42,13 @@ export type AdvancedSettings = {
 	loggingMode: LoggingMode;
 };
 
+type SavedSettings = {
+	program: ProgramSettings;
+	connection: ConnectionSettings;
+	tracker: TrackerSettings;
+	advanced: AdvancedSettings;
+};
+
 export const program = writable<ProgramSettings>({
 	autoUpdate: false,
 	checkUpdatesApp: true,
@@ -82,89 +86,38 @@ export const advanced = writable<AdvancedSettings>({
 	loggingMode: "minimal",
 });
 
+// only set once the config file is loaded, so nothing is saved before the stored settings are applied
+let config: Store | undefined;
+
 (async () => {
 	try {
 		config = await load("config.json", { autoSave: true });
+		const loaded = await config.get<SavedSettings>("settings");
 
-		try {
-			const loaded = await config.get("settings");
-			if (loaded && typeof loaded === "object") {
-				const settings = loaded as {
-					program?: ProgramSettings;
-					connection?: ConnectionSettings;
-					tracker?: TrackerSettings;
-					advanced?: AdvancedSettings;
-				};
-				if (settings.program) program.set(settings.program);
-				if (settings.connection) connection.set(settings.connection);
-				if (settings.tracker) tracker.set(settings.tracker);
-				if (settings.advanced) advanced.set(settings.advanced);
-			}
-			info(`Loaded settings from config.json: ${JSON.stringify(loaded, null, 2)}`);
-		} catch (e) {
-			error(`Failed to load settings from config.json: ${e}`);
+		if (loaded && typeof loaded === "object") {
+			if (loaded.program) program.set(loaded.program);
+			if (loaded.connection) connection.set(loaded.connection);
+			if (loaded.tracker) tracker.set(loaded.tracker);
+			if (loaded.advanced) advanced.set(loaded.advanced);
 		}
+		info(`Loaded settings from config.json: ${JSON.stringify(loaded, null, 2)}`);
 	} catch (e) {
-		error(`Failed to load config.json: ${e}`);
+		error(`Failed to load settings from config.json: ${e}`);
 	}
 })();
 
-type SettingsType = {
-	[key: string]: any;
-	program: ProgramSettings;
-	connection: ConnectionSettings;
-	tracker: TrackerSettings;
-	advanced: AdvancedSettings;
-};
-
-let lastSettings: any = null;
-derived([program, connection, tracker, advanced], ([$program, $connection, $tracker, $advanced]) => ({
+// save the whole settings object whenever any of the stores change
+derived([program, connection, tracker, advanced], ([$program, $connection, $tracker, $advanced]): SavedSettings => ({
 	program: $program,
 	connection: $connection,
 	tracker: $tracker,
 	advanced: $advanced,
 })).subscribe(async (settings) => {
-	try {
-		let changed = false;
-		if (lastSettings) {
-			for (const key of Object.keys(settings)) {
-				const current = (settings as SettingsType)[key];
-				const previous = lastSettings[key];
-				// what even is this
-				if (Array.isArray(current) || Array.isArray(previous)) {
-					if (JSON.stringify(current) !== JSON.stringify(previous)) {
-						info(`Changed "${key}": from ${JSON.stringify(previous)} to ${JSON.stringify(current)}`);
-						changed = true;
-					}
-				} else if (
-					typeof current === "object" &&
-					current !== null &&
-					previous &&
-					typeof previous === "object"
-				) {
-					for (const subKey of Object.keys(current)) {
-						if (JSON.stringify(current[subKey]) !== JSON.stringify(previous[subKey])) {
-							info(
-								`Changed "${key}.${subKey}": from ${JSON.stringify(previous[subKey])} to ${JSON.stringify(current[subKey])}`,
-							);
-							changed = true;
-						}
-					}
-				} else if (JSON.stringify(current) !== JSON.stringify(previous)) {
-					info(`Changed "${key}": from ${JSON.stringify(previous)} to ${JSON.stringify(current)}`);
-					changed = true;
-				}
-			}
-		} else {
-			changed = true; // first run, save so that programs the stores aren't undefined lol
-		}
+	if (!config) return;
 
-		if (changed) {
-			await config.set("settings", settings);
-			await config.save();
-			info(`Settings saved`);
-			lastSettings = JSON.parse(JSON.stringify(settings));
-		}
+	try {
+		await config.set("settings", settings);
+		await config.save();
 	} catch (e) {
 		error(`Failed to save settings: ${e}`);
 	}

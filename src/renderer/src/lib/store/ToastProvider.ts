@@ -1,4 +1,4 @@
-// HAHA STOLEN ONCE AGAIN FROM https://github.com/VERT-sh/VERT (because i wrote it)
+// based on the toast system from VERT (https://github.com/VERT-sh/VERT), which I also wrote
 import { writable } from "svelte/store";
 
 export type ToastType = "success" | "error" | "info" | "warning";
@@ -16,46 +16,24 @@ export interface Toast {
 }
 
 const toasts = writable<Toast[]>([]);
+let nextId = 0;
 
-let toastId = 0;
-
-function addToast(
-	type: ToastType,
-	message: string,
-	disappearing?: boolean,
-	durations?: { enter: number; stay: number; exit: number },
-) {
-	const id = toastId++;
-
-	durations = durations ?? {
+function addToast(type: ToastType, message: string, disappearing = true, durations?: Toast["durations"]) {
+	const id = nextId++;
+	const timing = durations ?? {
 		enter: 300,
-		stay: disappearing || disappearing === undefined ? 5000 : 86400000, // 24h cause why not
+		stay: disappearing ? 5000 : 86400000, // 24h cause why not
 		exit: 500,
 	};
 
-	const newToast: Toast = {
-		id,
-		type,
-		message,
-		disappearing: disappearing ?? true,
-		durations,
-	};
-	toasts.update((currentToasts) => [...currentToasts, newToast]);
-
-	setTimeout(
-		() => {
-			removeToast(id);
-		},
-		durations.enter + durations.stay + durations.exit,
-	);
+	toasts.update((list) => [...list, { id, type, message, disappearing, durations: timing }]);
+	setTimeout(() => removeToast(id), timing.enter + timing.stay + timing.exit);
 
 	return id;
 }
 
 function removeToast(id: number) {
-	toasts.update((currentToasts) =>
-		currentToasts.filter((toast) => toast.id !== id),
-	);
+	toasts.update((list) => list.filter((toast) => toast.id !== id));
 }
 
-export { toasts, addToast, removeToast };
+export { addToast, removeToast, toasts };

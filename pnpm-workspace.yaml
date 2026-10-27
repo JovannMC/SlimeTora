@@ -1,4 +1,4 @@
 packages:
-  - src/renderer
+    - src/renderer
 allowBuilds:
-  esbuild: true
+    esbuild: true

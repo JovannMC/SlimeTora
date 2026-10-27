@@ -14,58 +14,61 @@
 
 	let { content, icon, position = "up", width = "250px", children }: Props = $props();
 
+	const GAP = 8;
+	const POSITIONS: TooltipPosition[] = ["up", "down", "left", "right"];
+
 	let showTooltip = $state(false);
 	let hoverable: HTMLElement;
 	let tooltipEl: HTMLElement | undefined = $state();
 	let tooltipStyle = $state({ top: 0, left: 0 });
-	let tooltipCurrentPosition: TooltipPosition = $state(position);
+	let placement: TooltipPosition = $state(position);
+
+	function fits(pos: TooltipPosition, trigger: DOMRect, tip: DOMRect) {
+		switch (pos) {
+			case "up":
+				return trigger.top - tip.height - GAP > 0;
+			case "down":
+				return trigger.bottom + tip.height + GAP < window.innerHeight;
+			case "left":
+				return trigger.left - tip.width - GAP > 0;
+			case "right":
+				return trigger.right + tip.width + GAP < window.innerWidth;
+		}
+	}
+
+	function anchor(pos: TooltipPosition, trigger: DOMRect, tip: DOMRect) {
+		const centerX = trigger.left + trigger.width / 2 - tip.width / 2;
+		const centerY = trigger.top + trigger.height / 2 - tip.height / 2;
+		switch (pos) {
+			case "up":
+				return { top: trigger.top - tip.height - GAP, left: centerX };
+			case "down":
+				return { top: trigger.bottom + GAP, left: centerX };
+			case "left":
+				return { top: centerY, left: trigger.left - tip.width - GAP };
+			case "right":
+				return { top: centerY, left: trigger.right + GAP };
+		}
+	}
 
 	function updateTooltipPosition() {
 		if (!hoverable || !tooltipEl) return;
-		const triggerRect = hoverable.getBoundingClientRect();
-		const tooltipRect = tooltipEl.getBoundingClientRect();
-		let top = 0,
-			left = 0;
-		let chosenPosition: TooltipPosition = position;
+		const trigger = hoverable.getBoundingClientRect();
+		const tip = tooltipEl.getBoundingClientRect();
 
-		// try preferred position first, but if it doesn't fit, try others
-		function fits(pos: "up" | "down" | "left" | "right") {
-			if (pos === "up") return triggerRect.top - tooltipRect.height - 8 > 0;
-			if (pos === "down") return triggerRect.bottom + tooltipRect.height + 8 < window.innerHeight;
-			if (pos === "left") return triggerRect.left - tooltipRect.width - 8 > 0;
-			if (pos === "right") return triggerRect.right + tooltipRect.width + 8 < window.innerWidth;
-			return false;
-		}
+		// use the preferred side if it fits, otherwise the first side that does
+		const chosen = fits(position, trigger, tip)
+			? position
+			: (POSITIONS.filter((p) => p !== position).find((p) => fits(p, trigger, tip)) ?? position);
 
-		if (!fits(position)) {
-			const order = ["up", "down", "left", "right"].filter((p) => p !== position);
-			for (const pos of order)
-				if (fits(pos as TooltipPosition)) {
-					chosenPosition = pos as TooltipPosition;
-					break;
-				}
-		}
+		const { top, left } = anchor(chosen, trigger, tip);
 
-		if (chosenPosition === "up") {
-			top = triggerRect.top - tooltipRect.height - 8;
-			left = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
-		} else if (chosenPosition === "down") {
-			top = triggerRect.bottom + 8;
-			left = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
-		} else if (chosenPosition === "left") {
-			top = triggerRect.top + triggerRect.height / 2 - tooltipRect.height / 2;
-			left = triggerRect.left - tooltipRect.width - 8;
-		} else if (chosenPosition === "right") {
-			top = triggerRect.top + triggerRect.height / 2 - tooltipRect.height / 2;
-			left = triggerRect.right + 8;
-		}
-
-		// prevent overlap
-		top = Math.max(8, Math.min(window.innerHeight - tooltipRect.height - 8, top));
-		left = Math.max(8, Math.min(window.innerWidth - tooltipRect.width - 8, left));
-
-		tooltipStyle = { top, left };
-		tooltipCurrentPosition = chosenPosition;
+		// keep the tooltip on screen
+		tooltipStyle = {
+			top: Math.max(8, Math.min(window.innerHeight - tip.height - 8, top)),
+			left: Math.max(8, Math.min(window.innerWidth - tip.width - 8, left)),
+		};
+		placement = chosen;
 	}
 
 	$effect(() => {
@@ -81,7 +84,7 @@
 	role="tooltip"
 >
 	{#if icon}
-		<Icon {icon} width={20} class="text-text-alt cursor-pointer hover:text-text" />
+		<Icon {icon} width={20} class="cursor-pointer text-text-alt hover:text-text" />
 	{:else}
 		{@render children()}
 	{/if}
@@ -96,11 +99,11 @@
 		>
 			<div class="relative">
 				<div
-					class="py-2 px-3 bg-quaternary border-2 border-secondary/80 text-sm rounded-md shadow-lg relative"
-					class:tooltip-up={tooltipCurrentPosition === "up"}
-					class:tooltip-down={tooltipCurrentPosition === "down"}
-					class:tooltip-left={tooltipCurrentPosition === "left"}
-					class:tooltip-right={tooltipCurrentPosition === "right"}
+					class="relative rounded-md border-2 border-secondary/80 bg-quaternary px-3 py-2 text-sm shadow-lg"
+					class:tooltip-up={placement === "up"}
+					class:tooltip-down={placement === "down"}
+					class:tooltip-left={placement === "left"}
+					class:tooltip-right={placement === "right"}
 				>
 					{content}
 				</div>

@@ -1,10 +1,10 @@
 import { invoke } from "#lib/api/backend.js";
+import { error, info } from "#lib/log/index.js";
 import { activeModes, settings } from "#lib/store/index.js";
-import { get } from "svelte/store";
 import { ConnectionMode } from "#lib/types/connection.js";
 import { TrackerModel } from "#lib/types/tracker.js";
+import { get } from "svelte/store";
 import { Notification, Notifications } from "./notifications";
-import { info, error } from "#lib/log/index.js";
 
 let notification: Notification | null = null;
 

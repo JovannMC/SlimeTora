@@ -2,52 +2,57 @@
 	import Icon from "@iconify/svelte";
 	import Tooltip, { type TooltipPosition } from "./Tooltip.svelte";
 
-	interface Props {
+	type Props = {
 		label: string;
 		value: string | number;
+		type?: "text" | "number";
+		placeholder?: string;
+		icon?: string;
+		className?: string;
 		tooltip?: string;
 		tooltipPosition?: TooltipPosition;
 		tooltipWidth?: string;
-		className?: string;
-		placeholder?: string;
-		type?: string;
-		icon?: string | null;
-		onChange: (value: string | number) => void;
-	}
+	};
 
-	let { label, value, tooltip, tooltipPosition, tooltipWidth, className, type = "text", onChange, icon = null, placeholder }: Props = $props();
+	let {
+		label,
+		value = $bindable(),
+		type = "text",
+		placeholder,
+		icon,
+		className = "",
+		tooltip,
+		tooltipPosition,
+		tooltipWidth,
+	}: Props = $props();
+	const id = $props.id();
 
-	function handleChange(event: Event) {
-		const target = event.target as HTMLInputElement;
-		onChange(type === "number" ? Number(target.value) : target.value);
+	function onInput(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		value = type === "number" ? Number(input.value) : input.value;
 	}
 </script>
 
 <div class="flex flex-col gap-2 {className}">
-<div class="flex flex-row items-center gap-2">
-	<label class="font-medium" for="input">{label}</label>
-	{#if tooltip}
-		<Tooltip
-			content={tooltip}
-			icon="ri:information-line"
-			position={tooltipPosition}
-			width={tooltipWidth}
-		/>
-	{/if}
-</div>
+	<div class="flex flex-row items-center gap-2">
+		<label class="font-medium" for={id}>{label}</label>
+		{#if tooltip}
+			<Tooltip content={tooltip} icon="ri:information-line" position={tooltipPosition} width={tooltipWidth} />
+		{/if}
+	</div>
 	<div class="relative w-full">
 		<input
-			id="input"
+			{id}
 			{type}
-			bind:value
+			{value}
 			{placeholder}
-			oninput={handleChange}
-			class="w-full bg-quaternary rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-secondary transition-shadow"
+			oninput={onInput}
+			class="w-full rounded-md bg-quaternary px-3 py-2 transition-shadow focus:ring-2 focus:ring-secondary focus:outline-none"
 		/>
 		{#if icon}
 			<Icon
 				{icon}
-				class="absolute right-3 top-1/2 -translate-y-1/2 text-text-alt pointer-events-none"
+				class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-text-alt"
 				width={18}
 			/>
 		{/if}
@@ -55,7 +60,7 @@
 </div>
 
 <style>
-	/* Hide number input spinners on hover */
+	/* hide number input spinners on hover */
 	input[type="number"]:hover {
 		-moz-appearance: textfield;
 		appearance: textfield;

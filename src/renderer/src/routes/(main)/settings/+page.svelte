@@ -5,7 +5,7 @@
 	import AdvancedSettings from "#lib/components/settings/sections/AdvancedSettings.svelte";
 </script>
 
-<div class="flex flex-col p-4 gap-8">
+<div class="flex flex-col gap-8 p-4">
 	<ProgramSettings />
 	<ConnectionSettings />
 	<TrackerSettings />

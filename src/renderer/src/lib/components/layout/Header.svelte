@@ -1,18 +1,12 @@
 <script lang="ts">
-	import { currentPath, navLinks } from "#lib/store/index.js";
 	import Icon from "@iconify/svelte";
-	import { getBridge } from "#lib/api/bridge.js";
 	import { onMount } from "svelte";
+	import { currentPath, navLinks } from "#lib/store/index.js";
+	import { getBridge } from "#lib/api/bridge.js";
 	import { error } from "#lib/log/index.js";
 
 	let appVersion = $state("0.0.0");
-	let path = $currentPath;
-	let currentNavLink = $state({ name: "", icon: "" });
-
-	currentPath.subscribe((value) => {
-		path = value;
-		currentNavLink = navLinks.find((link) => link.link === path) || { name: "", icon: "" };
-	});
+	const currentNavLink = $derived(navLinks.find((link) => link.link === $currentPath) ?? { name: "", icon: "" });
 
 	onMount(async () => {
 		try {
@@ -23,8 +17,8 @@
 	});
 </script>
 
-<div class="fixed w-full h-16 bg-panel drop-shadow-xl z-10">
-	<div class="flex items-center justify-between h-full px-3">
+<div class="fixed z-10 h-16 w-full bg-panel drop-shadow-xl">
+	<div class="flex h-full items-center justify-between px-3">
 		<div class="flex flex-row items-center gap-2">
 			<img src="/logo.png" alt="Logo" class="w-10 rounded-md" />
 			<h1 class="text-xl font-bold">SlimeTora <span class="text-xs text-text-alt">v{appVersion}</span></h1>

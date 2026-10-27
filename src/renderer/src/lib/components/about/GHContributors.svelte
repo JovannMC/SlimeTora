@@ -1,35 +1,19 @@
 <script lang="ts">
 	import { t } from "#lib/lang/index.js";
-	import Icon from "@iconify/svelte";
+	import AboutSection from "./AboutSection.svelte";
 
-	interface Props {
-		ghContribs: Array<{
-			name: string;
-			link: string;
-			pfp: string;
-		}>;
-	}
-
-	let { ghContribs }: Props = $props();
+	let { ghContribs }: { ghContribs: { name: string; link: string; pfp: string }[] } = $props();
 </script>
 
-<div class="flex flex-col gap-3">
-	<div class="flex items-center gap-2 text-xl font-heading">
-		<Icon icon="ri:github-line" class="text-secondary" width={20} />
-		{$t("about.gh_contributors")}
-	</div>
-	<div class="bg-panel rounded-xl p-4 shadow flex flex-col gap-4 min-w-84.5">
-		{#each ghContribs as c}
-			<div class="flex items-center gap-3">
-				<a href={c.link} target="_blank" rel="noopener noreferrer">
-					<img src={c.pfp} alt={c.name} class="w-8 h-8 rounded-full bg-black object-cover" />
-				</a>
-				<div>
-					<p class="font-heading text-base flex items-center gap-1">
-						<a href={c.link} target="_blank" rel="noopener noreferrer" class="hover:underline">{c.name}</a>
-					</p>
-				</div>
-			</div>
-		{/each}
-	</div>
-</div>
+<AboutSection icon="ri:github-line" title={$t("about.gh_contributors")}>
+	{#each ghContribs as c}
+		<div class="flex items-center gap-3">
+			<a href={c.link} target="_blank" rel="noopener noreferrer">
+				<img src={c.pfp} alt={c.name} class="h-8 w-8 rounded-full bg-black object-cover" />
+			</a>
+			<a href={c.link} target="_blank" rel="noopener noreferrer" class="font-heading text-base hover:underline">
+				{c.name}
+			</a>
+		</div>
+	{/each}
+</AboutSection>

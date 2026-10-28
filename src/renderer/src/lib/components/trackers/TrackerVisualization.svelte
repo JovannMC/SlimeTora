@@ -2,6 +2,7 @@
 <!--
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
+	import { error } from "#lib/log/index";
 	import * as THREE from "three";
 	import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
 	import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
@@ -80,8 +81,8 @@
 						});
 					},
 					undefined,
-					(error) => {
-						console.error("Error loading tracker texture:", error);
+					(err) => {
+						error(["trackers", "visualization"], "Error loading tracker texture:", err);
 					},
 				);
 
@@ -94,8 +95,8 @@
 			(xhr) => {
 				// Loading progress
 			},
-			(error) => {
-				console.error("Error loading tracker model:", error);
+			(err) => {
+				error(["trackers", "visualization"], "Error loading tracker model:", err);
 			},
 		);
 

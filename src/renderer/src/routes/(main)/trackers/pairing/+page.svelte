@@ -46,13 +46,13 @@
 
 			unlistenDisconnect = await listen("disconnect", (event) => {
 				const payload = event.payload as { tracker: string };
-				info(`Device disconnected: ${payload.tracker}`);
+				info(["trackers", "pairing"], `Device disconnected: ${payload.tracker}`);
 				pairedDevices = pairedDevices.map((d) =>
 					d.macAddress === payload.tracker ? { ...d, connected: false } : d,
 				);
 			});
 		} catch (err) {
-			error(`Failed to initialize pairing page: ${err}`);
+			error(["trackers", "pairing"], `Failed to initialize pairing page: ${err}`);
 		}
 	});
 
@@ -72,7 +72,7 @@
 
 		isScanning = true;
 		discoveredDevices = [];
-		info("Started BLE scanning");
+		info(["trackers", "pairing"], "Started BLE scanning");
 
 		try {
 			const devices = await invoke<TrackerDevice[]>("start_ble_scanning", { timeout: 5000 });
@@ -82,9 +82,9 @@
 				trackerType,
 				rssi,
 			}));
-			info(`BLE scanning completed. Found ${devices.length} HaritoraX devices`);
+			info(["trackers", "pairing"], `BLE scanning completed. Found ${devices.length} HaritoraX devices`);
 		} catch (err) {
-			error(`Failed to start BLE scanning: ${err}`);
+			error(["trackers", "pairing"], `Failed to start BLE scanning: ${err}`);
 		} finally {
 			isScanning = false;
 		}
@@ -96,9 +96,9 @@
 		try {
 			await invoke("stop_ble_scanning");
 			isScanning = false;
-			info("Stopped BLE scanning");
+			info(["trackers", "pairing"], "Stopped BLE scanning");
 		} catch (err) {
-			error(`Failed to stop BLE scanning: ${err}`);
+			error(["trackers", "pairing"], `Failed to stop BLE scanning: ${err}`);
 		}
 	}
 
@@ -126,7 +126,7 @@
 		}
 
 		discoveredDevices = discoveredDevices.filter((d) => d.macAddress !== address);
-		info(`Paired device: ${name}`);
+		info(["trackers", "pairing"], `Paired device: ${name}`);
 	}
 
 	async function unpair(address: string) {
@@ -135,9 +135,9 @@
 
 		try {
 			await invoke("disconnect_device", { macAddress: address });
-			info(`Unpaired device: ${address}`);
+			info(["trackers", "pairing"], `Unpaired device: ${address}`);
 		} catch (err) {
-			error(`Failed to unpair device: ${err}`);
+			error(["trackers", "pairing"], `Failed to unpair device: ${err}`);
 		}
 	}
 
@@ -146,9 +146,9 @@
 			await invoke("stop_ble_connections");
 			pairedDevices = [];
 			syncMacAddresses();
-			info("Unpaired all devices");
+			info(["trackers", "pairing"], "Unpaired all devices");
 		} catch (err) {
-			error(`Failed to unpair all devices: ${err}`);
+			error(["trackers", "pairing"], `Failed to unpair all devices: ${err}`);
 		}
 	}
 

@@ -15,7 +15,7 @@
 		try {
 			appVersion = (await getBridge().getAppInfo()).version;
 		} catch (err) {
-			error("Failed to fetch app version:", err);
+			error(["about"], "Failed to fetch app version:", err);
 		}
 	});
 

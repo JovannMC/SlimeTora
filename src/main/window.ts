@@ -3,6 +3,7 @@ import { app, BrowserWindow, net, protocol, shell } from "electron";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { error } from "./log";
 
 const APP_SCHEME = "app";
 const APP_ORIGIN = `${APP_SCHEME}://bundle`;
@@ -50,8 +51,8 @@ export function serveRenderer(): void {
 			} catch {
 				return await serveFile(resolveRendererFile("/index.html"));
 			}
-		} catch (error) {
-			console.error(`[window] Failed to serve ${request.url}: ${error}`);
+		} catch (err) {
+			error("window", `Failed to serve ${request.url}: ${err}`);
 			return new Response("Not found", { status: 404 });
 		}
 	});
@@ -80,15 +81,8 @@ export function createMainWindow(): BrowserWindow {
 	window.once("ready-to-show", () => window.show());
 
 	window.webContents.on("did-fail-load", (_event, errorCode, errorDescription, validatedURL) => {
-		console.error(`[window] Failed to load ${validatedURL}: ${errorDescription} (${errorCode})`);
+		error("window", `Failed to load ${validatedURL}: ${errorDescription} (${errorCode})`);
 	});
-
-	if (isDev) {
-		// mirror renderer console messages to main process
-		window.webContents.on("console-message", (event) => {
-			console.log(`[renderer:${event.level}] ${event.message}`);
-		});
-	}
 
 	// open external links in default browser
 	window.webContents.setWindowOpenHandler(({ url }) => {

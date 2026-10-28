@@ -66,7 +66,7 @@
 				aria-label={$t("home.card.power_off", { name })}
 				onclick={(e) => {
 					e.stopPropagation();
-					info(`Powered off tracker: ${name} (${id})`);
+					info(["trackers", "card"], `Powered off tracker: ${name} (${id})`);
 				}}
 			>
 				<Icon icon="ri:shut-down-line" width={18} class="text-text-alt" />
@@ -76,7 +76,7 @@
 				aria-label={$t("home.card.settings", { name })}
 				onclick={(e) => {
 					e.stopPropagation();
-					info(`Settings clicked for: ${name}`);
+					info(["trackers", "card"], `Settings clicked for: ${name}`);
 					goto(`/trackers/settings?trackerId=${id}`);
 				}}
 			>

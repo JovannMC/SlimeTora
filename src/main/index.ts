@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from "electron";
 import { registerIpcHandlers } from "./ipc/contract";
+import { closeLogFile, error } from "./log";
 import { createMainWindow, registerAppScheme, serveRenderer } from "./window";
 
 app.setName("SlimeTora");
@@ -8,7 +9,7 @@ registerAppScheme();
 
 const hasLock = app.requestSingleInstanceLock();
 if (!hasLock) {
-	console.error("[main] Another instance is already running, quitting");
+	error("main", "Another instance is already running, quitting");
 	app.quit();
 }
 
@@ -34,3 +35,5 @@ void app.whenReady().then(() => {
 app.on("window-all-closed", () => {
 	if (process.platform !== "darwin") app.quit();
 });
+
+app.on("will-quit", () => closeLogFile());

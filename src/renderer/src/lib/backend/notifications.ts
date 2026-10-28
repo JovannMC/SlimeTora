@@ -32,7 +32,7 @@ export class Notification {
 
 	async start(type: NotificationType) {
 		if (this.activeNotifications.has(type)) {
-			warn(`Already listening to "${type}" notifications`);
+			warn(["backend", "notifications"], `Already listening to "${type}" notifications`);
 			return;
 		}
 
@@ -64,7 +64,7 @@ export class Notification {
 				unlisten = await connectionNotification();
 				break;
 			default:
-				error(`No notification type "${type}" available`);
+				error(["backend", "notifications"], `No notification type "${type}" available`);
 				return;
 		}
 
@@ -73,14 +73,14 @@ export class Notification {
 
 	stop(type: NotificationType) {
 		if (!this.activeNotifications.has(type)) {
-			warn(`Not listening to "${type}" notifications`);
+			warn(["backend", "notifications"], `Not listening to "${type}" notifications`);
 			return;
 		}
 
 		const unlisten = this.activeNotifications.get(type);
 		if (unlisten) unlisten();
 		this.activeNotifications.delete(type);
-		info(`Stopped listening to "${type}" notifications`);
+		info(["backend", "notifications"], `Stopped listening to "${type}" notifications`);
 	}
 
 	getActiveNotifications() {
@@ -90,7 +90,7 @@ export class Notification {
 	clearAllNotifications() {
 		this.activeNotifications.forEach((unlisten) => unlisten());
 		this.activeNotifications.clear();
-		info(`Stopped listening to all notifications`);
+		info(["backend", "notifications"], `Stopped listening to all notifications`);
 	}
 }
 
@@ -156,6 +156,7 @@ async function magNotification() {
 						data: { ...prev[index].data, magnetometer: data.magnetometer },
 					};
 					info(
+						["backend", "notifications"],
 						`Tracker ${tracker} magnetometer status changed: ${prev[index].data.magnetometer} -> ${data.magnetometer}`,
 					);
 					return [...prev.slice(0, index), updatedTracker, ...prev.slice(index + 1)];
@@ -178,7 +179,7 @@ async function batteryNotification() {
 
 		const trackerId = tracker.split("-").pop() || tracker;
 
-		info(`Battery notification received from ${trackerId}: ${JSON.stringify(data)}`);
+		info(["backend", "notifications"], `Battery notification received from ${trackerId}: ${JSON.stringify(data)}`);
 
 		if (!browser) return;
 		connectedTrackers.update((prev) => {
@@ -218,7 +219,7 @@ async function buttonNotification() {
 
 		const trackerId = tracker.split("-").pop() || tracker;
 
-		info(`Button notification received from ${trackerId}: ${JSON.stringify(data)}`);
+		info(["backend", "notifications"], `Button notification received from ${trackerId}: ${JSON.stringify(data)}`);
 
 		const now = Date.now();
 		if (!buttonPressTimestamps[trackerId]) buttonPressTimestamps[trackerId] = [];
@@ -243,7 +244,7 @@ async function buttonNotification() {
 			else if (pressCount >= 4) action = "PauseTracking";
 
 			if (action) {
-				info(`Sending action ${action} from ${pressCount} presses: ${trackerId}`);
+				info(["backend", "notifications"], `Sending action ${action} from ${pressCount} presses: ${trackerId}`);
 				await invoke("send_user_action_tauri", { trackerName: trackerId, action });
 				lastButtonAction[trackerId] = Date.now();
 				buttonPressTimestamps[trackerId] = [];
@@ -263,7 +264,7 @@ async function settingsNotification() {
 
 		const trackerId = tracker.split("-").pop() || tracker;
 
-		info(`Settings notification received from ${trackerId}: ${JSON.stringify(data)}`);
+		info(["backend", "notifications"], `Settings notification received from ${trackerId}: ${JSON.stringify(data)}`);
 	});
 }
 
@@ -288,7 +289,10 @@ async function connectNotification() {
 
 		const trackerId = tracker.split("-").pop() || tracker;
 
-		info(`Tracker connected: ${trackerId} (${assignment}, ${tracker_type}), connection mode: ${connection_mode}`);
+		info(
+			["backend", "notifications"],
+			`Tracker connected: ${trackerId} (${assignment}, ${tracker_type}), connection mode: ${connection_mode}`,
+		);
 
 		// load settings
 		let newTracker = await getTrackerConfig(trackerId);
@@ -306,7 +310,7 @@ async function connectNotification() {
 				},
 			};
 
-			info(`No existing config found for tracker ${trackerId}, creating new one`);
+			info(["backend", "notifications"], `No existing config found for tracker ${trackerId}, creating new one`);
 		} else if (!newTracker.settings) {
 			newTracker.settings = {
 				fps: 50,
@@ -314,10 +318,13 @@ async function connectNotification() {
 				dynamicCalibration: [SensorAutoCorrection.Accel],
 				emulatedFeet: false,
 			};
-			info(`Tracker ${trackerId} config found, but no settings - should use global settings`);
+			info(
+				["backend", "notifications"],
+				`Tracker ${trackerId} config found, but no settings - should use global settings`,
+			);
 		} else {
-			info(`Tracker ${trackerId} config found, using existing settings`);
-			info(`Tracker settings: ${JSON.stringify(newTracker.settings, null, 2)}`);
+			info(["backend", "notifications"], `Tracker ${trackerId} config found, using existing settings`);
+			info(["backend", "notifications"], `Tracker settings: ${JSON.stringify(newTracker.settings, null, 2)}`);
 		}
 
 		saveTrackerConfig(newTracker);
@@ -342,14 +349,14 @@ async function connectNotification() {
 		const trackerPort = await invoke("get_tracker_port", { trackerName: tracker });
 		const trackerPortId = await invoke("get_tracker_id", { trackerName: tracker });
 		if (!trackerPort || !trackerPortId) return;
-		info(`Tracker port for ${trackerId} is ${trackerPort} (ID: ${trackerPortId})`);
+		info(["backend", "notifications"], `Tracker port for ${trackerId} is ${trackerPort} (ID: ${trackerPortId})`);
 
 		// Manually request all the info from the trackers
 		const initialCommands = ["r0:", "r1:", "r:", "o:"];
 		const delayedCommands = ["i:", "i0:", "i1:", "o0:", "o1:", "v0:", "v1:"];
 
 		initialCommands.forEach((cmd) => {
-			info(`Sending initial command "${cmd}" to tracker port: ${trackerPort}`);
+			info(["backend", "notifications"], `Sending initial command "${cmd}" to tracker port: ${trackerPort}`);
 			invoke("write_serial", {
 				portPath: trackerPort,
 				data: cmd,
@@ -358,7 +365,7 @@ async function connectNotification() {
 
 		setTimeout(() => {
 			delayedCommands.forEach((cmd) => {
-				info(`Sending delayed command "${cmd}" to tracker port: ${trackerPort}`);
+				info(["backend", "notifications"], `Sending delayed command "${cmd}" to tracker port: ${trackerPort}`);
 				invoke("write_serial", {
 					portPath: trackerPort,
 					data: cmd,
@@ -367,7 +374,10 @@ async function connectNotification() {
 
 			// Repeated initial commands just to make sure, lol
 			initialCommands.forEach((cmd) => {
-				info(`Resending initial command "${cmd}" to tracker port: ${trackerPort}`);
+				info(
+					["backend", "notifications"],
+					`Resending initial command "${cmd}" to tracker port: ${trackerPort}`,
+				);
 				invoke("write_serial", {
 					portPath: trackerPort,
 					data: cmd,
@@ -388,7 +398,10 @@ async function disconnectNotification() {
 
 		const trackerId = tracker.split("-").pop() || tracker;
 
-		info(`Tracker disconnected: ${trackerId}, connection mode: ${connection_mode}, tracker type: ${tracker_type}`);
+		info(
+			["backend", "notifications"],
+			`Tracker disconnected: ${trackerId}, connection mode: ${connection_mode}, tracker type: ${tracker_type}`,
+		);
 		connectedTrackers.update((prev) => {
 			const index = prev.findIndex((t) => t.id === trackerId);
 			if (index !== -1) {

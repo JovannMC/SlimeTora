@@ -14,7 +14,7 @@
 		try {
 			await invoke("open_logs_folder");
 		} catch (err) {
-			error("Failed to open logs folder:", err);
+			error(["settings", "advanced"], "Failed to open logs folder:", err);
 		}
 	}
 

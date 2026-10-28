@@ -100,9 +100,9 @@ let config: Store | undefined;
 			if (loaded.tracker) tracker.set(loaded.tracker);
 			if (loaded.advanced) advanced.set(loaded.advanced);
 		}
-		info(`Loaded settings from config.json: ${JSON.stringify(loaded, null, 2)}`);
+		info(["store", "settings"], `Loaded settings from config.json: ${JSON.stringify(loaded, null, 2)}`);
 	} catch (e) {
-		error(`Failed to load settings from config.json: ${e}`);
+		error(["store", "settings"], `Failed to load settings from config.json: ${e}`);
 	}
 })();
 
@@ -119,6 +119,6 @@ derived([program, connection, tracker, advanced], ([$program, $connection, $trac
 		await config.set("settings", settings);
 		await config.save();
 	} catch (e) {
-		error(`Failed to save settings: ${e}`);
+		error(["store", "settings"], `Failed to save settings: ${e}`);
 	}
 });

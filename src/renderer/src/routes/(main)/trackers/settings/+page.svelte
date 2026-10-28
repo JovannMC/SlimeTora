@@ -20,14 +20,14 @@
 	$effect(() => {
 		const id = trackerId;
 		if (!id) {
-			error("Tracker ID is undefined, redirecting to home page.");
+			error(["trackers", "settings"], "Tracker ID is undefined, redirecting to home page.");
 			goto("/");
 			return;
 		}
 
 		trackerData = untrack(() => $connectedTrackers.find((t) => t.id === id));
 		if (!trackerData) {
-			error(`Tracker with ID ${id} not found, redirecting to home page.`);
+			error(["trackers", "settings"], `Tracker with ID ${id} not found, redirecting to home page.`);
 			goto("/");
 		}
 	});
@@ -40,11 +40,11 @@
 	let emulatedFeet = $state(false);
 
 	function getTrackerSettings() {
-		info(`Getting settings for tracker ${trackerId}`);
+		info(["trackers", "settings"], `Getting settings for tracker ${trackerId}`);
 	}
 
 	function resetSettings() {
-		info(`Resetting settings for tracker ${trackerId}`);
+		info(["trackers", "settings"], `Resetting settings for tracker ${trackerId}`);
 	}
 </script>
 

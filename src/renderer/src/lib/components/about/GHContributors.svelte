@@ -59,7 +59,7 @@
 			ghContribs = await fetchContributors();
 			sessionStorage.setItem(CACHE_KEY, JSON.stringify(ghContribs));
 		} catch (e) {
-			error(`Error fetching GitHub contributors: ${e}`);
+			error(["about", "github"], `Error fetching GitHub contributors: ${e}`);
 		}
 	});
 </script>

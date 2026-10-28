@@ -32,13 +32,13 @@
 		try {
 			const ports = (await invoke<string[]>("get_serial_ports")).sort();
 			availablePorts = ports;
-			info(`Available serial ports: ${ports}`);
+			info(["settings", "connection"], `Available serial ports: ${ports}`);
 
 			const filtered = (await invoke<string[]>("filter_ports", { ports })).sort();
 			haritoraPorts = filtered;
-			info(`Filtered Haritora ports: ${filtered}`);
+			info(["settings", "connection"], `Filtered Haritora ports: ${filtered}`);
 		} catch (err) {
-			warn(`Error occurred: ${err}`);
+			warn(["settings", "connection"], `Error occurred: ${err}`);
 		}
 	});
 

@@ -59,23 +59,23 @@ export const trackerOpenStates = writable<Record<string, boolean>>({});
 					.filter((tracker) => tracker.mac)
 					.map((tracker) => tracker.mac!);
 
-				console.log(`Loaded MAC addresses of paired BT trackers: ${macAddresses}`);
+				info(["store"], `Loaded MAC addresses of paired BT trackers: ${macAddresses}`);
 
 				// update connection settings with loaded mac addresses
 				connection.update((settings) => ({ ...settings, macAddresses }));
 			}
-			info(`Loaded settings from trackers.json: ${JSON.stringify(loaded, null, 2)}`);
+			info(["store"], `Loaded settings from trackers.json: ${JSON.stringify(loaded, null, 2)}`);
 		} catch (e) {
-			error(`Failed to load settings from trackers.json: ${e}`);
+			error(["store"], `Failed to load settings from trackers.json: ${e}`);
 		}
 	} catch (e) {
-		error(`Failed to load trackers.json: ${e}`);
+		error(["store"], `Failed to load trackers.json: ${e}`);
 	}
 })();
 
 export async function saveTrackerConfig(tracker: TrackerSave) {
 	if (!trackersConfig) {
-		error("Trackers config not loaded yet.");
+		error(["store"], "Trackers config not loaded yet.");
 		return;
 	}
 
@@ -86,15 +86,15 @@ export async function saveTrackerConfig(tracker: TrackerSave) {
 			[tracker.id]: tracker,
 		});
 		await trackersConfig.save();
-		info(`Tracker ${tracker.id} saved to trackers.json`);
+		info(["store"], `Tracker ${tracker.id} saved to trackers.json`);
 	} catch (e) {
-		error(`Failed to save tracker ${tracker.id} to trackers.json: ${e}`);
+		error(["store"], `Failed to save tracker ${tracker.id} to trackers.json: ${e}`);
 	}
 }
 
 export async function getTrackerConfig(id: string): Promise<TrackerSave | undefined> {
 	if (!trackersConfig) {
-		error("Trackers config not loaded yet.");
+		error(["store"], "Trackers config not loaded yet.");
 		return;
 	}
 
@@ -103,7 +103,7 @@ export async function getTrackerConfig(id: string): Promise<TrackerSave | undefi
 		if (!settings || typeof settings !== "object") return undefined;
 		return (settings as Record<string, TrackerSave>)[id] as TrackerSave | undefined;
 	} catch (e) {
-		error(`Failed to get tracker config for id ${id}: ${e}`);
+		error(["store"], `Failed to get tracker config for id ${id}: ${e}`);
 		return undefined;
 	}
 }
@@ -112,7 +112,7 @@ export const activeModes = writable<ConnectionMode[]>([]);
 // null if first time / app just launched
 export const isOn: Writable<boolean | null> = writable(null);
 isOn.subscribe(async (value) => {
-	info(`isOn: ${value}`);
+	info(["store"], `isOn: ${value}`);
 	if (value) {
 		startInterpreting();
 	} else if (value === false) {

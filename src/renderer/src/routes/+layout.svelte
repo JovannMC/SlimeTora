@@ -10,6 +10,7 @@
 	import { currentPath } from "#lib/store/index";
 	import { initialized, initTranslations } from "#lib/lang/index";
 	import { invoke } from "#lib/api/backend";
+	import { captureUncaughtErrors, error } from "#lib/log/index";
 	import "#lib/api/icons";
 	import { registerBridge } from "#lib/api/bridge";
 	import { electronBridge } from "#lib/api/electronBridge";
@@ -22,6 +23,7 @@
 
 	onMount(async () => {
 		currentPath.set(window.location.pathname);
+		captureUncaughtErrors();
 
 		if (!$initialized) await initTranslations("en");
 
@@ -33,7 +35,7 @@
 			try {
 				await invoke("cleanup_connections");
 			} catch (err) {
-				console.error(`Failed to cleanup backend connections: ${err}`);
+				error(["layout"], `Failed to cleanup backend connections: ${err}`);
 			}
 		});
 	});

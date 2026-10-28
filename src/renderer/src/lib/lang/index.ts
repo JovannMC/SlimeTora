@@ -47,7 +47,7 @@ export const t = derived([translations, locale], ([$translations, $locale]) => {
 	return (key: string, params: TranslationParams = {}): string => {
 		const localeTranslations = $translations[$locale];
 		if (!localeTranslations) {
-			console.warn(`No translations found for locale: ${$locale}`);
+			warn(["lang"], `No translations found for locale: ${$locale}`);
 			return key;
 		}
 
@@ -60,7 +60,7 @@ export const t = derived([translations, locale], ([$translations, $locale]) => {
 			if (typeof fallback === "string") return replaceVariables(fallback, params);
 		}
 
-		console.warn(`Translation not found for key: ${key}`);
+		warn(["lang"], `Translation not found for key: ${key}`);
 		return key;
 	};
 });
@@ -68,10 +68,13 @@ export const t = derived([translations, locale], ([$translations, $locale]) => {
 function checkLocaleVersion(code: string, file: Translations) {
 	const version = Number((file.meta as Metadata | undefined)?.version);
 	if (!Number.isFinite(version)) {
-		warn(`Translation file ${code} has no valid meta.version`);
+		warn(["lang"], `Translation file ${code} has no valid meta.version`);
 		outdatedLocales.update((list) => [...list, code]);
 	} else if (version < CURRENT_LOCALE_VERSION) {
-		warn(`Translation file ${code} is out of date (version ${version}, expected ${CURRENT_LOCALE_VERSION})`);
+		warn(
+			["lang"],
+			`Translation file ${code} is out of date (version ${version}, expected ${CURRENT_LOCALE_VERSION})`,
+		);
 		outdatedLocales.update((list) => [...list, code]);
 	}
 }
@@ -83,16 +86,16 @@ async function loadLocaleTranslations(targetLocale: string): Promise<Translation
 	try {
 		const response = await fetch(filePath);
 		if (!response.ok) {
-			error(`Translation file not found: ${filePath}`);
+			error(["lang"], `Translation file not found: ${filePath}`);
 			return null;
 		}
 
 		const parsed = await response.json();
 		checkLocaleVersion(targetLocale, parsed);
-		info(`Loaded translations for locale: ${targetLocale}`);
+		info(["lang"], `Loaded translations for locale: ${targetLocale}`);
 		return parsed;
 	} catch (err: any) {
-		error(`Error loading translations for ${targetLocale}: ${err.message || err}`);
+		error(["lang"], `Error loading translations for ${targetLocale}: ${err.message || err}`);
 		return null;
 	}
 }
@@ -113,9 +116,9 @@ export async function initTranslations(initialLocale: string = DEFAULT_LOCALE): 
 		locale.set(AVAILABLE_LOCALES.includes(initialLocale) ? initialLocale : DEFAULT_LOCALE);
 
 		initialized.set(true);
-		info(`Translations initialized. Available locales: ${Object.keys(allTranslations).join(", ")}`);
+		info(["lang"], `Translations initialized. Available locales: ${Object.keys(allTranslations).join(", ")}`);
 	} catch (err: any) {
-		error(`Failed to initialize translations: ${err.message || err}`);
+		error(["lang"], `Failed to initialize translations: ${err.message || err}`);
 	} finally {
 		loading.set(false);
 	}
@@ -123,10 +126,10 @@ export async function initTranslations(initialLocale: string = DEFAULT_LOCALE): 
 
 export function changeLocale(newLocale: string): void {
 	if (!AVAILABLE_LOCALES.includes(newLocale)) {
-		error(`Unsupported locale: ${newLocale}. Available locales: ${AVAILABLE_LOCALES.join(", ")}`);
+		error(["lang"], `Unsupported locale: ${newLocale}. Available locales: ${AVAILABLE_LOCALES.join(", ")}`);
 		return;
 	}
 
 	locale.set(newLocale);
-	info(`Locale changed to: ${newLocale}`);
+	info(["lang"], `Locale changed to: ${newLocale}`);
 }

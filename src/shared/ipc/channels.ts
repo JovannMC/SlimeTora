@@ -1,6 +1,9 @@
+import type { LogRecord } from "$shared/log/index";
+
 export const Channels = {
 	appInfo: "app:info",
 	capabilities: "app:capabilities",
+	log: "log:write",
 } as const;
 
 export type ChannelName = (typeof Channels)[keyof typeof Channels];
@@ -39,4 +42,5 @@ export interface Capabilities {
 export interface PlatformBridge {
 	getAppInfo(): Promise<AppInfo>;
 	getCapabilities(): Promise<Capabilities>;
+	log(record: LogRecord): void;
 }

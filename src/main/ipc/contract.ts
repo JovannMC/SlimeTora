@@ -1,5 +1,7 @@
 import { Channels, type AppInfo, type Capabilities } from "$shared/ipc/channels";
+import { isLogRecord } from "$shared/log/index";
 import { app, ipcMain } from "electron";
+import { warn, writeRecord } from "../log";
 
 function getAppInfo(): AppInfo {
 	return {
@@ -23,4 +25,8 @@ function getCapabilities(): Capabilities {
 export function registerIpcHandlers(): void {
 	ipcMain.handle(Channels.appInfo, () => getAppInfo());
 	ipcMain.handle(Channels.capabilities, () => getCapabilities());
+	ipcMain.on(Channels.log, (_event, record: unknown) => {
+		if (isLogRecord(record)) writeRecord(record);
+		else warn("ipc", "Dropped malformed log record from renderer");
+	});
 }

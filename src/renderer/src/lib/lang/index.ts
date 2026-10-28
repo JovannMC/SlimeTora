@@ -5,14 +5,24 @@ import { derived, writable } from "svelte/store";
 type Translations = Record<string, unknown>;
 type TranslationParams = Record<string, string | number>;
 
-const AVAILABLE_LOCALES = ["en", "ja"];
-const DEFAULT_LOCALE = "en";
+const AVAILABLE_LOCALES = ["en-US", "ja-JP"];
+const DEFAULT_LOCALE = "en-US";
 
 export const locale = writable<string>(DEFAULT_LOCALE);
 export const translations = writable<Record<string, Translations>>({});
 export const loading = writable<boolean>(true);
 export const initialized = writable<boolean>(false);
 export const locales = writable<string[]>(AVAILABLE_LOCALES);
+
+export type TranslatorCredit = { name: string; link: string; pfp?: string };
+export type TranslatorGroup = { language: string; contributors: TranslatorCredit[] };
+
+export const translatorGroups = derived(translations, ($translations) =>
+	Object.entries($translations).flatMap(([code, file]) => {
+		const group = file.translators as TranslatorGroup | undefined;
+		return group ? [{ ...group, language: `${group.language} (${code})` }] : [];
+	}),
+);
 
 function lookup(obj: unknown, path: string): unknown {
 	return path.split(".").reduce<unknown>((current, part) => {

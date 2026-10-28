@@ -6,7 +6,7 @@
 	import "@fontsource/chakra-petch";
 	import "overlayscrollbars/overlayscrollbars.css";
 	import Toast from "#lib/components/Toast.svelte";
-	import { toasts } from "#lib/store/ToastProvider.js";
+	import { ToastManager } from "#lib/util/toast.svelte.js";
 	import { currentPath } from "#lib/store/index.js";
 	import { initialized, initTranslations } from "#lib/lang/index.js";
 	import { invoke } from "#lib/api/backend.js";
@@ -42,9 +42,9 @@
 {@render children()}
 
 <div class="fixed right-0 bottom-28 z-50 flex flex-col-reverse gap-4 p-4 md:bottom-0">
-	{#each $toasts as toast (toast.id)}
+	{#each ToastManager.toasts as toast (toast.id)}
 		<div class="flex justify-end">
-			<Toast id={toast.id} type={toast.type} message={toast.message} durations={toast.durations} />
+			<Toast {toast} />
 		</div>
 	{/each}
 </div>

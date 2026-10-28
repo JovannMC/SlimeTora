@@ -220,5 +220,11 @@
 		"error": "エラーが発生しました。",
 		"info": "インフォメーション",
 		"warning": "警告"
+	},
+	"translators": {
+		"language": "日本語",
+		"contributors": [
+			{ "name": "pikepikeid", "link": "https://github.com/pikepikeid", "pfp": "/pfp/pikepikeid.png" }
+		]
 	}
 }

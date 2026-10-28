@@ -23,13 +23,13 @@
 		{ icon: "ri:link", url: "https://jovann.me" },
 		{ icon: "ri:github-fill", url: "https://github.com/JovannMC" },
 	];
-	const BRACKETPROTO_LINKS = [
-		{ icon: "ri:link", url: "https://bracketproto.com" },
-		{ icon: "ri:github-fill", url: "https://github.com/OCSYT" },
-	];
 	const REALMY_LINKS = [
 		{ icon: "ri:link", url: "https://realmy.net" },
 		{ icon: "ri:github-fill", url: "https://github.com/RealmyTheMan" },
+	];
+	const BRACKETPROTO_LINKS = [
+		{ icon: "ri:link", url: "https://bracketproto.com" },
+		{ icon: "ri:github-fill", url: "https://github.com/OCSYT" },
 	];
 
 	const contributors = [
@@ -39,13 +39,13 @@
 			byline: "about.contributors.byline.jovannmc",
 			links: MAYA_LINKS,
 		},
+		{ pfp: "/pfp/realmy.jpg", name: "Realmy", byline: "about.contributors.byline.realmy", links: REALMY_LINKS },
 		{
 			pfp: "/pfp/bracketproto.png",
 			name: "BracketProto",
 			byline: "about.contributors.byline.bracketproto",
 			links: BRACKETPROTO_LINKS,
 		},
-		{ pfp: "/pfp/realmy.jpg", name: "Realmy", byline: "about.contributors.byline.realmy", links: REALMY_LINKS },
 	];
 
 	const contributorsEasterEgg = [
@@ -56,45 +56,16 @@
 			links: MAYA_LINKS,
 		},
 		{
-			pfp: "/pfp/bracketproto.png",
-			name: "BracketProto",
-			byline: "about.contributors.easter_egg.bracketproto",
-			links: BRACKETPROTO_LINKS,
-		},
-		{
 			pfp: "/pfp/realmy.jpg",
 			name: "Grrealmy",
 			byline: "about.contributors.easter_egg.grrealmy",
 			links: REALMY_LINKS,
 		},
-	];
-
-	const ghContribs = [
-		{ name: "Lillith", link: "https://github.com/lillithkt", pfp: "/pfp/lillithkt.png" },
-		{ name: "Francesca", link: "https://github.com/francescatanuki", pfp: "/pfp/francescatanuki.png" },
-	];
-
-	const translators = [
 		{
-			language: "English",
-			contributors: [
-				{ name: "JovannMC", pfp: "/pfp/jovannmc.png", link: "https://github.com/JovannMC" },
-				{ name: "Realmy", pfp: "/pfp/realmy.jpg", link: "https://github.com/RealmyTheMan" },
-			],
-		},
-		{
-			language: "Japanese",
-			contributors: [{ name: "pikepikeid", pfp: "/pfp/pikepikeid.png", link: "https://github.com/pikepikeid" }],
-		},
-		{
-			language: "uwu language",
-			contributors: [
-				{
-					name: "JowannUwU, your sleep paralysis demon",
-					pfp: "/pfp/jovannmc.png",
-					link: "https://github.com/JovannMC",
-				},
-			],
+			pfp: "/pfp/bracketproto.png",
+			name: "BracketProto",
+			byline: "about.contributors.easter_egg.bracketproto",
+			links: BRACKETPROTO_LINKS,
 		},
 	];
 
@@ -139,12 +110,13 @@
 	</div>
 
 	<div class="flex flex-row gap-8 p-4">
-		<div class="flex flex-col gap-8">
+	<!-- same size, half half -->
+		<div class="flex flex-col gap-8 w-1/2">
 			<ContributorsPanel contributors={showingEasterEgg ? contributorsEasterEgg : contributors} />
-			<GHContributors {ghContribs} />
+			<GHContributors />
 		</div>
-		<div class="flex flex-1 flex-col gap-8">
-			<TranslatorsPanel {translators} />
+		<div class="flex flex-1 flex-col gap-8 w-1/2">
+			<TranslatorsPanel />
 			<OtherCreditsPanel {others} />
 		</div>
 	</div>

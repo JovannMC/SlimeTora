@@ -5,6 +5,7 @@ import type { ConnectionMode } from "#lib/types/connection.js";
 import type { ChargeStatus, MagStatus, TrackerModel } from "#lib/types/tracker.js";
 import { writable, type Writable } from "svelte/store";
 import { connection, type TrackerSettings } from "./settings";
+import { DISCORD_URL, GITHUB_URL } from "#lib/util/consts.ts";
 
 export * as settings from "./settings";
 
@@ -149,16 +150,16 @@ export const externalNavLinks = [
 	{
 		name: "GitHub",
 		icon: "ri:github-line",
-		link: "https://github.com/JovannMC/SlimeTora",
+		link: GITHUB_URL,
 	},
 	{
 		name: "Discord",
 		icon: "ri:discord-line",
-		link: "https://discord.gg/3J6q2a5k4C",
+		link: DISCORD_URL,
 	},
 	{
 		name: "Help",
 		icon: "ri:question-line",
-		link: "https://github.com/JovannMC/SlimeTora/wiki/",
+		link: `${GITHUB_URL}/wiki/`,
 	},
 ];

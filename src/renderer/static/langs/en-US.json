@@ -234,18 +234,21 @@
 			"title": "Contributors",
 			"byline": {
 				"jovannmc": "Developer, has a tail",
-				"bracketproto": "Developer, loves scugs",
-				"realmy": "UI designer, growls occasionally"
+				"realmy": "UI designer, growls occasionally",
+				"bracketproto": "Original developer, loves scugs"
 			},
 			"easter_egg": {
 				"joe-van": "Has Joe Biden, is a van, maybe a Joe-van",
-				"bracketproto": "Developer, loves scugs",
-				"grrealmy": "grrgrgrhrtgrgrrrgtdg!!!grrr!!! !!"
+				"grrealmy": "grrgrgrhrtgrgrrrgtdg!!!grrr!!! !!",
+				"bracketproto": "Original developer, loves scugs"
 			}
 		},
 		"translators": "Translators",
 		"other_credits": "Other Credits",
-		"gh_contributors": "GitHub Contributors"
+		"gh_contributors": {
+			"title": "GitHub Contributors",
+			"none": "No GitHub contributors found (or connection failed), be the first!"
+		}
 	},
 
 	"common": {
@@ -261,5 +264,12 @@
 		"error": "An error occurred.",
 		"info": "Information",
 		"warning": "Warning"
+	},
+	"translators": {
+		"language": "English",
+		"contributors": [
+			{ "name": "JovannMC", "link": "https://github.com/JovannMC", "pfp": "/pfp/jovannmc.png" },
+			{ "name": "Realmy", "link": "https://github.com/RealmyTheMan", "pfp": "/pfp/realmy.jpg" }
+		]
 	}
 }

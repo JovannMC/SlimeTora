@@ -8,7 +8,7 @@
 		<div>
 			<h3 class="mb-2 font-heading text-base">{group.language}</h3>
 			<div class="flex flex-wrap items-center gap-4 text-sm">
-				{#each group.contributors as c}
+				{#each group.translators as c}
 					<div class="flex items-center gap-2">
 						{#if c.pfp}
 							<a href={c.link} target="_blank" rel="noopener noreferrer">

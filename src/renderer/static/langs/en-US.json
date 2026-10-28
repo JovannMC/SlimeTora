@@ -1,7 +1,8 @@
 {
-	"translators": {
+	"meta": {
+		"version": "1",
 		"language": "English",
-		"contributors": [
+		"translators": [
 			{ "name": "JovannMC", "link": "https://github.com/JovannMC", "pfp": "/pfp/jovannmc.png" },
 			{ "name": "Realmy", "link": "https://github.com/RealmyTheMan", "pfp": "/pfp/realmy.jpg" }
 		]

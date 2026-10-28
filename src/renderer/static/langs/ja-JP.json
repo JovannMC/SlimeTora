@@ -1,7 +1,8 @@
 {
-	"translators": {
+	"meta": {
+		"version": "1",
 		"language": "日本語",
-		"contributors": [
+		"translators": [
 			{ "name": "pikepikeid", "link": "https://github.com/pikepikeid", "pfp": "/pfp/pikepikeid.png" }
 		]
 	},

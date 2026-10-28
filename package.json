@@ -5,6 +5,7 @@
 	"description": "Connects the HaritoraX full body trackers to the SlimeVR server",
 	"private": true,
 	"type": "module",
+	"packageManager": "pnpm@12.16.1+sha512.091d1dee7927575661b25dab3c2ae31cafc1c54d6b71ed6a6600cf0c1cb10434a447eae14015f1b23e2e6bedeed79df94a932e2164d2832280dce3fb32f656d1",
 	"main": "dist/main/index.js",
 	"license": "MIT",
 	"workspaces": [
@@ -15,20 +16,20 @@
 	},
 	"scripts": {
 		"dev": "concurrently -k -n renderer,desktop -c cyan,magenta \"npm:dev:renderer\" \"npm:dev:desktop\"",
-		"dev:renderer": "npm run dev --workspace slimetora-renderer",
+		"dev:renderer": "pnpm --filter slimetora-renderer run dev",
 		"dev:desktop": "node scripts/dev-desktop.mjs",
-		"build": "npm run build:renderer && npm run build:node",
-		"build:renderer": "npm run build --workspace slimetora-renderer",
+		"build": "pnpm run build:renderer && pnpm run build:node",
+		"build:renderer": "pnpm --filter slimetora-renderer run build",
 		"build:node": "node scripts/build-node.mjs",
-		"start": "npm run build && electron .",
-		"typecheck": "npm run typecheck:node && npm run typecheck:renderer",
+		"start": "pnpm run build && electron .",
+		"typecheck": "pnpm run typecheck:node && pnpm run typecheck:renderer",
 		"typecheck:node": "tsc -p tsconfig.node.json --noEmit",
-		"typecheck:renderer": "npm run typecheck --workspace slimetora-renderer",
+		"typecheck:renderer": "pnpm --filter slimetora-renderer run typecheck",
 		"lint": "eslint .",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
-		"package": "npm run build && electron-builder --dir",
-		"dist": "npm run build && electron-builder"
+		"package": "pnpm run build && electron-builder --dir",
+		"dist": "pnpm run build && electron-builder"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

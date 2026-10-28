@@ -3,9 +3,9 @@
 	import { goto } from "$app/navigation";
 	import { untrack } from "svelte";
 	import Icon from "@iconify/svelte";
-	import { error, info } from "#lib/log/index.js";
-	import { t } from "#lib/lang/index.js";
-	import { connectedTrackers, type Tracker } from "#lib/store/index.js";
+	import { error, info } from "#lib/log/index";
+	import { t } from "#lib/lang/index";
+	import { connectedTrackers, type Tracker } from "#lib/store/index";
 	import Button from "#lib/components/settings/Button.svelte";
 	import Select from "#lib/components/settings/Select.svelte";
 	import Switch from "#lib/components/settings/Switch.svelte";
@@ -61,11 +61,7 @@
 			<div class="flex flex-col gap-4">
 				<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
 					{$t("home.per_tracker.fps.name")}
-					<Tooltip
-						content={$t("home.per_tracker.fps.tooltip")}
-						icon="ri:information-line"
-						width="300px"
-					/>
+					<Tooltip content={$t("home.per_tracker.fps.tooltip")} icon="ri:information-line" width="300px" />
 				</h3>
 				<Select
 					options={[

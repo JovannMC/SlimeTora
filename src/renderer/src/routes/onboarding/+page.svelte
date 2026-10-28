@@ -2,7 +2,7 @@
 	import { goto } from "$app/navigation";
 	import Button from "#lib/components/settings/Button.svelte";
 	import Select from "#lib/components/settings/Select.svelte";
-	import { t, locales, locale, changeLocale } from "#lib/lang/index.js";
+	import { t, locales, locale, changeLocale } from "#lib/lang/index";
 </script>
 
 <div class="flex min-h-screen flex-col justify-between text-center">

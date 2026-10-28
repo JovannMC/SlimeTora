@@ -1,4 +1,4 @@
-import { error, info, warn } from "#lib/log/index.js";
+import { error, info, warn } from "#lib/log/index";
 import { browser } from "$app/env";
 import { derived, writable } from "svelte/store";
 
@@ -8,7 +8,6 @@ type TranslationParams = Record<string, string | number>;
 const CURRENT_LOCALE_VERSION = 1;
 const AVAILABLE_LOCALES = ["en-US", "ja-JP"];
 const DEFAULT_LOCALE = "en-US";
-
 
 export const locale = writable<string>(DEFAULT_LOCALE);
 export const translations = writable<Record<string, Translations>>({});

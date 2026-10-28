@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
-	import { t } from "#lib/lang/index.js";
+	import { t } from "#lib/lang/index";
 	import Button from "#lib/components/settings/Button.svelte";
-	import type { PairedDevice, TrackerDevice } from "./types.js";
+	import type { PairedDevice, TrackerDevice } from "./types";
 
 	let {
 		pairedDevices,

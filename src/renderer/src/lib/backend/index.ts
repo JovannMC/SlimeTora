@@ -1,8 +1,8 @@
-import { invoke } from "#lib/api/backend.js";
-import { error, info } from "#lib/log/index.js";
-import { activeModes, settings } from "#lib/store/index.js";
-import { ConnectionMode } from "#lib/types/connection.js";
-import { TrackerModel } from "#lib/types/tracker.js";
+import { invoke } from "#lib/api/backend";
+import { error, info } from "#lib/log/index";
+import { activeModes, settings } from "#lib/store/index";
+import { ConnectionMode } from "#lib/types/connection";
+import { TrackerModel } from "#lib/types/tracker";
 import { get } from "svelte/store";
 import { Notification, Notifications } from "./notifications";
 

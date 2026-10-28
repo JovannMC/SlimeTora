@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
-	import { tracker } from "#lib/store/settings.js";
-	import { FPSMode, SensorAutoCorrection, SensorMode } from "#lib/types/tracker.js";
-	import { t } from "#lib/lang/index.js";
+	import { tracker } from "#lib/store/settings";
+	import { FPSMode, SensorAutoCorrection, SensorMode } from "#lib/types/tracker";
+	import { t } from "#lib/lang/index";
 	import Input from "#lib/components/settings/Input.svelte";
 	import Select from "#lib/components/settings/Select.svelte";
 	import Switch from "#lib/components/settings/Switch.svelte";

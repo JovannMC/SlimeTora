@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import { t } from "#lib/lang/index.js";
-	import { error } from "#lib/log/index.js";
-	import { GITHUB_API_URL } from "#lib/util/consts.js";
+	import { t } from "#lib/lang/index";
+	import { error } from "#lib/log/index";
+	import { GITHUB_API_URL } from "#lib/util/consts";
 	import AboutSection from "./AboutSection.svelte";
 
 	type Contributor = {

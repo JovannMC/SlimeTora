@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
-	import { t } from "#lib/lang/index.js";
+	import { t } from "#lib/lang/index";
 	import AboutSection from "./AboutSection.svelte";
 
 	type Contributor = {

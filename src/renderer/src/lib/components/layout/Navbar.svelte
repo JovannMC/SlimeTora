@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
-	import { currentPath, externalNavLinks, navLinks } from "#lib/store/index.js";
-	import { t } from "#lib/lang/index.js";
+	import { currentPath, externalNavLinks, navLinks } from "#lib/store/index";
+	import { t } from "#lib/lang/index";
 </script>
 
 <nav class="fixed top-16 flex h-[calc(100vh-64px)] w-16 flex-col justify-between bg-panel drop-shadow-xl">

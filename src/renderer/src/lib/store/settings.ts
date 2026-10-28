@@ -1,6 +1,6 @@
-import { load, type Store } from "#lib/api/store.js";
-import { error, info } from "#lib/log/index.js";
-import { FPSMode, SensorAutoCorrection, SensorMode, TrackerModel } from "#lib/types/tracker.js";
+import { load, type Store } from "#lib/api/store";
+import { error, info } from "#lib/log/index";
+import { FPSMode, SensorAutoCorrection, SensorMode, TrackerModel } from "#lib/types/tracker";
 import { derived, writable } from "svelte/store";
 
 export type LoggingMode = "minimal" | "debug" | "all";

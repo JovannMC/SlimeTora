@@ -6,13 +6,13 @@
 	import "@fontsource/chakra-petch";
 	import "overlayscrollbars/overlayscrollbars.css";
 	import Toast from "#lib/components/Toast.svelte";
-	import { ToastManager } from "#lib/util/toast.svelte.js";
-	import { currentPath } from "#lib/store/index.js";
-	import { initialized, initTranslations } from "#lib/lang/index.js";
-	import { invoke } from "#lib/api/backend.js";
-	import "#lib/api/icons.js";
-	import { registerBridge } from "#lib/api/bridge.js";
-	import { electronBridge } from "#lib/api/electronBridge.js";
+	import { ToastManager } from "#lib/util/toast.svelte";
+	import { currentPath } from "#lib/store/index";
+	import { initialized, initTranslations } from "#lib/lang/index";
+	import { invoke } from "#lib/api/backend";
+	import "#lib/api/icons";
+	import { registerBridge } from "#lib/api/bridge";
+	import { electronBridge } from "#lib/api/electronBridge";
 
 	registerBridge(electronBridge);
 

@@ -1,11 +1,11 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
 	import { goto } from "$app/navigation";
-	import { connectedTrackers, trackerOpenStates } from "#lib/store/index.js";
-	import { program } from "#lib/store/settings.js";
-	import { info } from "#lib/log/index.js";
-	import { t } from "#lib/lang/index.js";
-	import { ChargeStatus } from "#lib/types/tracker.js";
+	import { connectedTrackers, trackerOpenStates } from "#lib/store/index";
+	import { program } from "#lib/store/settings";
+	import { info } from "#lib/log/index";
+	import { t } from "#lib/lang/index";
+	import { ChargeStatus } from "#lib/types/tracker";
 	import Tooltip from "../settings/Tooltip.svelte";
 	// import TrackerVisualization from "./TrackerVisualization.svelte"; // temporarily
 
@@ -129,10 +129,10 @@
 			</div>
 
 			<!-- {#if visualization} -->
-				<!-- <TrackerVisualization {rotation} {acceleration} fps={visualizationFPS} /> -->
+			<!-- <TrackerVisualization {rotation} {acceleration} fps={visualizationFPS} /> -->
 			<!-- {:else} -->
-				<!-- <img src="/tracker.png" alt="Tracker" class="mx-auto mt-2" style="width: 150px;" /> -->
-				<!-- TODO: maybe a fallback? like an image of the tracker? -->
+			<!-- <img src="/tracker.png" alt="Tracker" class="mx-auto mt-2" style="width: 150px;" /> -->
+			<!-- TODO: maybe a fallback? like an image of the tracker? -->
 			<!-- {/if} -->
 		</div>
 	{/if}

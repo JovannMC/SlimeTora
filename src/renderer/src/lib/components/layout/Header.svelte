@@ -1,10 +1,10 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
 	import { onMount } from "svelte";
-	import { currentPath, navLinks } from "#lib/store/index.js";
-	import { t } from "#lib/lang/index.js";
-	import { getBridge } from "#lib/api/bridge.js";
-	import { error } from "#lib/log/index.js";
+	import { currentPath, navLinks } from "#lib/store/index";
+	import { t } from "#lib/lang/index";
+	import { getBridge } from "#lib/api/bridge";
+	import { error } from "#lib/log/index";
 
 	let appVersion = $state("0.0.0");
 	const currentNavLink = $derived(navLinks.find((link) => link.link === $currentPath));

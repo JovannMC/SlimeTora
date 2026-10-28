@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
-	import { invoke, listen } from "#lib/api/backend.js";
-	import { error, info } from "#lib/log/index.js";
-	import { t } from "#lib/lang/index.js";
-	import { connection } from "#lib/store/settings.js";
-	import { saveTrackerConfig } from "#lib/store/index.js";
-	import { ConnectionMode } from "#lib/types/connection.js";
-	import { TrackerModel } from "#lib/types/tracker.js";
+	import { invoke, listen } from "#lib/api/backend";
+	import { error, info } from "#lib/log/index";
+	import { t } from "#lib/lang/index";
+	import { connection } from "#lib/store/settings";
+	import { saveTrackerConfig } from "#lib/store/index";
+	import { ConnectionMode } from "#lib/types/connection";
+	import { TrackerModel } from "#lib/types/tracker";
 	import BluetoothPanel from "#lib/components/pairing/BluetoothPanel.svelte";
 	import SerialPanel from "#lib/components/pairing/SerialPanel.svelte";
-	import type { PairedDevice, PortSlot, TrackerDevice } from "#lib/components/pairing/types.js";
+	import type { PairedDevice, PortSlot, TrackerDevice } from "#lib/components/pairing/types";
 
 	// TODO: unify bluetooth and serial devices into one list (they are handled differently right now)
 	// TODO: load paired bluetooth devices from config

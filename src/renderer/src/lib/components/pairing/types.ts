@@ -1,4 +1,4 @@
-import type { TrackerModel } from "#lib/types/tracker.js";
+import type { TrackerModel } from "#lib/types/tracker";
 
 export interface TrackerDevice {
 	deviceName: string;

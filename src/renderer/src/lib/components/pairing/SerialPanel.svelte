@@ -1,9 +1,9 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
-	import { t } from "#lib/lang/index.js";
+	import { t } from "#lib/lang/index";
 	import Button from "#lib/components/settings/Button.svelte";
 	import Select from "#lib/components/settings/Select.svelte";
-	import type { PortSlot, SlotStatus } from "./types.js";
+	import type { PortSlot, SlotStatus } from "./types";
 
 	let {
 		ports,
@@ -69,9 +69,7 @@
 										>{$t("home.pairing.serial.tracker")}</span
 									>
 									<span class="text-base font-normal">
-										{slot.status === "paired"
-											? slot.trackerName
-											: $t("home.pairing.serial.none")}
+										{slot.status === "paired" ? slot.trackerName : $t("home.pairing.serial.none")}
 									</span>
 								</div>
 								<div class="flex flex-row items-center justify-center gap-2">

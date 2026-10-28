@@ -1,11 +1,11 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
-	import { program } from "#lib/store/settings.js";
+	import { program } from "#lib/store/settings";
 	import Checkbox from "#lib/components/settings/Checkbox.svelte";
 	import Input from "#lib/components/settings/Input.svelte";
 	import Select from "#lib/components/settings/Select.svelte";
 	import Tooltip from "#lib/components/settings/Tooltip.svelte";
-	import { t } from "#lib/lang/index.js";
+	import { t } from "#lib/lang/index";
 </script>
 
 <!-- TODO: fix reloading default to stable even if we load beta from config (only happens when ctrl+r on page) -->

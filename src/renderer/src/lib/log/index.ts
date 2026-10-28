@@ -1,5 +1,3 @@
-// Console only for now. The Tauri file log plugin has no Electron equivalent wired yet.
-
 export function info(...args: any[]) {
 	console.log(...args);
 }

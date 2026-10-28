@@ -1,9 +1,9 @@
-import { invoke, listen } from "#lib/api/backend.js";
-import { error, info, warn } from "#lib/log/index.js";
-import { connectedTrackers, getTrackerConfig, saveTrackerConfig, type BatteryData } from "#lib/store/index.js";
-import { program } from "#lib/store/settings.js";
-import { ConnectionMode } from "#lib/types/connection.js";
-import { MagStatus, SensorAutoCorrection, type IMUData, type TrackerModel } from "#lib/types/tracker.js";
+import { invoke, listen } from "#lib/api/backend";
+import { error, info, warn } from "#lib/log/index";
+import { connectedTrackers, getTrackerConfig, saveTrackerConfig, type BatteryData } from "#lib/store/index";
+import { program } from "#lib/store/settings";
+import { ConnectionMode } from "#lib/types/connection";
+import { MagStatus, SensorAutoCorrection, type IMUData, type TrackerModel } from "#lib/types/tracker";
 import { browser } from "$app/env";
 import { get } from "svelte/store";
 

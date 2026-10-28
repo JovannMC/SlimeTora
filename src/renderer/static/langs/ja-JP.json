@@ -2,9 +2,7 @@
 	"meta": {
 		"version": "1",
 		"language": "日本語",
-		"translators": [
-			{ "name": "pikepikeid", "link": "https://github.com/pikepikeid", "pfp": "/pfp/pikepikeid.png" }
-		]
+		"translators": [{ "name": "pikepikeid", "link": "https://github.com/pikepikeid", "pfp": "/pfp/pikepikeid.png" }]
 	},
 
 	"onboarding": {

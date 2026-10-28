@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t, translatorGroups } from "#lib/lang/index.js";
+	import { t, translatorGroups } from "#lib/lang/index";
 	import AboutSection from "./AboutSection.svelte";
 </script>
 
@@ -15,7 +15,12 @@
 								<img src={c.pfp} alt={c.name} class="h-5 w-5 rounded-full bg-black object-cover" />
 							</a>
 						{/if}
-						<a href={c.link} target="_blank" rel="noopener noreferrer" class="hover:text-secondary-alt hover:underline">
+						<a
+							href={c.link}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="hover:text-secondary-alt hover:underline"
+						>
 							{c.name}
 						</a>
 					</div>

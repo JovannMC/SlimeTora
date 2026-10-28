@@ -1,11 +1,11 @@
-import { load } from "#lib/api/store.js";
-import { startInterpreting, stopInterpreting } from "#lib/backend/index.js";
-import { error, info } from "#lib/log/index.js";
-import type { ConnectionMode } from "#lib/types/connection.js";
-import type { ChargeStatus, MagStatus, TrackerModel } from "#lib/types/tracker.js";
+import { load } from "#lib/api/store";
+import { startInterpreting, stopInterpreting } from "#lib/backend/index";
+import { error, info } from "#lib/log/index";
+import type { ConnectionMode } from "#lib/types/connection";
+import type { ChargeStatus, MagStatus, TrackerModel } from "#lib/types/tracker";
+import { DISCORD_URL, GITHUB_URL } from "#lib/util/consts.ts";
 import { writable, type Writable } from "svelte/store";
 import { connection, type TrackerSettings } from "./settings";
-import { DISCORD_URL, GITHUB_URL } from "#lib/util/consts.ts";
 
 export * as settings from "./settings";
 

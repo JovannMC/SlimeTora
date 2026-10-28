@@ -2,12 +2,12 @@
 	import Icon from "@iconify/svelte";
 	import { onMount } from "svelte";
 	import { goto } from "$app/navigation";
-	import { connection } from "#lib/store/settings.js";
-	import { ConnectionMode } from "#lib/types/connection.js";
-	import { TrackerModel } from "#lib/types/tracker.js";
-	import { invoke } from "#lib/api/backend.js";
-	import { error, info, warn } from "#lib/log/index.js";
-	import { t } from "#lib/lang/index.js";
+	import { connection } from "#lib/store/settings";
+	import { ConnectionMode } from "#lib/types/connection";
+	import { TrackerModel } from "#lib/types/tracker";
+	import { invoke } from "#lib/api/backend";
+	import { error, info, warn } from "#lib/log/index";
+	import { t } from "#lib/lang/index";
 	import Button from "#lib/components/settings/Button.svelte";
 	import Checkbox from "#lib/components/settings/Checkbox.svelte";
 	import Input from "#lib/components/settings/Input.svelte";

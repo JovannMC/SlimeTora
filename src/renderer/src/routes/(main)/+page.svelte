@@ -4,9 +4,9 @@
 	import Button from "#lib/components/settings/Button.svelte";
 	import Switch from "#lib/components/settings/Switch.svelte";
 	import Card from "#lib/components/trackers/Card.svelte";
-	import { t } from "#lib/lang/index.js";
-	import { isOn, connectedTrackers, trackerOpenStates } from "#lib/store/index.js";
-	import { program } from "#lib/store/settings.js";
+	import { t } from "#lib/lang/index";
+	import { isOn, connectedTrackers, trackerOpenStates } from "#lib/store/index";
+	import { program } from "#lib/store/settings";
 
 	// turning off clears the tracker list (null means the app just started, so leave it alone)
 	$effect(() => {

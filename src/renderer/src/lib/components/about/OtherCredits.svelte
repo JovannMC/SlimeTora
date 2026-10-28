@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from "#lib/lang/index.js";
+	import { t } from "#lib/lang/index";
 	import AboutSection from "./AboutSection.svelte";
 
 	let { others }: { others: { name: string; link: string; author?: string }[] } = $props();

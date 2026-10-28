@@ -1,10 +1,10 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
 	import { goto } from "$app/navigation";
-	import { invoke } from "#lib/api/backend.js";
-	import { error } from "#lib/log/index.js";
-	import { advanced, type LoggingMode } from "#lib/store/settings.js";
-	import { t } from "#lib/lang/index.js";
+	import { invoke } from "#lib/api/backend";
+	import { error } from "#lib/log/index";
+	import { advanced, type LoggingMode } from "#lib/store/settings";
+	import { t } from "#lib/lang/index";
 	import Button from "#lib/components/settings/Button.svelte";
 	import Checkbox from "#lib/components/settings/Checkbox.svelte";
 	import Select from "#lib/components/settings/Select.svelte";

@@ -3,7 +3,7 @@
 	import { fade, fly } from "svelte/transition";
 	import { quintOut } from "svelte/easing";
 	import Icon from "@iconify/svelte";
-	import { ToastManager, type Toast } from "#lib/util/toast.svelte.js";
+	import { ToastManager, type Toast } from "#lib/util/toast.svelte";
 
 	let { toast }: { toast: Toast<unknown> } = $props();
 

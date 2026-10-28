@@ -3,12 +3,12 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
 	import * as THREE from "three";
-	import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
-	import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-	import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass.js";
-	import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
-	import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
-	import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
+	import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
+	import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
+	import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass";
+	import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
+	import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
+	import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader";
 
 	type Props = {
 		rotation: number[];

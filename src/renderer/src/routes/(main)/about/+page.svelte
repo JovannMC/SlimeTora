@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import { getBridge } from "#lib/api/bridge.js";
-	import { error } from "#lib/log/index.js";
-	import { t } from "#lib/lang/index.js";
+	import { getBridge } from "#lib/api/bridge";
+	import { error } from "#lib/log/index";
+	import { t } from "#lib/lang/index";
 	import ContributorsPanel from "#lib/components/about/Contributors.svelte";
 	import TranslatorsPanel from "#lib/components/about/Translators.svelte";
 	import OtherCreditsPanel from "#lib/components/about/OtherCredits.svelte";
@@ -110,11 +110,11 @@
 	</div>
 
 	<div class="flex flex-row gap-8 p-4">
-		<div class="flex flex-col gap-8 w-1/2">
+		<div class="flex w-1/2 flex-col gap-8">
 			<ContributorsPanel contributors={showingEasterEgg ? contributorsEasterEgg : contributors} />
 			<GHContributors />
 		</div>
-		<div class="flex flex-1 flex-col gap-8 w-1/2">
+		<div class="flex w-1/2 flex-1 flex-col gap-8">
 			<TranslatorsPanel />
 			<OtherCreditsPanel {others} />
 		</div>

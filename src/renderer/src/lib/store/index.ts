@@ -47,7 +47,7 @@ export const trackerOpenStates = writable<Record<string, boolean>>({});
 
 (async () => {
 	try {
-		trackersConfig = await load("trackers.json", { autoSave: true });
+		trackersConfig = await load("home.json", { autoSave: true });
 
 		try {
 			const loaded = await trackersConfig.get("trackers");
@@ -122,26 +122,23 @@ isOn.subscribe(async (value) => {
 
 export const currentPath = writable("/");
 
-// TODO: change this so it can be translated by files
 export const navLinks = [
 	{
-		name: "Home",
-		icon: "ri:home-4-fill",
+		label: "nav.home",
+		icon: "ri:gps-line",
+		active: "ri:gps-fill",
 		link: "/",
 	},
 	{
-		name: "Trackers",
-		icon: "ri:compass-3-line",
-		link: "/trackers",
-	},
-	{
-		name: "Settings",
+		label: "nav.settings",
 		icon: "ri:equalizer-line",
+		active: "ri:equalizer-fill",
 		link: "/settings",
 	},
 	{
-		name: "About",
+		label: "nav.about",
 		icon: "ri:information-line",
+		active: "ri:information-fill",
 		link: "/about",
 	},
 ];

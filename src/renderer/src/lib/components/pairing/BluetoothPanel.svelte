@@ -32,18 +32,18 @@
 <div class="rounded-lg bg-panel p-6">
 	<div class="mb-4 flex items-center gap-3">
 		<Icon icon="mdi:bluetooth" width={24} class="text-secondary" />
-		<h2 class="text-xl font-semibold">{$t("trackers.pairing.bluetooth.title")}</h2>
+		<h2 class="text-xl font-semibold">{$t("home.pairing.bluetooth.title")}</h2>
 	</div>
 
 	<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 		<!-- paired devices -->
 		<div class="rounded-lg bg-quaternary p-4">
 			<div class="mb-3 flex items-center justify-between">
-				<h3 class="grow text-base font-medium">{$t("trackers.pairing.bluetooth.paired_devices")}</h3>
+				<h3 class="grow text-base font-medium">{$t("home.pairing.bluetooth.paired_devices")}</h3>
 				{#if pairedDevices.length > 0}
 					<div class="text-sm">
 						<Button
-							label={$t("trackers.pairing.bluetooth.unpair_all")}
+							label={$t("home.pairing.bluetooth.unpair_all")}
 							icon="mdi:link-off"
 							background="danger"
 							onClick={onUnpairAll}
@@ -55,7 +55,7 @@
 				{#if pairedDevices.length === 0}
 					<div class="col-span-2 py-4 text-center text-sm">
 						<Icon icon="mdi:bluetooth-off" width={24} class="mx-auto mb-2 opacity-50" />
-						<p>{$t("trackers.pairing.bluetooth.no_paired_devices")}</p>
+						<p>{$t("home.pairing.bluetooth.no_paired_devices")}</p>
 					</div>
 				{:else}
 					{#each pairedDevices as device (device.macAddress)}
@@ -69,8 +69,8 @@
 										: 'bg-gray-500'}"
 								>
 									{device.connected
-										? $t("trackers.pairing.bluetooth.connected")
-										: $t("trackers.pairing.bluetooth.disconnected")}
+										? $t("home.pairing.bluetooth.connected")
+										: $t("home.pairing.bluetooth.disconnected")}
 								</span>
 							</div>
 							<div class="flex items-center justify-between">
@@ -82,7 +82,7 @@
 								{/if}
 							</div>
 							<Button
-								label={$t("trackers.pairing.bluetooth.unpair")}
+								label={$t("home.pairing.bluetooth.unpair")}
 								icon="mdi:link-off"
 								background="danger"
 								className="text-xs h-7 px-2"
@@ -97,12 +97,12 @@
 		<!-- discovered devices -->
 		<div class="rounded-lg bg-quaternary p-4">
 			<div class="mb-3 flex items-center justify-between">
-				<h3 class="grow text-base font-medium">{$t("trackers.pairing.bluetooth.discovered_devices")}</h3>
+				<h3 class="grow text-base font-medium">{$t("home.pairing.bluetooth.discovered_devices")}</h3>
 				<div class="text-sm">
 					<Button
 						label={isScanning
-							? $t("trackers.pairing.bluetooth.stop_scanning")
-							: $t("trackers.pairing.bluetooth.scan_devices")}
+							? $t("home.pairing.bluetooth.stop_scanning")
+							: $t("home.pairing.bluetooth.scan_devices")}
 						icon={isScanning ? "mdi:stop" : "mdi:magnify"}
 						background={isScanning ? "danger" : "primary"}
 						onClick={onToggleScan}
@@ -115,10 +115,10 @@
 					<div class="col-span-2 py-4 text-center text-sm">
 						{#if isScanning}
 							<Icon icon="mdi:loading" width={24} class="mx-auto mb-2 animate-spin" />
-							<p>{$t("trackers.pairing.bluetooth.searching")}</p>
+							<p>{$t("home.pairing.bluetooth.searching")}</p>
 						{:else}
 							<Icon icon="mdi:bluetooth-off" width={24} class="mx-auto mb-2 opacity-50" />
-							<p>{$t("trackers.pairing.bluetooth.no_devices_found")}</p>
+							<p>{$t("home.pairing.bluetooth.no_devices_found")}</p>
 						{/if}
 					</div>
 				{:else}
@@ -136,7 +136,7 @@
 							</div>
 							<div class="truncate font-mono text-xs">{device.macAddress}</div>
 							<Button
-								label={$t("trackers.pairing.bluetooth.pair")}
+								label={$t("home.pairing.bluetooth.pair")}
 								icon="mdi:link"
 								background="primary"
 								className="text-xs h-7 px-2"

@@ -1,4 +1,11 @@
 {
+	"translators": {
+		"language": "日本語",
+		"contributors": [
+			{ "name": "pikepikeid", "link": "https://github.com/pikepikeid", "pfp": "/pfp/pikepikeid.png" }
+		]
+	},
+
 	"onboarding": {
 		"title": "SlimeToraへようこそ！",
 		"welcome": "SlimeToraは、HaritoraXを公式ソフトウェアを経由せず、SlimeVRサーバーに直接接続するためのソフトウェアです！",
@@ -10,15 +17,10 @@
 	},
 
 	"home": {
-		"title": "ホーム",
 		"connected": "トラッカー接続済み",
 		"disconnected": "トラッカー未接続",
 		"count": "{{value}} 台のトラッカーが接続済み",
-		"onboarding": "セットアップウィザード"
-	},
-
-	"trackers": {
-		"title": "トラッカー",
+		"onboarding": "セットアップウィザード",
 		"none": "トラッカーが見つかりません！",
 		"card": {
 			"device": "デバイス:",
@@ -65,7 +67,6 @@
 	},
 
 	"settings": {
-		"title": "設定",
 		"program": {
 			"title": "アプリケーション設定",
 			"app_behavior": {
@@ -214,17 +215,15 @@
 		"yes": "はい",
 		"no": "いいえ"
 	},
-
+	"nav": {
+		"home": "ホーム",
+		"settings": "設定",
+		"about": "SlimeToraについて"
+	},
 	"toast": {
 		"success": "成功しました！",
 		"error": "エラーが発生しました。",
 		"info": "インフォメーション",
 		"warning": "警告"
-	},
-	"translators": {
-		"language": "日本語",
-		"contributors": [
-			{ "name": "pikepikeid", "link": "https://github.com/pikepikeid", "pfp": "/pfp/pikepikeid.png" }
-		]
 	}
 }

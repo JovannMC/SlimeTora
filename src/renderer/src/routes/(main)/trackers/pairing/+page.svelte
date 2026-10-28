@@ -177,8 +177,8 @@
 
 <div class="mx-auto flex max-w-6xl flex-col gap-6 p-6">
 	<div class="text-center">
-		<h1 class="mb-2 text-3xl font-bold">{$t("trackers.pairing.title")}</h1>
-		<p>{$t("trackers.pairing.subtitle")}</p>
+		<h1 class="mb-2 text-3xl font-bold">{$t("home.pairing.title")}</h1>
+		<p>{$t("home.pairing.subtitle")}</p>
 	</div>
 
 	<BluetoothPanel

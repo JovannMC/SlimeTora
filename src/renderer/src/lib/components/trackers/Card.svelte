@@ -63,7 +63,7 @@
 		<div class="flex items-center gap-1">
 			<button
 				class="rounded-md p-1 hover:bg-secondary/20 active:bg-secondary/10"
-				aria-label={$t("trackers.card.power_off", { name })}
+				aria-label={$t("home.card.power_off", { name })}
 				onclick={(e) => {
 					e.stopPropagation();
 					info(`Powered off tracker: ${name} (${id})`);
@@ -73,7 +73,7 @@
 			</button>
 			<button
 				class="rounded-md p-1 hover:bg-secondary/20 active:bg-secondary/10"
-				aria-label={$t("trackers.card.settings", { name })}
+				aria-label={$t("home.card.settings", { name })}
 				onclick={(e) => {
 					e.stopPropagation();
 					info(`Settings clicked for: ${name}`);
@@ -88,12 +88,12 @@
 
 	{#if isOpen}
 		<div class="m-4 mt-0 flex flex-col gap-2 rounded-lg bg-panel p-4">
-			<p><b>{$t("trackers.card.device")}</b> <span id="device-type">{id} ({type})</span></p>
+			<p><b>{$t("home.card.device")}</b> <span id="device-type">{id} ({type})</span></p>
 			<p>
-				<b>{$t("trackers.card.imu")}</b> <span id="imu">{rotation.join(", ")} ({acceleration.join(", ")})</span>
+				<b>{$t("home.card.imu")}</b> <span id="imu">{rotation.join(", ")} ({acceleration.join(", ")})</span>
 			</p>
 			<p class="flex flex-row items-center">
-				<b>{$t("trackers.card.battery")}</b>
+				<b>{$t("home.card.battery")}</b>
 				<span class="ml-1 flex flex-row items-center justify-center gap-1" id="battery-main">
 					<span>{batteryPercent}% ({batteryVoltage / 1000}V)</span>
 					{#if batteryStatus === ChargeStatus.Charging}
@@ -102,10 +102,10 @@
 				</span>
 			</p>
 			<div id="status" class="flex items-center gap-1 text-center">
-				<b>{$t("trackers.card.status.text")}</b>
+				<b>{$t("home.card.status.text")}</b>
 				<div class="flex items-center gap-2" id="battery-status">
 					<div class="flex items-center gap-1" id="mag-status">
-						<Tooltip content={$t("trackers.card.tooltip.mag_status")} position="up" width="200px">
+						<Tooltip content={$t("home.card.tooltip.mag_status")} position="up" width="200px">
 							<Icon
 								icon="ri:compass-3-fill"
 								width={16}
@@ -115,12 +115,12 @@
 						</Tooltip>
 						<span class="bg-transparent! uppercase {magClass}" id="mag-text">
 							{magStatus === "N/A"
-								? $t("trackers.card.status.unknown")
+								? $t("home.card.status.unknown")
 								: $t(`trackers.card.status.${magStatus}`)}
 						</span>
 					</div>
 					<div class="flex items-center gap-1" id="rssi-status">
-						<Tooltip content={$t("trackers.card.tooltip.rssi")} position="up" width="200px">
+						<Tooltip content={$t("home.card.tooltip.rssi")} position="up" width="200px">
 							<Icon icon="ri:signal-wifi-fill" width={16} class="text-text-alt" />
 						</Tooltip>
 						<span class="text-text-alt" id="rssi">-{rssi} dBm</span>

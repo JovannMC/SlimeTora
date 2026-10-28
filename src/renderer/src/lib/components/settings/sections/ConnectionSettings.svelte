@@ -119,7 +119,7 @@
 			</div>
 
 			<Button
-				label={$t("trackers.settings.pairing")}
+				label={$t("home.settings.pairing")}
 				icon="ri:bluetooth-connect-line"
 				background="quaternary"
 				onClick={() => goto("/trackers/pairing")}

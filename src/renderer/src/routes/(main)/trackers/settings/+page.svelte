@@ -20,15 +20,15 @@
 	$effect(() => {
 		const id = trackerId;
 		if (!id) {
-			error("Tracker ID is undefined. Redirecting to trackers list.");
-			goto("/trackers");
+			error("Tracker ID is undefined, redirecting to home page.");
+			goto("/");
 			return;
 		}
 
 		trackerData = untrack(() => $connectedTrackers.find((t) => t.id === id));
 		if (!trackerData) {
-			error(`Tracker with ID ${id} not found. Redirecting to trackers list.`);
-			goto("/trackers");
+			error(`Tracker with ID ${id} not found, redirecting to home page.`);
+			goto("/");
 		}
 	});
 
@@ -51,18 +51,18 @@
 <div class="flex flex-col gap-8 p-4">
 	<div class="rounded-lg bg-panel p-6 shadow">
 		<h1 class="mb-4 font-heading text-2xl">
-			{$t("trackers.per_tracker.title", { name: trackerData?.name ?? "" })}
+			{$t("home.per_tracker.title", { name: trackerData?.name ?? "" })}
 		</h1>
 		<p class="mb-6 text-text-alt">
-			{$t("trackers.per_tracker.description")}
+			{$t("home.per_tracker.description")}
 		</p>
 
 		<div class="grid grid-cols-1 gap-8 md:grid-cols-2">
 			<div class="flex flex-col gap-4">
 				<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
-					{$t("trackers.per_tracker.fps.name")}
+					{$t("home.per_tracker.fps.name")}
 					<Tooltip
-						content={$t("trackers.per_tracker.fps.tooltip")}
+						content={$t("home.per_tracker.fps.tooltip")}
 						icon="ri:information-line"
 						width="300px"
 					/>
@@ -78,9 +78,9 @@
 
 			<div class="flex flex-col gap-4">
 				<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
-					{$t("trackers.per_tracker.sensor_mode.name")}
+					{$t("home.per_tracker.sensor_mode.name")}
 					<Tooltip
-						content={$t("trackers.per_tracker.sensor_mode.tooltip")}
+						content={$t("home.per_tracker.sensor_mode.tooltip")}
 						icon="ri:information-line"
 						width="300px"
 					/>
@@ -96,9 +96,9 @@
 
 			<div class="flex flex-col gap-4">
 				<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
-					{$t("trackers.per_tracker.sensor_auto_correction.name")}
+					{$t("home.per_tracker.sensor_auto_correction.name")}
 					<Tooltip
-						content={$t("trackers.per_tracker.sensor_auto_correction.tooltip")}
+						content={$t("home.per_tracker.sensor_auto_correction.tooltip")}
 						icon="ri:information-line"
 						width="300px"
 					/>
@@ -112,21 +112,21 @@
 
 			<div class="flex flex-col gap-4">
 				<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
-					{$t("trackers.per_tracker.virtual_feet.name")}
+					{$t("home.per_tracker.virtual_feet.name")}
 					<Tooltip
-						content={$t("trackers.per_tracker.virtual_feet.tooltip")}
+						content={$t("home.per_tracker.virtual_feet.tooltip")}
 						icon="ri:information-line"
 						width="250px"
 					/>
 				</h3>
-				<Switch label={$t("trackers.per_tracker.virtual_feet.name")} bind:selected={emulatedFeet} />
+				<Switch label={$t("home.per_tracker.virtual_feet.name")} bind:selected={emulatedFeet} />
 			</div>
 
 			<div class="col-span-2 flex flex-col gap-4">
 				<h3
 					class="text-warning mb-4 flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg"
 				>
-					{$t("trackers.per_tracker.debugging")}
+					{$t("home.per_tracker.debugging")}
 					<Icon
 						icon="ri:information-line"
 						width={20}
@@ -135,12 +135,12 @@
 				</h3>
 				<div class="flex flex-col gap-4">
 					<Button
-						label={$t("trackers.per_tracker.get_settings")}
+						label={$t("home.per_tracker.get_settings")}
 						background="primary"
 						onClick={getTrackerSettings}
 					/>
 					<Button
-						label={$t("trackers.per_tracker.reset_settings")}
+						label={$t("home.per_tracker.reset_settings")}
 						background="primary"
 						onClick={resetSettings}
 					/>

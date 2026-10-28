@@ -110,7 +110,6 @@
 	</div>
 
 	<div class="flex flex-row gap-8 p-4">
-	<!-- same size, half half -->
 		<div class="flex flex-col gap-8 w-1/2">
 			<ContributorsPanel contributors={showingEasterEgg ? contributorsEasterEgg : contributors} />
 			<GHContributors />

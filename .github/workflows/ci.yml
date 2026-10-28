@@ -3,7 +3,10 @@ name: CI
 on:
     push:
         branches: [main]
+        paths: [src/**]
     pull_request:
+        paths: [src/**]
+    workflow_dispatch:
 
 jobs:
     verify:
@@ -19,19 +22,19 @@ jobs:
             - uses: actions/setup-node@v4
               with:
                   node-version: 22
-                  cache: npm
+                  cache: pnpm
 
             - name: Install dependencies
-              run: npm ci
+              run: pnpm ci
 
             - name: Typecheck
-              run: npm run typecheck
+              run: pnpm run typecheck
 
             - name: Lint
-              run: npm run lint
+              run: pnpm run lint
 
             - name: Format check
-              run: npm run format:check
+              run: pnpm run format:check
 
             - name: Build
-              run: npm run build
+              run: pnpm run build

@@ -1,14 +1,15 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
 	import { currentPath, externalNavLinks, navLinks } from "#lib/store/index.js";
+	import { t } from "#lib/lang/index.js";
 </script>
 
 <nav class="fixed top-16 flex h-[calc(100vh-64px)] w-16 flex-col justify-between bg-panel drop-shadow-xl">
 	<div>
-		{#each navLinks as { icon, link }}
+		{#each navLinks as { icon, active, label, link }}
 			{@const selected = $currentPath === link}
-			<a href={link} class="link" class:selected>
-				<Icon class={selected ? "text-white" : "text-text-alt"} {icon} width={28} />
+			<a href={link} class="link" class:selected aria-label={$t(label)} title={$t(label)}>
+				<Icon class={selected ? "text-white" : "text-text-alt"} icon={selected ? active : icon} width={28} />
 			</a>
 		{/each}
 	</div>

@@ -15,10 +15,14 @@ const LOG_FILE_PREFIX = "slimetora-";
 
 let stream: fs.WriteStream | undefined;
 
+export function logsDirectory(): string {
+	return path.join(app.getPath("userData"), "logs");
+}
+
 function openLogFile(): fs.WriteStream {
 	if (stream) return stream;
 
-	const dir = path.join(app.getPath("userData"), "logs");
+	const dir = logsDirectory();
 	fs.mkdirSync(dir, { recursive: true });
 
 	const existing = fs

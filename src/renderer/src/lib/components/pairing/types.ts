@@ -1,17 +1,18 @@
 import type { TrackerModel } from "#lib/types/tracker";
 
+// a BLE endpoint the library found, its id is the BLE local name
 export interface TrackerDevice {
+	endpointId: string;
 	deviceName: string;
-	macAddress: string;
-	trackerType: TrackerModel;
+	trackerType?: TrackerModel;
 	rssi?: number;
 }
 
 export interface PairedDevice {
+	endpointId: string;
 	deviceName: string;
-	macAddress: string;
 	connected: boolean;
-	trackerType: TrackerModel;
+	trackerType?: TrackerModel;
 }
 
 export type SlotStatus = "paired" | "unpaired" | "pairing";

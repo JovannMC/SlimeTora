@@ -1,5 +1,4 @@
 <!-- based off code on pre-v2 SlimeTora by BracketProto -->
-<!--
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
 	import { error } from "#lib/log/index";
@@ -29,7 +28,7 @@
 	let animationFrameId: number;
 	let lastFrameTime = 0;
 
-	let frameInterval = 1000 / fps;
+	let frameInterval = $derived(1000 / fps);
 
 	function initThreeJS() {
 		// Scene setup
@@ -265,4 +264,3 @@
 		background-color: transparent;
 	}
 </style>
--->

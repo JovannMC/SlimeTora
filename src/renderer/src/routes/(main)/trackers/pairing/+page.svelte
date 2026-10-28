@@ -3,69 +3,99 @@
 	import { invoke, listen } from "#lib/api/backend";
 	import { error, info } from "#lib/log/index";
 	import { t } from "#lib/lang/index";
-	import { connection } from "#lib/store/settings";
-	import { saveTrackerConfig } from "#lib/store/index";
-	import { ConnectionMode } from "#lib/types/connection";
-	import { TrackerModel } from "#lib/types/tracker";
+	import { MODEL_FROM_LIBRARY } from "#lib/backend/mapping";
 	import BluetoothPanel from "#lib/components/pairing/BluetoothPanel.svelte";
 	import SerialPanel from "#lib/components/pairing/SerialPanel.svelte";
 	import type { PairedDevice, PortSlot, TrackerDevice } from "#lib/components/pairing/types";
+	import type { TrackerModel } from "#lib/types/tracker";
 
-	// TODO: unify bluetooth and serial devices into one list (they are handled differently right now)
-	// TODO: load paired bluetooth devices from config
+	// TODO: pairing serial trackers is a placeholder for the dongle slot status, it's not checked against the dongle yet
 
 	let isScanning = $state(false);
 	let discoveredDevices: TrackerDevice[] = $state([]);
 	let pairedDevices: PairedDevice[] = $state([]);
 	let portTrackers: Record<string, PortSlot[]> = $state({});
+	let availablePorts: string[] = $state([]);
 
-	let unlistenConnect: (() => void) | undefined;
-	let unlistenDisconnect: (() => void) | undefined;
+	let unlisteners: (() => void)[] = [];
 
-	const ports = $derived($connection.ports);
+	let endpointModels: Record<string, TrackerModel | undefined> = $state({});
 
-	// every port gets two empty slots whenever the list of ports changes
+	// every discovered serial port gets two empty slots whenever the list changes
 	const emptySlots = (): PortSlot[] => [
 		{ portId: "0", status: "unpaired", trackerName: "", channel: 1 },
 		{ portId: "1", status: "unpaired", trackerName: "", channel: 1 },
 	];
 
 	$effect(() => {
-		portTrackers = Object.fromEntries(ports.map((port) => [port, emptySlots()]));
+		portTrackers = Object.fromEntries(availablePorts.map((port) => [port, emptySlots()]));
 	});
 
-	onMount(async () => {
-		try {
-			unlistenConnect = await listen("connect", (event) => {
-				// the "connect" event is also handled in notifications.ts for the trackers store
-				const payload = event.payload as { tracker: string; tracker_type: TrackerModel };
-				pairedDevices = pairedDevices.map((d) =>
-					d.macAddress === payload.tracker ? { ...d, connected: true, trackerType: payload.tracker_type } : d,
-				);
-			});
+	function setConnected(endpointId: string, connected: boolean) {
+		pairedDevices = pairedDevices.map((d) => (d.endpointId === endpointId ? { ...d, connected } : d));
+	}
 
-			unlistenDisconnect = await listen("disconnect", (event) => {
-				const payload = event.payload as { tracker: string };
-				info(["trackers", "pairing"], `Device disconnected: ${payload.tracker}`);
-				pairedDevices = pairedDevices.map((d) =>
-					d.macAddress === payload.tracker ? { ...d, connected: false } : d,
-				);
-			});
+	// TODO: this needs to be quicker or smth, it takes forever for the lists to update when pairing page opens
+	async function syncBackend() {
+		try {
+			const endpoints = await invoke("discover");
+			// BLE devices
+			pairedDevices = endpoints
+				.filter((e) => e.connection === "ble")
+				.map((e) => ({
+					endpointId: e.id,
+					deviceName: e.displayName,
+					connected: true,
+					trackerType: e.model ? MODEL_FROM_LIBRARY[e.model] : undefined,
+				}));
+			// serial ports
+			availablePorts = endpoints
+				.filter((e) => e.connection === "serial")
+				.map((e) => e.id)
+				.sort();
 		} catch (err) {
-			error(["trackers", "pairing"], `Failed to initialize pairing page: ${err}`);
+			error(["trackers", "pairing"], `Failed to sync with backend: ${err}`);
 		}
+	}
+
+	onMount(() => {
+		unlisteners = [
+			listen("endpoint:connected", ({ endpointId, displayName }) => {
+				setConnected(endpointId, true);
+				if (!pairedDevices.find((d) => d.endpointId === endpointId)) {
+					pairedDevices = [
+						...pairedDevices,
+						{
+							endpointId,
+							deviceName: displayName,
+							connected: true,
+							trackerType: endpointModels[endpointId],
+						},
+					];
+				}
+			}),
+			listen("endpoint:disconnected", ({ endpointId, reason }) => {
+				info(["trackers", "pairing"], `Endpoint ${endpointId} disconnected: ${reason}`);
+				pairedDevices = pairedDevices.filter((d) => d.endpointId !== endpointId);
+				// clean up model map when endpoint disconnects
+				endpointModels = Object.fromEntries(
+					Object.entries(endpointModels).filter(([eid]) => eid !== endpointId),
+				);
+			}),
+
+			listen("device:connected", ({ endpointId, model }) => {
+				if (model) {
+					endpointModels = { ...endpointModels, [endpointId]: MODEL_FROM_LIBRARY[model] };
+				}
+			}),
+		];
+		void syncBackend();
 	});
 
 	onDestroy(() => {
-		unlistenConnect?.();
-		unlistenDisconnect?.();
-		if (isScanning) stopScan();
+		for (const unlisten of unlisteners) unlisten();
+		if (isScanning) void stopScan();
 	});
-
-	// keeps the connection store's MAC list in step with the paired devices
-	function syncMacAddresses() {
-		connection.update((s) => ({ ...s, macAddresses: pairedDevices.map((d) => d.macAddress) }));
-	}
 
 	async function startScan() {
 		if (isScanning) return;
@@ -75,14 +105,19 @@
 		info(["trackers", "pairing"], "Started BLE scanning");
 
 		try {
-			const devices = await invoke<TrackerDevice[]>("start_ble_scanning", { timeout: 5000 });
-			discoveredDevices = devices.map(({ deviceName, macAddress, trackerType, rssi }) => ({
-				deviceName,
-				macAddress,
-				trackerType,
-				rssi,
-			}));
-			info(["trackers", "pairing"], `BLE scanning completed. Found ${devices.length} HaritoraX devices`);
+			const endpoints = await invoke("discover");
+			discoveredDevices = endpoints
+				.filter((endpoint) => endpoint.connection === "ble")
+				.map((endpoint) => ({
+					endpointId: endpoint.id,
+					deviceName: endpoint.displayName,
+					trackerType: endpoint.model ? MODEL_FROM_LIBRARY[endpoint.model] : undefined,
+					rssi: endpoint.rssi,
+				}));
+			info(
+				["trackers", "pairing"],
+				`BLE scanning completed. Found ${discoveredDevices.length} HaritoraX devices`,
+			);
 		} catch (err) {
 			error(["trackers", "pairing"], `Failed to start BLE scanning: ${err}`);
 		} finally {
@@ -94,7 +129,7 @@
 		if (!isScanning) return;
 
 		try {
-			await invoke("stop_ble_scanning");
+			await invoke("stopDiscovery");
 			isScanning = false;
 			info(["trackers", "pairing"], "Stopped BLE scanning");
 		} catch (err) {
@@ -102,54 +137,46 @@
 		}
 	}
 
-	function pair(address: string, name: string) {
-		if (!pairedDevices.some((d) => d.macAddress === address)) {
-			const trackerType = name.startsWith("HaritoraX2-")
-				? TrackerModel.X2
-				: name.startsWith("HaritoraXW-")
-					? TrackerModel.Wireless
-					: TrackerModel.Wired;
-			const id = name.includes("-") ? name.substring(name.indexOf("-") + 1) : name;
-
-			pairedDevices = [
-				...pairedDevices,
-				{ macAddress: address, deviceName: name, connected: false, trackerType },
-			];
-			saveTrackerConfig({
-				id,
-				name,
-				connection_mode: ConnectionMode.BLE,
-				tracker_type: trackerType,
-				mac: address,
-			});
-			syncMacAddresses();
+	async function pair(endpointId: string, name: string) {
+		try {
+			await invoke("connect", endpointId);
+		} catch (err) {
+			error(["trackers", "pairing"], `Failed to connect to ${name}: ${err}`);
+			return;
 		}
 
-		discoveredDevices = discoveredDevices.filter((d) => d.macAddress !== address);
-		info(["trackers", "pairing"], `Paired device: ${name}`);
+		const device = discoveredDevices.find((d) => d.endpointId === endpointId);
+		pairedDevices = [
+			...pairedDevices.filter((d) => d.endpointId !== endpointId),
+			{ endpointId, deviceName: name, connected: true, trackerType: device?.trackerType },
+		];
+		discoveredDevices = discoveredDevices.filter((d) => d.endpointId !== endpointId);
+		info(["trackers", "pairing"], `Connected to device: ${name}`);
 	}
 
-	async function unpair(address: string) {
-		pairedDevices = pairedDevices.filter((d) => d.macAddress !== address);
-		syncMacAddresses();
+	async function unpair(endpointId: string) {
+		pairedDevices = pairedDevices.filter((d) => d.endpointId !== endpointId);
 
 		try {
-			await invoke("disconnect_device", { macAddress: address });
-			info(["trackers", "pairing"], `Unpaired device: ${address}`);
+			await invoke("disconnect", endpointId);
+			info(["trackers", "pairing"], `Unpaired device: ${endpointId}`);
 		} catch (err) {
 			error(["trackers", "pairing"], `Failed to unpair device: ${err}`);
 		}
 	}
 
 	async function unpairAll() {
-		try {
-			await invoke("stop_ble_connections");
-			pairedDevices = [];
-			syncMacAddresses();
-			info(["trackers", "pairing"], "Unpaired all devices");
-		} catch (err) {
-			error(["trackers", "pairing"], `Failed to unpair all devices: ${err}`);
+		const endpoints = pairedDevices.map((d) => d.endpointId);
+		pairedDevices = [];
+
+		for (const endpointId of endpoints) {
+			try {
+				await invoke("disconnect", endpointId);
+			} catch (err) {
+				error(["trackers", "pairing"], `Failed to unpair ${endpointId}: ${err}`);
+			}
 		}
+		info(["trackers", "pairing"], "Unpaired all devices");
 	}
 
 	function updateSlot(port: string, portId: string, change: Partial<PortSlot>) {
@@ -162,15 +189,36 @@
 		};
 	}
 
-	// TODO: pairing serial trackers is a placeholder, it doesn't talk to the dongle yet
-	function togglePair(port: string, portId: string) {
+	async function togglePair(port: string, portId: string) {
 		const slot = portTrackers[port]?.find((s) => s.portId === portId);
 		if (!slot) return;
 
 		if (slot.status === "unpaired") {
-			updateSlot(port, portId, { status: "paired", trackerName: "meow" });
+			updateSlot(port, portId, { status: "pairing" });
+			try {
+				await invoke("pair", port, portId);
+				const device = (await invoke("getDevices")).find((d) => d.endpointId === port && d.slot === portId);
+				updateSlot(port, portId, { status: "paired", trackerName: device?.deviceId ?? "" });
+			} catch (err) {
+				error(["trackers", "pairing"], `Failed to pair slot ${portId} on ${port}: ${err}`);
+				updateSlot(port, portId, { status: "unpaired" });
+			}
 		} else {
-			updateSlot(port, portId, { status: "unpaired", trackerName: "" });
+			try {
+				await invoke("unpair", port, portId);
+				updateSlot(port, portId, { status: "unpaired", trackerName: "" });
+			} catch (err) {
+				error(["trackers", "pairing"], `Failed to unpair slot ${portId} on ${port}: ${err}`);
+			}
+		}
+	}
+
+	async function setChannel(port: string, portId: string, channel: number) {
+		try {
+			await invoke("setChannel", port, channel);
+			updateSlot(port, portId, { channel });
+		} catch (err) {
+			error(["trackers", "pairing"], `Failed to set channel ${channel} on ${port}: ${err}`);
 		}
 	}
 </script>
@@ -191,10 +239,5 @@
 		onUnpairAll={unpairAll}
 	/>
 
-	<SerialPanel
-		{ports}
-		{portTrackers}
-		onTogglePair={togglePair}
-		onChannel={(port, portId, channel) => updateSlot(port, portId, { channel })}
-	/>
+	<SerialPanel ports={availablePorts} {portTrackers} onTogglePair={togglePair} onChannel={setChannel} />
 </div>

@@ -9,7 +9,6 @@
 	import { ToastManager } from "#lib/util/toast.svelte";
 	import { currentPath } from "#lib/store/index";
 	import { initialized, initTranslations } from "#lib/lang/index";
-	import { invoke } from "#lib/api/backend";
 	import { captureUncaughtErrors, error } from "#lib/log/index";
 	import "#lib/api/icons";
 	import { registerBridge } from "#lib/api/bridge";
@@ -29,14 +28,6 @@
 
 		OverlayScrollbars(document.body, {
 			scrollbars: { autoHide: "leave", autoHideDelay: 100, visibility: "auto", theme: "os-theme-dark" },
-		});
-
-		window.addEventListener("beforeunload", async () => {
-			try {
-				await invoke("cleanup_connections");
-			} catch (err) {
-				error(["layout"], `Failed to cleanup backend connections: ${err}`);
-			}
 		});
 	});
 </script>

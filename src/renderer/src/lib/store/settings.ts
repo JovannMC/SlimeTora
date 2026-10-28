@@ -22,7 +22,6 @@ export type ConnectionSettings = {
 	models: TrackerModel[];
 	modes: string[];
 	ports: string[]; // for serial
-	macAddresses?: string[]; // for BLE
 	slimevrIP: string;
 	slimevrPort: number;
 };
@@ -66,7 +65,6 @@ export const connection = writable<ConnectionSettings>({
 	models: [],
 	modes: [],
 	ports: [],
-	macAddresses: [],
 	slimevrIP: "255.255.255.255",
 	slimevrPort: 6969,
 });

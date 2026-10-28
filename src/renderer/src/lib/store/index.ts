@@ -5,7 +5,7 @@ import type { ConnectionMode } from "#lib/types/connection";
 import type { ChargeStatus, MagStatus, TrackerModel } from "#lib/types/tracker";
 import { DISCORD_URL, GITHUB_URL } from "#lib/util/consts.ts";
 import { writable, type Writable } from "svelte/store";
-import { connection, type TrackerSettings } from "./settings";
+import type { TrackerSettings } from "./settings";
 
 export * as settings from "./settings";
 
@@ -19,11 +19,11 @@ export interface BatteryData {
 
 export interface Tracker {
 	// Info
-	id: string; // does NOT change and should be unique (MAC address or serial num (in format of bt names: HaritoraX()-(serial)?)
+	id: string; // does NOT change and should be unique: `serial:imuIndex`
 	name: string; // can be user-set
 	connection_mode: ConnectionMode;
 	tracker_type: TrackerModel;
-	mac?: string;
+	bodyPart?: string;
 	settings?: Omit<TrackerSettings, "heartbeat" | "buttonDebounce">;
 
 	// Data
@@ -54,15 +54,6 @@ export const trackerOpenStates = writable<Record<string, boolean>>({});
 			if (loaded && typeof loaded === "object") {
 				// for every Tracker in loaded, place into knownTrackers
 				knownTrackers.set(Object.values(loaded));
-
-				const macAddresses: string[] = Object.values(loaded)
-					.filter((tracker) => tracker.mac)
-					.map((tracker) => tracker.mac!);
-
-				info(["store"], `Loaded MAC addresses of paired BT trackers: ${macAddresses}`);
-
-				// update connection settings with loaded mac addresses
-				connection.update((settings) => ({ ...settings, macAddresses }));
 			}
 			info(["store"], `Loaded settings from trackers.json: ${JSON.stringify(loaded, null, 2)}`);
 		} catch (e) {

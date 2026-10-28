@@ -7,7 +7,7 @@
 	import { t } from "#lib/lang/index";
 	import { ChargeStatus } from "#lib/types/tracker";
 	import Tooltip from "../settings/Tooltip.svelte";
-	// import TrackerVisualization from "./TrackerVisualization.svelte"; // temporarily
+	import TrackerVisualization from "./TrackerVisualization.svelte";
 
 	let { name, id, type }: { name: string; id: string; type: string } = $props();
 
@@ -24,6 +24,9 @@
 	const rssi = $derived(tracker?.data.rssi ?? 1);
 	const magClass = $derived(`mag-status-${magStatus.toLowerCase().replace(/\s/g, "_")}`);
 
+	const visualization = $derived($program.visualization ?? true);
+	const visualizationFPS = $derived(($program.visualizationFPS ?? 60));
+
 	function toggleOpen() {
 		trackerOpenStates.update((states) => ({ ...states, [id]: !isOpen }));
 	}
@@ -31,7 +34,7 @@
 
 <!-- TODO: add tracker connection mode (maybe part assignment too?) -->
 <div
-	class="flex h-auto w-84.5 flex-col overflow-hidden rounded-xl bg-card shadow-card transition-all duration-300"
+	class="flex h-auto w-full flex-col overflow-hidden rounded-xl bg-card shadow-card transition-all duration-300"
 	id="tracker-card-{id}"
 >
 	<!-- collapsed header -->
@@ -56,7 +59,7 @@
 				</p>
 				<div class="flex items-center gap-1" id="rssi-status">
 					<Icon icon="ri:signal-wifi-fill" width={14} class="text-text-alt" />
-					<span class="text-text-alt" id="rssi">-{rssi} dBm</span>
+					<span class="text-text-alt" id="rssi">{rssi} dBm</span>
 				</div>
 			</div>
 		</div>
@@ -114,26 +117,25 @@
 							/>
 						</Tooltip>
 						<span class="bg-transparent! uppercase {magClass}" id="mag-text">
-							{magStatus === "N/A"
+							{magStatus === "N/A" || magStatus === "unknown"
 								? $t("home.card.status.unknown")
-								: $t(`trackers.card.status.${magStatus}`)}
+								: $t(`home.card.status.${magStatus.toLowerCase()}`)}
 						</span>
 					</div>
 					<div class="flex items-center gap-1" id="rssi-status">
 						<Tooltip content={$t("home.card.tooltip.rssi")} position="up" width="200px">
 							<Icon icon="ri:signal-wifi-fill" width={16} class="text-text-alt" />
 						</Tooltip>
-						<span class="text-text-alt" id="rssi">-{rssi} dBm</span>
+						<span class="text-text-alt" id="rssi">{rssi} dBm</span>
 					</div>
 				</div>
 			</div>
 
-			<!-- {#if visualization} -->
-			<!-- <TrackerVisualization {rotation} {acceleration} fps={visualizationFPS} /> -->
-			<!-- {:else} -->
-			<!-- <img src="/tracker.png" alt="Tracker" class="mx-auto mt-2" style="width: 150px;" /> -->
-			<!-- TODO: maybe a fallback? like an image of the tracker? -->
-			<!-- {/if} -->
+			{#if visualization}
+				<TrackerVisualization {rotation} {acceleration} fps={visualizationFPS} />
+			{:else}
+				<img src="/tracker.png" alt="Tracker" class="mx-auto mt-2" style="width: 150px;" />
+			{/if}
 		</div>
 	{/if}
 </div>

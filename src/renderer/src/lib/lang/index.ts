@@ -94,8 +94,8 @@ async function loadLocaleTranslations(targetLocale: string): Promise<Translation
 		checkLocaleVersion(targetLocale, parsed);
 		info(["lang"], `Loaded translations for locale: ${targetLocale}`);
 		return parsed;
-	} catch (err: any) {
-		error(["lang"], `Error loading translations for ${targetLocale}: ${err.message || err}`);
+	} catch (err) {
+		error(["lang"], `Error loading translations for ${targetLocale}: ${(err as Error).message || err}`);
 		return null;
 	}
 }
@@ -117,8 +117,8 @@ export async function initTranslations(initialLocale: string = DEFAULT_LOCALE): 
 
 		initialized.set(true);
 		info(["lang"], `Translations initialized. Available locales: ${Object.keys(allTranslations).join(", ")}`);
-	} catch (err: any) {
-		error(["lang"], `Failed to initialize translations: ${err.message || err}`);
+	} catch (err) {
+		error(["lang"], `Failed to initialize translations: ${(err as Error).message || err}`);
 	} finally {
 		loading.set(false);
 	}

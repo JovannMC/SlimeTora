@@ -2,4 +2,9 @@ packages:
     - src/renderer
 allowBuilds:
     esbuild: true
+    "@serialport/bindings-cpp": true
+    "@stoprocent/noble": true
+    "@stoprocent/bluetooth-hci-socket": true
+    usb: true
+    usocket: true
     electron-winstaller: true

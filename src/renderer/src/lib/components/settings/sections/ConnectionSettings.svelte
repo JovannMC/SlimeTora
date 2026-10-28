@@ -15,7 +15,6 @@
 	import Tooltip from "#lib/components/settings/Tooltip.svelte";
 
 	const MODELS = [
-		{ model: TrackerModel.X2, label: "HaritoraX 2" },
 		{ model: TrackerModel.Wireless, label: "HaritoraX Wireless" },
 		{ model: TrackerModel.Wired, label: "HaritoraX 1.1b/1.1/1.0" },
 	];
@@ -25,21 +24,24 @@
 		{ mode: ConnectionMode.Serial, label: "Serial / GX(6/2)" },
 	];
 
+	// serial endpoints the library can see: GX dongles and wired trackers
 	let availablePorts: string[] = $state([]);
-	let haritoraPorts: string[] = $state([]);
 
-	onMount(async () => {
+	async function refreshPorts() {
 		try {
-			const ports = (await invoke<string[]>("get_serial_ports")).sort();
-			availablePorts = ports;
-			info(["settings", "connection"], `Available serial ports: ${ports}`);
-
-			const filtered = (await invoke<string[]>("filter_ports", { ports })).sort();
-			haritoraPorts = filtered;
-			info(["settings", "connection"], `Filtered Haritora ports: ${filtered}`);
+			const endpoints = await invoke("discover");
+			availablePorts = endpoints
+				.filter((endpoint) => endpoint.connection === "serial")
+				.map((endpoint) => endpoint.id)
+				.sort();
+			info(["settings", "connection"], `Found serial ports: ${availablePorts}`);
 		} catch (err) {
-			warn(["settings", "connection"], `Error occurred: ${err}`);
+			warn(["settings", "connection"], `Error refreshing ports: ${err}`);
 		}
+	}
+
+	onMount(() => {
+		void refreshPorts();
 	});
 
 	// keeps the order of `order`, so the stored lists are always in a stable order
@@ -135,12 +137,20 @@
 					width="250px"
 				/>
 			</h3>
+			<div class="mb-2 flex items-center gap-2">
+				<Button
+					label={$t("settings.connection.serial_ports.refresh")}
+					icon="ri:refresh-line"
+					background="secondary"
+					className="h-8 px-3 text-xs"
+					onClick={refreshPorts}
+				/>
+			</div>
 			{#if availablePorts.length > 0}
 				<div class="grid grid-cols-2 gap-3 pl-1">
 					{#each availablePorts as port (port)}
 						<Switch
 							label={port}
-							className={haritoraPorts.includes(port) ? "text-secondary" : ""}
 							bind:selected={() => $connection.ports.includes(port), (on) => setPort(port, on)}
 						/>
 					{/each}

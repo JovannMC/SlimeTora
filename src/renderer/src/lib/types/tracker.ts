@@ -1,31 +1,3 @@
-import type { ConnectionMode } from "./connection";
-export interface IMUData {
-	tracker: string;
-	connection_mode: ConnectionMode;
-	tracker_type: TrackerModel;
-	data: {
-		rotation: {
-			x: number;
-			y: number;
-			z: number;
-			w: number;
-		};
-		acceleration: {
-			x: number;
-			y: number;
-			z: number;
-		};
-	};
-	ankle?: number;
-}
-
-export interface MagData {
-	tracker: string;
-	data: {
-		magnetometer: MagStatus;
-	};
-}
-
 export enum TrackerModel {
 	X2 = "X2",
 	Wireless = "Wireless",

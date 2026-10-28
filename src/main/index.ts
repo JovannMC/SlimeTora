@@ -1,4 +1,5 @@
 import { app, BrowserWindow } from "electron";
+import { disposeBackend } from "./backend";
 import { registerIpcHandlers } from "./ipc/contract";
 import { closeLogFile, error } from "./log";
 import { createMainWindow, registerAppScheme, serveRenderer } from "./window";
@@ -36,4 +37,7 @@ app.on("window-all-closed", () => {
 	if (process.platform !== "darwin") app.quit();
 });
 
-app.on("will-quit", () => closeLogFile());
+app.on("will-quit", () => {
+	void disposeBackend();
+	closeLogFile();
+});

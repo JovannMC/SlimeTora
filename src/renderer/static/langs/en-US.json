@@ -3,11 +3,18 @@
 		"version": "1",
 		"language": "English",
 		"translators": [
-			{ "name": "JovannMC", "link": "https://github.com/JovannMC", "pfp": "/pfp/jovannmc.png" },
-			{ "name": "Realmy", "link": "https://github.com/RealmyTheMan", "pfp": "/pfp/realmy.jpg" }
+			{
+				"name": "JovannMC",
+				"link": "https://github.com/JovannMC",
+				"pfp": "/pfp/jovannmc.png"
+			},
+			{
+				"name": "Realmy",
+				"link": "https://github.com/RealmyTheMan",
+				"pfp": "/pfp/realmy.jpg"
+			}
 		]
 	},
-
 	"onboarding": {
 		"title": "Welcome to SlimeTora!",
 		"welcome": "SlimeTora is a middleware program that allows you to connect your HaritoraX trackers to the SlimeVR server, bypassing the official software!",
@@ -17,7 +24,6 @@
 		"next": "Next",
 		"back": "Back"
 	},
-
 	"home": {
 		"connected": "Trackers are enabled",
 		"disconnected": "Trackers are not enabled",
@@ -155,7 +161,8 @@
 			"serial_ports": {
 				"name": "Serial Ports",
 				"tooltip": "Select the serial port(s) your GX(6/2) dongles or HaritoraX 1.1b/1.1/1.0 trackers are using.",
-				"none": "No serial ports detected"
+				"none": "No serial ports detected",
+				"refresh": "Refresh"
 			},
 			"slimevr_server": {
 				"name": "SlimeVR Server",

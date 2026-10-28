@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
 	import { goto } from "$app/navigation";
-	import { invoke } from "#lib/api/backend";
+	import { getBridge, isBridgeAvailable } from "#lib/api/bridge";
 	import { error } from "#lib/log/index";
 	import { advanced, type LoggingMode } from "#lib/store/settings";
 	import { t } from "#lib/lang/index";
@@ -12,7 +12,8 @@
 
 	async function openLogsFolder() {
 		try {
-			await invoke("open_logs_folder");
+			if (!isBridgeAvailable()) throw new Error("the Electron main process is not available");
+			await getBridge().openLogsFolder();
 		} catch (err) {
 			error(["settings", "advanced"], "Failed to open logs folder:", err);
 		}

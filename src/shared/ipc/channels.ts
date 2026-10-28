@@ -1,9 +1,13 @@
+import type { BackendBridge } from "$shared/backend/contract";
 import type { LogRecord } from "$shared/log/index";
 
 export const Channels = {
 	appInfo: "app:info",
 	capabilities: "app:capabilities",
 	log: "log:write",
+	backendInvoke: "backend:invoke",
+	backendEvent: "backend:event",
+	openLogsFolder: "log:open-folder",
 } as const;
 
 export type ChannelName = (typeof Channels)[keyof typeof Channels];
@@ -43,4 +47,6 @@ export interface PlatformBridge {
 	getAppInfo(): Promise<AppInfo>;
 	getCapabilities(): Promise<Capabilities>;
 	log(record: LogRecord): void;
+	backend: BackendBridge;
+	openLogsFolder(): Promise<void>;
 }

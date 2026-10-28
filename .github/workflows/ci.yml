@@ -9,6 +9,7 @@ on:
             - "package.json"
             - "pnpm-lock.yaml"
             - "pnpm-workspace.yaml"
+            - "electron-builder.yml"
             - ".github/workflows/**"
     pull_request:
         paths:
@@ -17,6 +18,7 @@ on:
             - "package.json"
             - "pnpm-lock.yaml"
             - "pnpm-workspace.yaml"
+            - "electron-builder.yml"
             - ".github/workflows/**"
     workflow_dispatch:
 
@@ -50,5 +52,5 @@ jobs:
             - name: Format check
               run: pnpm run format:check
 
-            - name: Build
-              run: pnpm run build
+            - name: Package
+              run: pnpm run package

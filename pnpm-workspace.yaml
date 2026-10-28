@@ -2,3 +2,4 @@ packages:
     - src/renderer
 allowBuilds:
     esbuild: true
+    electron-winstaller: true

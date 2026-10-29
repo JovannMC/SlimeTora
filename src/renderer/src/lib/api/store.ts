@@ -5,23 +5,21 @@ export interface Store {
 }
 
 export async function load(path: string, _options?: { autoSave?: boolean }): Promise<Store> {
-	const storeKey = `slimetora:${path}`;
-
 	return {
 		async get<T = unknown>(key: string) {
-			const data: Record<string, unknown> = ((await window.slimetora!.getSetting(storeKey)) as Record<
+			const data: Record<string, unknown> = ((await window.slimetora!.getSetting(path)) as Record<
 				string,
 				unknown
 			>) ?? {};
 			return data[key] as T | undefined;
 		},
 		async set(key: string, value: unknown) {
-			const data: Record<string, unknown> = ((await window.slimetora!.getSetting(storeKey)) as Record<
+			const data: Record<string, unknown> = ((await window.slimetora!.getSetting(path)) as Record<
 				string,
 				unknown
 			>) ?? {};
 			data[key] = value;
-			await window.slimetora!.setSetting(storeKey, data);
+			await window.slimetora!.setSetting(path, data);
 		},
 		async save() {
 			// No-op: IPC calls are synchronous from the main process perspective

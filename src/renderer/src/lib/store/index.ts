@@ -45,9 +45,10 @@ export const knownTrackers = writable<Tracker[]>([]);
 
 export const trackerOpenStates = writable<Record<string, boolean>>({});
 
-(async () => {
+// resolves once the saved trackers have been loaded into knownTrackers
+export const trackersLoaded: Promise<void> = (async () => {
 	try {
-		trackersConfig = await load("home.json", { autoSave: true });
+		trackersConfig = await load("trackers.json", { autoSave: true });
 
 		try {
 			const loaded = await trackersConfig.get("trackers");

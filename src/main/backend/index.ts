@@ -74,6 +74,7 @@ async function getBackend(): Promise<HaritoraX> {
 export const backendCalls: BackendCalls = {
 	discover: async () => (await getBackend()).discover(),
 	stopDiscovery: async () => (await getBackend()).stopDiscovery(),
+	getEndpoints: () => backend?.getEndpoints() ?? [],
 	getDevices: () => backend?.getDevices() ?? [],
 	connect: async (endpointId) => (await getBackend()).connect(endpointId),
 	disconnect: async (endpointId) => (await getBackend()).disconnect(endpointId),

@@ -7,6 +7,21 @@
 	import { t } from "#lib/lang/index";
 	import { isOn, connectedTrackers, trackerOpenStates } from "#lib/store/index";
 	import { program } from "#lib/store/settings";
+	import { onMount } from "svelte";
+
+	let isSmall = $state(window.matchMedia("(max-width: 768px)").matches);
+
+	onMount(() => {
+		window.addEventListener("resize", () => {
+			isSmall = window.matchMedia("(max-width: 768px)").matches;
+		});
+
+		return () => {
+			window.removeEventListener("resize", () => {
+				isSmall = window.matchMedia("(max-width: 768px)").matches;
+			});
+		};
+	});
 
 	// turning off clears the tracker list (null means the app just started, so leave it alone)
 	$effect(() => {
@@ -74,18 +89,27 @@
 		{#if $connectedTrackers.length === 0}
 			<div class="rounded-lg bg-panel py-8 text-center">{$t("home.none")}</div>
 		{:else}
-			<div class="flex flex-row gap-4">
-				<div class="flex flex-1 flex-col gap-4">
-					{#each leftColumn as tracker (tracker.id)}
+			<!-- on mobile/small it needs to be one column -->
+			{#if isSmall}
+				<div class="flex flex-col gap-4">
+					{#each $connectedTrackers as tracker (tracker.id)}
 						<Card name={tracker.name} id={tracker.id} type={tracker.tracker_type} />
 					{/each}
 				</div>
-				<div class="flex flex-1 flex-col gap-4">
-					{#each rightColumn as tracker (tracker.id)}
-						<Card name={tracker.name} id={tracker.id} type={tracker.tracker_type} />
-					{/each}
+			{:else}
+				<div class="flex flex-row gap-4">
+					<div class="flex flex-1 flex-col gap-4">
+						{#each leftColumn as tracker (tracker.id)}
+							<Card name={tracker.name} id={tracker.id} type={tracker.tracker_type} />
+						{/each}
+					</div>
+					<div class="flex flex-1 flex-col gap-4">
+						{#each rightColumn as tracker (tracker.id)}
+							<Card name={tracker.name} id={tracker.id} type={tracker.tracker_type} />
+						{/each}
+					</div>
 				</div>
-			</div>
+			{/if}
 		{/if}
 	{/if}
 </div>

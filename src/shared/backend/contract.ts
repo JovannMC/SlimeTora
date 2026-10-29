@@ -42,6 +42,7 @@ export type UserActionName = "ResetYaw" | "Reset" | "ResetMounting" | "PauseTrac
 export interface BackendCalls {
 	discover(): Promise<EndpointDescriptor[]>;
 	stopDiscovery(): Promise<void>;
+	getEndpoints(): EndpointDescriptor[];
 	getDevices(): DeviceSnapshot[];
 	connect(endpointId: string): Promise<void>;
 	disconnect(endpointId: string): Promise<void>;

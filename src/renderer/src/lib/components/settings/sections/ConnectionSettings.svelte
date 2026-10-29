@@ -5,7 +5,8 @@
 	import { connection } from "#lib/store/settings";
 	import { ConnectionMode } from "#lib/types/connection";
 	import { TrackerModel } from "#lib/types/tracker";
-	import { invoke } from "#lib/api/backend";
+	import { refreshEndpoints } from "#lib/backend/endpoints";
+	import { knownEndpoints } from "#lib/backend/endpoints";
 	import { error, info, warn } from "#lib/log/index";
 	import { t } from "#lib/lang/index";
 	import Button from "#lib/components/settings/Button.svelte";
@@ -24,24 +25,27 @@
 		{ mode: ConnectionMode.Serial, label: "Serial / GX(6/2)" },
 	];
 
-	// serial endpoints the library can see: GX dongles and wired trackers
 	let availablePorts: string[] = $state([]);
+	$effect(() => {
+		availablePorts = $knownEndpoints
+			.filter((endpoint) => endpoint.connection === "serial")
+			.map((endpoint) => endpoint.id)
+			.sort();
+	});
 
 	async function refreshPorts() {
-		try {
-			const endpoints = await invoke("discover");
-			availablePorts = endpoints
-				.filter((endpoint) => endpoint.connection === "serial")
-				.map((endpoint) => endpoint.id)
-				.sort();
-			info(["settings", "connection"], `Found serial ports: ${availablePorts}`);
-		} catch (err) {
-			warn(["settings", "connection"], `Error refreshing ports: ${err}`);
-		}
+		const endpoints = await refreshEndpoints();
+		availablePorts = endpoints
+			.filter((endpoint) => endpoint.connection === "serial")
+			.map((endpoint) => endpoint.id)
+			.sort();
+		info(["settings", "connection"], `Found serial ports: ${availablePorts}`);
 	}
 
 	onMount(() => {
-		void refreshPorts();
+		if ($knownEndpoints.length === 0) {
+			void refreshEndpoints().catch((err) => warn(["settings", "connection"], `Error refreshing ports: ${err}`));
+		}
 	});
 
 	// keeps the order of `order`, so the stored lists are always in a stable order

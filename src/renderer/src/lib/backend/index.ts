@@ -1,14 +1,15 @@
 import { invoke } from "#lib/api/backend";
 import { error, info } from "#lib/log/index";
-import { activeModes, settings } from "#lib/store/index";
+import { activeModes, knownTrackers, settings } from "#lib/store/index";
 import { ConnectionMode, type ConnectionMode as Mode } from "#lib/types/connection";
 import type { TrackerModel } from "#lib/types/tracker";
 import type { EndpointDescriptor } from "haritorax-interpreter";
 import { get } from "svelte/store";
+import { setKnownEndpoints } from "./endpoints";
 import { MODE_FROM_LIBRARY, MODEL_FROM_LIBRARY } from "./mapping";
 import { attachNotifications } from "./notifications";
+import { serialFromBleName } from "../util";
 
-// endpoints we connect to: the selected modes, models and ports (dongles and wired serial ports both count as ports)
 function matchesSettings(endpoint: EndpointDescriptor, modes: Mode[], models: TrackerModel[], ports: string[]) {
 	if (!modes.includes(MODE_FROM_LIBRARY[endpoint.connection])) return false;
 	if (endpoint.connection === "serial" && !ports.includes(endpoint.id)) return false;
@@ -24,14 +25,6 @@ export async function startInterpreting() {
 	const modes = rawModes as Mode[];
 	const models = rawModels as TrackerModel[];
 
-	if (modes.length === 0 || models.length === 0) {
-		return error(["backend"], "No modes or model selected for connection");
-	}
-
-	if (modes.includes(ConnectionMode.Serial) && ports.length === 0) {
-		return error(["backend"], "No ports selected for serial connection");
-	}
-
 	info(["backend"], `Starting interpreting with modes: ${modes}, models: ${models}, ports: ${ports}`);
 	info(["backend"], `Active endpoints: ${Array.from(activeEndpoints).join(", ")}`);
 
@@ -40,8 +33,19 @@ export async function startInterpreting() {
 	await invoke("configure", { slimevrIp: slimevr.ip, slimevrPort: slimevr.port });
 
 	const endpoints = await invoke("discover");
+	setKnownEndpoints(endpoints);
+
+	// reconnect to BLE trackers user paired to before via serial number
+	const savedSerials = new Set(
+		get(knownTrackers)
+			.filter((tracker) => tracker.connection_mode === ConnectionMode.BLE)
+			.map((tracker) => tracker.id.split(":")[0]),
+	);
+
 	for (const endpoint of endpoints) {
-		if (!matchesSettings(endpoint, modes, models, ports)) continue;
+		const isSavedBle = endpoint.connection === "ble" && savedSerials.has(serialFromBleName(endpoint.displayName));
+		const matches = endpoint.connection === "ble" ? isSavedBle : matchesSettings(endpoint, modes, models, ports);
+		if (!matches) continue;
 
 		try {
 			await invoke("connect", endpoint.id);
@@ -65,6 +69,8 @@ export async function stopInterpreting() {
 			error(["backend"], `Failed to disconnect ${endpointId}: ${err}`);
 		}
 	}
+
+	setKnownEndpoints((await invoke("getEndpoints")).filter((endpoint) => endpoint.connection === "ble"));
 
 	activeEndpoints.clear();
 	activeModes.set([]);

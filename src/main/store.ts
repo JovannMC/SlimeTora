@@ -1,43 +1,46 @@
 import { app } from "electron";
-import { mkdirSync } from "node:fs";
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 
 function getPaths() {
-	const dataDir = app.getPath("userData");
 	return {
-		dataDir,
-		STORE_PATH: `${dataDir}/settings.json`,
+		dataDir: app.getPath("userData"),
 	};
 }
 
-export function getSetting<T = unknown>(key: string): T | undefined {
-	const data = load();
-	return data[key] as T | undefined;
+export function getSetting<T = unknown>(path: string): T | undefined {
+	return readJson(fileFor(path)) as T | undefined;
 }
 
-export function setSetting(key: string, value: unknown): void {
-	const data = load();
-	data[key] = value;
-	save(data);
+export function setSetting(path: string, value: unknown): void {
+	writeJson(fileFor(path), value);
 }
 
-export function deleteSetting(key: string): void {
-	const data = load();
-	delete data[key];
-	save(data);
-}
-
-function load(): Record<string, unknown> {
-	const { STORE_PATH } = getPaths();
+export function deleteSetting(path: string): void {
 	try {
-		return JSON.parse(readFileSync(STORE_PATH, "utf-8")) ?? {};
+		unlinkSync(fileFor(path));
 	} catch {
-		return {};
+		// already gone
 	}
 }
 
-function save(data: Record<string, unknown>): void {
-	const { dataDir, STORE_PATH } = getPaths();
-	mkdirSync(dataDir, { recursive: true });
-	writeFileSync(STORE_PATH, JSON.stringify(data, null, 2), "utf-8");
+function fileFor(path: string): string {
+	const { dataDir } = getPaths();
+
+	const name = path.split(/[\\/]/).pop() ?? path;
+	if (name !== path || !/^[A-Za-z0-9._-]+$/.test(name)) throw new Error(`Invalid settings path: "${path}"`);
+
+	return `${dataDir}/${name}`;
+}
+
+function readJson(file: string): Record<string, unknown> | undefined {
+	try {
+		return JSON.parse(readFileSync(file, "utf-8")) ?? {};
+	} catch {
+		return undefined;
+	}
+}
+
+function writeJson(file: string, value: unknown): void {
+	mkdirSync(app.getPath("userData"), { recursive: true });
+	writeFileSync(file, JSON.stringify(value, null, 2), "utf-8");
 }

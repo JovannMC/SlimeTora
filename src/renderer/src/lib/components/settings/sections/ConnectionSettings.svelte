@@ -15,7 +15,7 @@
 	import Tooltip from "#lib/components/settings/Tooltip.svelte";
 
 	const MODELS = [
-		{ model: TrackerModel.Wireless, label: "HaritoraX Wireless" },
+		{ model: TrackerModel.Wireless, label: "HaritoraX Wireless / 2" },
 		{ model: TrackerModel.Wired, label: "HaritoraX 1.1b/1.1/1.0" },
 	];
 
@@ -173,7 +173,7 @@
 						label={$t("settings.connection.server_ip")}
 						icon="ri:global-line"
 						placeholder="255.255.255.255"
-						bind:value={$connection.slimevrIP}
+						bind:value={$connection.slimevr.ip}
 					/>
 				</div>
 				<div>
@@ -182,7 +182,7 @@
 						type="number"
 						icon="ri:door-line"
 						placeholder="6969"
-						bind:value={$connection.slimevrPort}
+						bind:value={$connection.slimevr.port}
 					/>
 				</div>
 			</div>

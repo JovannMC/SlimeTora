@@ -8,6 +8,9 @@ export const Channels = {
 	backendInvoke: "backend:invoke",
 	backendEvent: "backend:event",
 	openLogsFolder: "log:open-folder",
+	settingGet: "setting:get",
+	settingSet: "setting:set",
+	settingDelete: "setting:delete",
 } as const;
 
 export type ChannelName = (typeof Channels)[keyof typeof Channels];
@@ -49,4 +52,7 @@ export interface PlatformBridge {
 	log(record: LogRecord): void;
 	backend: BackendBridge;
 	openLogsFolder(): Promise<void>;
+	getSetting<T = unknown>(key: string): Promise<T | undefined>;
+	setSetting(key: string, value: unknown): Promise<void>;
+	deleteSetting(key: string): Promise<void>;
 }

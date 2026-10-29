@@ -23,7 +23,6 @@ const USER_ACTIONS: Record<UserActionName, UserAction> = {
 	PauseTracking: UserAction.PAUSE_TRACKING,
 };
 
-// the same serial always gives the same MAC, so SlimeVR knows a tracker across restarts and instances
 export function macFromSerial(serial: string): MACAddress {
 	const bytes = [...createHash("sha256").update(`slimetora:${serial}`).digest().subarray(0, 6)] as MACAddressBytes;
 	// locally administered and unicast, so it can't collide with a real vendor MAC
@@ -33,13 +32,21 @@ export function macFromSerial(serial: string): MACAddress {
 
 interface EmulatedDevice {
 	tracker: EmulatedTracker;
-	// one SlimeVR sensor per IMU, indexed by the IMU's position on the device
 	sensors: EmulatedSensor[];
 }
 
-// each HaritoraX device shows up in SlimeVR as one tracker with a sensor per IMU
 export class SlimeVRBridge {
 	readonly #devices = new Map<string, EmulatedDevice>();
+
+	ip = "";
+	port = "";
+
+	configure(settings: Record<string, unknown>): void {
+		if (settings.slimevrIp) this.ip = settings.slimevrIp as string;
+		if (settings.slimevrPort) this.port = settings.slimevrPort as string;
+
+		info(["backend", "slimevr"], `Configured SlimeVR bridge to ${this.ip}:${this.port}`);
+	}
 
 	async deviceConnected(device: DeviceSnapshot): Promise<void> {
 		if (this.#devices.has(device.deviceId)) return;
@@ -50,6 +57,8 @@ export class SlimeVRBridge {
 			new FirmwareFeatureFlags(),
 			BoardType.UNKNOWN,
 			MCUType.UNKNOWN,
+			this.ip,
+			Number(this.port),
 		);
 		await tracker.init();
 

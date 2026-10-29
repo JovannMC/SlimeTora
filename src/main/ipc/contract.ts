@@ -1,6 +1,7 @@
 import { Channels, type AppInfo, type Capabilities } from "$shared/ipc/channels";
 import { isLogRecord } from "$shared/log/index";
 import { app, ipcMain, shell } from "electron";
+import { deleteSetting, getSetting, setSetting } from "../store";
 import { registerBackendIpc } from "../backend";
 import { logsDirectory, warn, writeRecord } from "../log";
 
@@ -32,4 +33,7 @@ export function registerIpcHandlers(): void {
 		if (isLogRecord(record)) writeRecord(record);
 		else warn("ipc", "Dropped malformed log record from renderer");
 	});
+	ipcMain.handle(Channels.settingGet, (_event, key: string) => getSetting(key));
+	ipcMain.handle(Channels.settingSet, (_event, key: string, value: unknown) => setSetting(key, value));
+	ipcMain.handle(Channels.settingDelete, (_event, key: string) => deleteSetting(key));
 }

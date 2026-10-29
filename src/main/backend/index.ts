@@ -7,9 +7,8 @@ import { debug, error, info, trace, warn } from "../log";
 import { SlimeVRBridge } from "./slimevr";
 
 let backend: HaritoraX | undefined;
-let slimevr: SlimeVRBridge | undefined;
+export let slimevr = new SlimeVRBridge();
 
-// each connection is loaded on its own, so a missing native binding only disables that link
 async function loadConnections(): Promise<Connection[]> {
 	const connections: Connection[] = [];
 
@@ -60,7 +59,6 @@ async function getBackend(): Promise<HaritoraX> {
 	}
 	backend.on("error", ({ error: err }) => send("error", { error: { message: err.message } }));
 
-	// SlimeVR gets the same stream directly, since it doesn't go through the renderer
 	backend.on("device:connected", (event) => {
 		const device = backend?.getDevice(event.deviceId);
 		if (device) void slimevr?.deviceConnected(device);
@@ -73,7 +71,6 @@ async function getBackend(): Promise<HaritoraX> {
 	return backend;
 }
 
-// every renderer call goes through here, so this is the full list of what the renderer can do
 export const backendCalls: BackendCalls = {
 	discover: async () => (await getBackend()).discover(),
 	stopDiscovery: async () => (await getBackend()).stopDiscovery(),
@@ -89,6 +86,7 @@ export const backendCalls: BackendCalls = {
 	pair: async (endpointId, slot) => (await getBackend()).pair(endpointId, slot),
 	unpair: async (endpointId, slot) => (await getBackend()).unpair(endpointId, slot),
 	sendUserAction: (deviceId, action) => slimevr?.sendUserAction(deviceId, action),
+	configure: (settings) => slimevr?.configure(settings),
 };
 
 export function registerBackendIpc(): void {
@@ -105,6 +103,5 @@ export function registerBackendIpc(): void {
 export async function disposeBackend(): Promise<void> {
 	await slimevr?.dispose();
 	await backend?.dispose();
-	slimevr = undefined;
 	backend = undefined;
 }

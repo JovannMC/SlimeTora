@@ -22,8 +22,10 @@ export type ConnectionSettings = {
 	models: TrackerModel[];
 	modes: string[];
 	ports: string[]; // for serial
-	slimevrIP: string;
-	slimevrPort: number;
+	slimevr: {
+		ip: string;
+		port: number;
+	};
 };
 
 export type TrackerSettings = {
@@ -65,8 +67,10 @@ export const connection = writable<ConnectionSettings>({
 	models: [],
 	modes: [],
 	ports: [],
-	slimevrIP: "255.255.255.255",
-	slimevrPort: 6969,
+	slimevr: {
+		ip: "255.255.255.255",
+		port: 6969,
+	},
 });
 
 export const tracker = writable<TrackerSettings>({

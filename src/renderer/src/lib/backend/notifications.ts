@@ -6,6 +6,7 @@ import { ChargeStatus, SensorAutoCorrection } from "#lib/types/tracker";
 import { browser } from "$app/env";
 import type { UserActionName } from "$shared/backend/contract";
 import type { BatteryInfo, ConnectionKind, TrackerModel as LibraryModel } from "haritorax-interpreter";
+import { Quaternion as BetterQuaternion } from "quaternion";
 import { get } from "svelte/store";
 import { MAG_FROM_LIBRARY, MODE_FROM_LIBRARY, MODEL_FROM_LIBRARY } from "./mapping";
 
@@ -140,11 +141,19 @@ export function attachNotifications(): () => void {
 			if (!fastData && lastImuUpdate[trackerId] && now - lastImuUpdate[trackerId] < 50) return;
 			lastImuUpdate[trackerId] = now;
 
+			const euler = new BetterQuaternion(rotation.w, rotation.x, rotation.y, rotation.z).toEuler();
+
+			const rotationDisplay = {
+				x: euler[0] * (180 / Math.PI),
+				y: euler[1] * (180 / Math.PI),
+				z: euler[2] * (180 / Math.PI),
+			};
+
 			updateTracker(trackerId, (prev) => ({
 				...prev,
 				data: {
 					...prev.data,
-					rotation: [rotation.x, rotation.y, rotation.z],
+					rotation: [rotationDisplay.x, rotationDisplay.y, rotationDisplay.z],
 					acceleration: [acceleration.x, acceleration.y, acceleration.z],
 				},
 			}));

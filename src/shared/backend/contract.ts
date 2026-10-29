@@ -54,6 +54,7 @@ export interface BackendCalls {
 	pair(endpointId: string, slot: string): Promise<void>;
 	unpair(endpointId: string, slot: string): Promise<void>;
 	sendUserAction(deviceId: string, action: UserActionName): void;
+	configure(settings: Record<string, unknown>): void;
 }
 
 export type BackendCallName = keyof BackendCalls;

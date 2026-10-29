@@ -20,7 +20,7 @@ const activeEndpoints = new Set<string>();
 let detachNotifications: (() => void) | undefined;
 
 export async function startInterpreting() {
-	const { modes: rawModes, models: rawModels, ports } = get(settings.connection);
+	const { modes: rawModes, models: rawModels, ports, slimevr } = get(settings.connection);
 	const modes = rawModes as Mode[];
 	const models = rawModels as TrackerModel[];
 
@@ -33,8 +33,11 @@ export async function startInterpreting() {
 	}
 
 	info(["backend"], `Starting interpreting with modes: ${modes}, models: ${models}, ports: ${ports}`);
+	info(["backend"], `Active endpoints: ${Array.from(activeEndpoints).join(", ")}`);
 
 	detachNotifications ??= attachNotifications();
+
+	await invoke("configure", { slimevrIp: slimevr.ip, slimevrPort: slimevr.port });
 
 	const endpoints = await invoke("discover");
 	for (const endpoint of endpoints) {

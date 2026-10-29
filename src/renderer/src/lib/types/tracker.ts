@@ -1,5 +1,4 @@
 export enum TrackerModel {
-	X2 = "X2",
 	Wireless = "Wireless",
 	Wired = "Wired",
 }

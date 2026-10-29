@@ -196,6 +196,9 @@ importers:
       overlayscrollbars:
         specifier: ^2.17.0
         version: 2.17.0
+      quaternion:
+        specifier: ^2.2.0
+        version: 2.2.0
       rand-seed:
         specifier: ^3.0.0
         version: 3.0.0
@@ -2641,6 +2644,9 @@ packages:
   qs@6.5.5:
     resolution: {integrity: sha512-mzR4sElr1bfCaPJe7m8ilJ6ZXdDaGoObcYR0ZHSsktM/Lt21MVHj5De30GQH2eiZ1qGRTO7LCAzQsUeXTNexWQ==}
     engines: {node: '>=0.6'}
+
+  quaternion@2.2.0:
+    resolution: {integrity: sha512-dVX+rdN3RZU/XPPyfayxuyZdWjLlbp2ZRHWAhKFXgfZ91mM/YUTUassEzWJV8VNynq2kCaaHoa4Kkckj2AA4sQ==}
 
   quick-lru@5.1.1:
     resolution: {integrity: sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==}
@@ -5500,6 +5506,8 @@ snapshots:
 
   qs@6.5.5:
     optional: true
+
+  quaternion@2.2.0: {}
 
   quick-lru@5.1.1: {}
 

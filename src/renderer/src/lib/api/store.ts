@@ -5,16 +5,26 @@ export interface Store {
 }
 
 export async function load(path: string, _options?: { autoSave?: boolean }): Promise<Store> {
-	const storageKey = `slimetora:${path}`;
-	const read = (): Record<string, unknown> => JSON.parse(localStorage.getItem(storageKey) ?? "{}");
+	const storeKey = `slimetora:${path}`;
 
 	return {
 		async get<T = unknown>(key: string) {
-			return read()[key] as T | undefined;
+			const data: Record<string, unknown> = ((await window.slimetora!.getSetting(storeKey)) as Record<
+				string,
+				unknown
+			>) ?? {};
+			return data[key] as T | undefined;
 		},
 		async set(key: string, value: unknown) {
-			localStorage.setItem(storageKey, JSON.stringify({ ...read(), [key]: value }));
+			const data: Record<string, unknown> = ((await window.slimetora!.getSetting(storeKey)) as Record<
+				string,
+				unknown
+			>) ?? {};
+			data[key] = value;
+			await window.slimetora!.setSetting(storeKey, data);
 		},
-		async save() {},
+		async save() {
+			// No-op: IPC calls are synchronous from the main process perspective
+		},
 	};
 }

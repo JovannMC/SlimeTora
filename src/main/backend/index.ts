@@ -21,7 +21,7 @@ async function loadConnections(): Promise<Connection[]> {
 
 	try {
 		const { createBleConnection } = await import("haritorax-interpreter/connections/ble");
-		connections.push(createBleConnection());
+		connections.push(createBleConnection({ rssiPollMs: 2_000 }));
 	} catch (err) {
 		error(["backend", "ble"], "BLE connection unavailable:", err);
 	}

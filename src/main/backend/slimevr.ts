@@ -38,8 +38,8 @@ interface EmulatedDevice {
 export class SlimeVRBridge {
 	readonly #devices = new Map<string, EmulatedDevice>();
 
-	ip = "";
-	port = "";
+	ip = "255.255.255.255";
+	port = "6969";
 
 	configure(settings: Record<string, unknown>): void {
 		if (settings.slimevrIp) this.ip = settings.slimevrIp as string;
@@ -60,6 +60,7 @@ export class SlimeVRBridge {
 			this.ip,
 			Number(this.port),
 		);
+		console.log(`ip: ${this.ip}, port: ${Number(this.port)}`);
 		await tracker.init();
 
 		const sensors: EmulatedSensor[] = [];

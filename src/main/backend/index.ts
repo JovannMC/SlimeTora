@@ -51,7 +51,7 @@ async function getBackend(): Promise<HaritoraX> {
 			LOG_FUNCTIONS[entry.level](["haritorax"], ...args);
 		},
 	});
-	slimevr = new SlimeVRBridge();
+	if (!slimevr) slimevr = new SlimeVRBridge();
 
 	for (const event of BACKEND_EVENTS) {
 		if (event === "error") continue;

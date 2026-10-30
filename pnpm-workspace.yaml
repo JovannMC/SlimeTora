@@ -1,5 +1,6 @@
 packages:
     - src/renderer
+
 allowBuilds:
     esbuild: true
     "@serialport/bindings-cpp": true
@@ -8,3 +9,7 @@ allowBuilds:
     usb: true
     usocket: true
     electron-winstaller: true
+
+overrides:
+    # stupid dumb electron builder using usocker which is stupid old causing native compilation errors for noble
+    "usocket@0.3.0>node-gyp": "13.1.0"

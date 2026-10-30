@@ -13,6 +13,7 @@
 	import "#lib/api/icons";
 	import { registerBridge } from "#lib/api/bridge";
 	import { electronBridge } from "#lib/api/electronBridge";
+	import { attachNotifications } from "#lib/backend/notifications";
 
 	registerBridge(electronBridge);
 
@@ -20,15 +21,21 @@
 
 	onNavigate((event) => currentPath.set(event.to?.url.pathname ?? "/"));
 
-	onMount(async () => {
+	onMount(() => {
+		const detachNotifications = attachNotifications();
 		currentPath.set(window.location.pathname);
-		captureUncaughtErrors();
+		const stopCapture = captureUncaughtErrors();
 
-		if (!$initialized) await initTranslations("en");
+		if (!$initialized) void initTranslations("en");
 
-		OverlayScrollbars(document.body, {
+		const scrollbars = OverlayScrollbars(document.body, {
 			scrollbars: { autoHide: "leave", autoHideDelay: 100, visibility: "auto", theme: "os-theme-dark" },
 		});
+		return () => {
+			detachNotifications();
+			stopCapture();
+			scrollbars?.destroy();
+		};
 	});
 </script>
 

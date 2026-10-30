@@ -60,6 +60,7 @@
 		"pairing": {
 			"title": "Pairing management",
 			"subtitle": "Pair and manage your HaritoraX trackers via Bluetooth (LE) or Serial/GX(6/2) connections",
+			"enable_connect": "Enable trackers to connect or pair devices",
 			"bluetooth": {
 				"title": "Bluetooth (LE) Pairing",
 				"paired_devices": "Paired devices",
@@ -69,6 +70,7 @@
 				"unpair_all": "Unpair All",
 				"pair": "Pair",
 				"connect": "Connect",
+				"disconnect": "Disconnect",
 				"unpair": "Unpair",
 				"connected": "Connected",
 				"disconnected": "Disconnected",

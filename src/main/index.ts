@@ -37,7 +37,15 @@ app.on("window-all-closed", () => {
 	if (process.platform !== "darwin") app.quit();
 });
 
-app.on("will-quit", () => {
-	void disposeBackend();
-	closeLogFile();
+let quitting = false;
+app.on("before-quit", (event) => {
+	if (quitting) return;
+	event.preventDefault();
+	quitting = true;
+	void disposeBackend()
+		.catch((err) => error("main", "Failed to shut down backend:", err))
+		.finally(() => {
+			closeLogFile();
+			app.quit();
+		});
 });

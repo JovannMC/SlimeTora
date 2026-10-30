@@ -41,7 +41,7 @@ export interface TrackerData {
 export type TrackerSave = Omit<Tracker, "data">;
 
 export const connectedTrackers = writable<Tracker[]>([]);
-export const knownTrackers = writable<Tracker[]>([]);
+export const knownTrackers = writable<TrackerSave[]>([]);
 
 export const trackerOpenStates = writable<Record<string, boolean>>({});
 
@@ -65,23 +65,26 @@ export const trackersLoaded: Promise<void> = (async () => {
 	}
 })();
 
-export async function saveTrackerConfig(tracker: TrackerSave) {
-	if (!trackersConfig) {
-		error(["store"], "Trackers config not loaded yet.");
-		return;
-	}
+let trackerSaveQueue = Promise.resolve();
 
-	try {
-		const settings = (await trackersConfig.get("trackers")) || {};
-		await trackersConfig.set("trackers", {
-			...settings,
-			[tracker.id]: tracker,
+export function saveTrackerConfig(tracker: TrackerSave): Promise<void> {
+	trackerSaveQueue = trackerSaveQueue
+		.then(async () => {
+			await trackersLoaded;
+			if (!trackersConfig) return;
+			knownTrackers.update((trackers) => [...trackers.filter((saved) => saved.id !== tracker.id), tracker]);
+			const settings = (await trackersConfig.get("trackers")) || {};
+			await trackersConfig.set("trackers", {
+				...settings,
+				[tracker.id]: tracker,
+			});
+			await trackersConfig.save();
+			info(["store"], `Tracker ${tracker.id} saved to trackers.json`);
+		})
+		.catch((e) => {
+			error(["store"], `Failed to save tracker ${tracker.id} to trackers.json: ${e}`);
 		});
-		await trackersConfig.save();
-		info(["store"], `Tracker ${tracker.id} saved to trackers.json`);
-	} catch (e) {
-		error(["store"], `Failed to save tracker ${tracker.id} to trackers.json: ${e}`);
-	}
+	return trackerSaveQueue;
 }
 
 export async function getTrackerConfig(id: string): Promise<TrackerSave | undefined> {
@@ -106,9 +109,9 @@ export const isOn: Writable<boolean | null> = writable(null);
 isOn.subscribe(async (value) => {
 	info(["store"], `isOn: ${value}`);
 	if (value) {
-		startInterpreting();
+		void startInterpreting().catch((err) => error(["backend"], `Failed to start tracking: ${err}`));
 	} else if (value === false) {
-		stopInterpreting();
+		void stopInterpreting().catch((err) => error(["backend"], `Failed to stop tracking: ${err}`));
 	}
 });
 

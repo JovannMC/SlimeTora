@@ -1,4 +1,12 @@
-import type { BodyPart, DeviceSnapshot, EndpointDescriptor, Events, TrackerSettings } from "haritorax-interpreter";
+import type {
+	BodyPart,
+	ConnectionKind,
+	DeviceSnapshot,
+	EndpointDescriptor,
+	Events,
+	TrackerModel,
+	TrackerSettings,
+} from "haritorax-interpreter";
 
 // events the renderer receives; `log` goes to the log file instead, and `error` is sent as a plain message
 export type BackendEventName = Exclude<keyof Events, "log">;
@@ -38,8 +46,21 @@ export const BACKEND_EVENTS = [
 
 export type UserActionName = "ResetYaw" | "Reset" | "ResetMounting" | "PauseTracking";
 
+export interface SessionOptions {
+	modes: ConnectionKind[];
+	models: TrackerModel[];
+	ports: string[];
+	bleSerials: string[];
+	slimevr: { ip: string; port: number };
+}
+
 // calls the renderer can make into the main process, by name
 export interface BackendCalls {
+	startSession(options: SessionOptions): Promise<void>;
+	stopSession(): Promise<void>;
+	listSerialPorts(): Promise<string[]>;
+	scanBlePreview(): Promise<EndpointDescriptor[]>;
+	stopBlePreview(): Promise<void>;
 	discover(): Promise<EndpointDescriptor[]>;
 	stopDiscovery(): Promise<void>;
 	getEndpoints(): EndpointDescriptor[];

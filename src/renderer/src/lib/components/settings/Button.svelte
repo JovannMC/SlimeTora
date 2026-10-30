@@ -18,6 +18,7 @@
 		background?: keyof typeof backgrounds;
 		type?: "main" | "onboarding";
 		onClick: () => void;
+		disabled?: boolean;
 	};
 
 	let {
@@ -28,12 +29,15 @@
 		background = "quaternary",
 		type = "main",
 		onClick,
+		disabled = false,
 	}: Props = $props();
 </script>
 
 <button
 	class="flex w-full items-center gap-2 rounded-md px-4 py-2 transition-colors {backgrounds[background]} {className}"
 	class:button={type === "onboarding"}
+	class:opacity-50={disabled}
+	{disabled}
 	onclick={onClick}
 >
 	{#if icon && iconPosition === "left"}

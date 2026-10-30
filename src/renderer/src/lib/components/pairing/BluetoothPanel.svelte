@@ -8,6 +8,7 @@
 		pairedDevices,
 		discoveredDevices,
 		isScanning,
+		enabled,
 		onToggleScan,
 		onPair,
 		onConnect,
@@ -17,6 +18,7 @@
 		pairedDevices: PairedDevice[];
 		discoveredDevices: TrackerDevice[];
 		isScanning: boolean;
+		enabled: boolean;
 		onToggleScan: () => void;
 		onPair: (endpointId: string, name: string) => void;
 		onConnect: (id: string) => void;
@@ -57,6 +59,7 @@
 							label={$t("home.pairing.bluetooth.unpair_all")}
 							icon="mdi:link-off"
 							background="danger"
+							disabled={!enabled}
 							onClick={onUnpairAll}
 						/>
 					</div>
@@ -85,18 +88,19 @@
 								</span>
 							</div>
 							<div class="flex items-center justify-between">
-								<div class="truncate font-mono text-xs">{device.endpointId ?? device.id}</div>
+								<div class="truncate font-mono text-xs">{device.id}</div>
 								{#if device.trackerType}
 									<span class="shrink-0 rounded bg-blue-500 px-1 py-0.5 text-xs text-white">
 										{modelLabel(device.trackerType)}
 									</span>
 								{/if}
 							</div>
-							{#if device.endpointId}
+							{#if device.connected && device.endpointId}
 								<Button
-									label={$t("home.pairing.bluetooth.unpair")}
+									label={$t("home.pairing.bluetooth.disconnect")}
 									icon="mdi:link-off"
 									background="danger"
+									disabled={!enabled}
 									className="text-xs h-7 px-2"
 									onClick={() => onUnpair(device.endpointId!)}
 								/>
@@ -105,6 +109,7 @@
 									label={$t("home.pairing.bluetooth.connect")}
 									icon="mdi:link-variant"
 									background="primary"
+									disabled={!enabled}
 									className="text-xs h-7 px-2"
 									onClick={() => onConnect(device.id)}
 								/>
@@ -160,6 +165,7 @@
 								label={$t("home.pairing.bluetooth.pair")}
 								icon="mdi:link"
 								background="primary"
+								disabled={!enabled}
 								className="text-xs h-7 px-2"
 								onClick={() => onPair(device.endpointId, device.deviceName)}
 							/>

@@ -5,9 +5,8 @@
 	import { connection } from "#lib/store/settings";
 	import { ConnectionMode } from "#lib/types/connection";
 	import { TrackerModel } from "#lib/types/tracker";
-	import { refreshEndpoints } from "#lib/backend/endpoints";
-	import { knownEndpoints } from "#lib/backend/endpoints";
-	import { error, info, warn } from "#lib/log/index";
+	import { invoke } from "#lib/api/backend";
+	import { info, warn } from "#lib/log/index";
 	import { t } from "#lib/lang/index";
 	import Button from "#lib/components/settings/Button.svelte";
 	import Checkbox from "#lib/components/settings/Checkbox.svelte";
@@ -26,26 +25,18 @@
 	];
 
 	let availablePorts: string[] = $state([]);
-	$effect(() => {
-		availablePorts = $knownEndpoints
-			.filter((endpoint) => endpoint.connection === "serial")
-			.map((endpoint) => endpoint.id)
-			.sort();
-	});
 
 	async function refreshPorts() {
-		const endpoints = await refreshEndpoints();
-		availablePorts = endpoints
-			.filter((endpoint) => endpoint.connection === "serial")
-			.map((endpoint) => endpoint.id)
-			.sort();
-		info(["settings", "connection"], `Found serial ports: ${availablePorts}`);
+		try {
+			availablePorts = await invoke("listSerialPorts");
+			info(["settings", "connection"], `Found serial ports: ${availablePorts}`);
+		} catch (err) {
+			warn(["settings", "connection"], `Error refreshing ports: ${err}`);
+		}
 	}
 
 	onMount(() => {
-		if ($knownEndpoints.length === 0) {
-			void refreshEndpoints().catch((err) => warn(["settings", "connection"], `Error refreshing ports: ${err}`));
-		}
+		void refreshPorts();
 	});
 
 	// keeps the order of `order`, so the stored lists are always in a stable order

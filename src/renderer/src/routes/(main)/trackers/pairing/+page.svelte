@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
+	import { SvelteMap, SvelteSet } from "svelte/reactivity";
 	import { invoke, listen } from "#lib/api/backend";
 	import { error, info } from "#lib/log/index";
 	import { t } from "#lib/lang/index";
@@ -9,9 +10,8 @@
 	import type { PortSlot } from "#lib/components/pairing/types";
 	import { ConnectionMode } from "#lib/types/connection";
 	import type { TrackerModel } from "#lib/types/tracker";
-	import { knownTrackers } from "#lib/store/index";
+	import { isOn, knownTrackers } from "#lib/store/index";
 	import type { EndpointDescriptor } from "haritorax-interpreter";
-	import { get } from "svelte/store";
 	import { serialFromBleName } from "#lib/util/index.ts";
 
 	// TODO: pairing serial trackers is a placeholder for the dongle slot status, it's not checked against the dongle yet
@@ -20,12 +20,12 @@
 	let availablePorts: string[] = $state([]);
 	let portTrackers: Record<string, PortSlot[]> = $state({});
 
-	const knownBle = $state(new Map<string, { name: string; model?: TrackerModel; rssi?: number }>());
-	const connectedBle = $state(new Set<string>());
+	const knownBle = new SvelteMap<string, { name: string; model?: TrackerModel; rssi?: number }>();
+	const connectedBle = new SvelteSet<string>();
 	const endpointModels: Record<string, TrackerModel | undefined> = $state({});
-	const savedBle = $state(
+	const savedBle = $derived(
 		new Map(
-			get(knownTrackers)
+			$knownTrackers
 				.filter((tracker) => tracker.connection_mode === ConnectionMode.BLE)
 				.map((tracker) => {
 					const serial = tracker.id.split(":")[0]!;
@@ -36,13 +36,14 @@
 
 	const pairedDevices = $derived(
 		[...savedBle].map(([serial, saved]) => {
-			const endpointId = [...knownBle.entries()]
-				.find(([id, device]) => serialFromBleName(device.name) === serial || id === serial)?.[0];
+			const endpointId = [...knownBle.entries()].find(
+				([id, device]) => serialFromBleName(device.name) === serial || id === serial,
+			)?.[0];
 			const device = endpointId ? knownBle.get(endpointId) : undefined;
 			return {
 				id: saved.id,
 				endpointId,
-				deviceName: device?.name ?? saved.name,
+				deviceName: saved.name,
 				connected: Boolean(endpointId && connectedBle.has(endpointId)),
 				trackerType: device?.model ?? saved.trackerType,
 			};
@@ -71,7 +72,9 @@
 	});
 
 	let unlisteners: (() => void)[] = [];
-	let scanStopped = false;
+	let refreshRequest = 0;
+	let destroyed = false;
+	let previewScanning = false;
 
 	function upsertBle(endpoint: EndpointDescriptor) {
 		knownBle.set(endpoint.id, {
@@ -82,15 +85,19 @@
 	}
 
 	function upsertPorts(endpoints: EndpointDescriptor[]) {
-		availablePorts = endpoints.filter((e) => e.connection === "serial").map((e) => e.id).sort();
+		availablePorts = endpoints
+			.filter((e) => e.connection === "serial")
+			.map((e) => e.id)
+			.sort();
 	}
 
-	async function refresh() {
+	async function refresh(preview = false) {
+		const request = ++refreshRequest;
 		const scanning = isScanning;
 		try {
-			const endpoints = await invoke("discover");
+			const endpoints = await invoke(preview ? "scanBlePreview" : "discover");
 
-			if (scanning && scanStopped) return;
+			if (destroyed || request !== refreshRequest) return;
 
 			const foundBle = new Set(endpoints.filter((e) => e.connection === "ble").map((e) => e.id));
 			// keep connected trackers (they don't advertise), drop stale unconnected ones
@@ -100,21 +107,25 @@
 			for (const endpoint of endpoints) {
 				if (endpoint.connection === "ble") upsertBle(endpoint);
 			}
-			upsertPorts(endpoints);
+			if (!preview) upsertPorts(endpoints);
 
 			if (scanning) {
-				info(["trackers", "pairing"], `BLE scanning completed. Found ${discoveredDevices.length} HaritoraX devices`);
+				info(
+					["trackers", "pairing"],
+					`BLE scanning completed. Found ${discoveredDevices.length} HaritoraX devices`,
+				);
 			}
 		} catch (err) {
 			error(["trackers", "pairing"], `Failed to refresh endpoints: ${err}`);
 		} finally {
-			if (scanning) isScanning = false;
+			if (scanning && request === refreshRequest) isScanning = false;
 		}
 	}
 
 	async function syncState() {
 		try {
 			const [endpoints, devices] = await Promise.all([invoke("getEndpoints"), invoke("getDevices")]);
+			if (destroyed) return;
 			for (const endpoint of endpoints) {
 				if (endpoint.connection === "ble") upsertBle(endpoint);
 			}
@@ -133,7 +144,7 @@
 			error(["trackers", "pairing"], `Failed to sync with backend: ${err}`);
 		}
 
-		void refresh();
+		if (!destroyed && $isOn) void refresh();
 	}
 
 	onMount(() => {
@@ -161,6 +172,8 @@
 	});
 
 	onDestroy(() => {
+		destroyed = true;
+		refreshRequest++;
 		for (const unlisten of unlisteners) unlisten();
 		if (isScanning) void stopScan();
 	});
@@ -169,17 +182,17 @@
 		if (isScanning) return;
 
 		isScanning = true;
-		scanStopped = false;
+		previewScanning = !$isOn;
 		info(["trackers", "pairing"], "Started BLE scanning");
-		await refresh();
+		await refresh(previewScanning);
 	}
 
 	async function stopScan() {
 		if (!isScanning) return;
 
 		try {
-			scanStopped = true;
-			await invoke("stopDiscovery");
+			refreshRequest++;
+			await invoke(previewScanning ? "stopBlePreview" : "stopDiscovery");
 		} catch (err) {
 			error(["trackers", "pairing"], `Failed to stop BLE scanning: ${err}`);
 		} finally {
@@ -189,6 +202,7 @@
 	}
 
 	async function connectSaved(id: string) {
+		if (!$isOn) return;
 		const serial = id.split(":")[0]!;
 		const saved = savedBle.get(serial);
 		const name = saved?.name ?? id;
@@ -196,6 +210,7 @@
 		// the tracker must be discoverable before we can connect, scan for it first
 		try {
 			const endpoints = await invoke("discover");
+			if (!$isOn || destroyed) return;
 			const endpoint = endpoints.find(
 				(e) => e.connection === "ble" && serialFromBleName(e.displayName) === serial,
 			);
@@ -212,6 +227,7 @@
 	}
 
 	async function pair(endpointId: string, name: string) {
+		if (!$isOn) return;
 		knownBle.set(endpointId, { name, model: endpointModels[endpointId] });
 
 		try {
@@ -233,16 +249,15 @@
 
 	async function unpairAll() {
 		for (const device of pairedDevices) {
-			// a device that is not visible right now has nothing to disconnect
-			if (!device.endpointId) continue;
+			if (!device.connected || !device.endpointId) continue;
 
 			try {
 				await invoke("disconnect", device.endpointId);
 			} catch (err) {
-				error(["trackers", "pairing"], `Failed to unpair ${device.endpointId}: ${err}`);
+				error(["trackers", "pairing"], `Failed to disconnect ${device.endpointId}: ${err}`);
 			}
 		}
-		info(["trackers", "pairing"], "Unpaired all devices");
+		info(["trackers", "pairing"], "Disconnected all devices");
 	}
 
 	function updateSlot(port: string, portId: string, change: Partial<PortSlot>) {
@@ -256,6 +271,7 @@
 	}
 
 	async function togglePair(port: string, portId: string) {
+		if (!$isOn) return;
 		const slot = portTrackers[port]?.find((s) => s.portId === portId);
 		if (!slot) return;
 
@@ -280,6 +296,7 @@
 	}
 
 	async function setChannel(port: string, _portId: string, channel: number) {
+		if (!$isOn) return;
 		try {
 			await invoke("setChannel", port, channel);
 		} catch (err) {
@@ -292,12 +309,16 @@
 	<div class="text-center">
 		<h1 class="mb-2 text-3xl font-bold">{$t("home.pairing.title")}</h1>
 		<p>{$t("home.pairing.subtitle")}</p>
+		{#if !$isOn}
+			<p class="mt-2 text-sm">{$t("home.pairing.enable_connect")}</p>
+		{/if}
 	</div>
 
 	<BluetoothPanel
 		{pairedDevices}
 		{discoveredDevices}
 		{isScanning}
+		enabled={$isOn === true}
 		onToggleScan={() => (isScanning ? stopScan() : startScan())}
 		onPair={pair}
 		onConnect={connectSaved}
@@ -305,5 +326,11 @@
 		onUnpairAll={unpairAll}
 	/>
 
-	<SerialPanel ports={availablePorts} {portTrackers} onTogglePair={togglePair} onChannel={setChannel} />
+	<SerialPanel
+		ports={availablePorts}
+		{portTrackers}
+		enabled={$isOn === true}
+		onTogglePair={togglePair}
+		onChannel={setChannel}
+	/>
 </div>

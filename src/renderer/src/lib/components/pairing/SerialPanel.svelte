@@ -8,11 +8,13 @@
 	let {
 		ports,
 		portTrackers,
+		enabled,
 		onTogglePair,
 		onChannel,
 	}: {
 		ports: string[];
 		portTrackers: Record<string, PortSlot[]>;
+		enabled: boolean;
 		onTogglePair: (port: string, portId: string) => void;
 		onChannel: (port: string, portId: string, channel: number) => void;
 	} = $props();
@@ -72,7 +74,10 @@
 										{slot.status === "paired" ? slot.trackerName : $t("home.pairing.serial.none")}
 									</span>
 								</div>
-								<div class="flex flex-row items-center justify-center gap-2">
+								<fieldset
+									disabled={!enabled}
+									class="flex flex-row items-center justify-center gap-2 disabled:opacity-50"
+								>
 									<Select
 										options={CHANNELS.map((num) => ({
 											value: String(num),
@@ -91,7 +96,7 @@
 										className="w-full text-xs h-8"
 										onClick={() => onTogglePair(port, slot.portId)}
 									/>
-								</div>
+								</fieldset>
 							</div>
 						{/each}
 					</div>

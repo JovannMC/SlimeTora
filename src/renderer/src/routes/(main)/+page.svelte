@@ -23,11 +23,6 @@
 		};
 	});
 
-	// turning off clears the tracker list (null means the app just started, so leave it alone)
-	$effect(() => {
-		if ($isOn === false) connectedTrackers.set([]);
-	});
-
 	// spread trackers over two columns, alternating
 	const leftColumn = $derived($connectedTrackers.filter((_, i) => i % 2 === 0));
 	const rightColumn = $derived($connectedTrackers.filter((_, i) => i % 2 === 1));

@@ -27,8 +27,22 @@
 	let gravityLine: THREE.Line;
 	let animationFrameId: number;
 	let lastFrameTime = 0;
+	let destroyed = false;
 
-	let frameInterval = $derived(1000 / fps);
+	const frameInterval = $derived(1000 / fps);
+
+	function disposeObject(object: THREE.Object3D) {
+		object.traverse((child) => {
+			if (!(child as THREE.Mesh).isMesh) return;
+			const mesh = child as THREE.Mesh;
+			const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+			for (const material of materials) {
+				if (material instanceof THREE.MeshStandardMaterial) material.map?.dispose();
+				material.dispose();
+			}
+			mesh.geometry?.dispose();
+		});
+	}
 
 	function initThreeJS() {
 		// Scene setup
@@ -62,12 +76,22 @@
 		fbxLoader.load(
 			"/tracker.fbx",
 			(object) => {
+				if (destroyed) {
+					disposeObject(object);
+					return;
+				}
 				object.scale.set(0.01, 0.01, 0.01);
+				trackerModel = object;
+				scene.add(object);
 
 				const textureLoader = new THREE.TextureLoader();
 				textureLoader.load(
 					"/tracker-texture.png",
 					(texture) => {
+						if (destroyed) {
+							texture.dispose();
+							return;
+						}
 						object.traverse((child) => {
 							if ((child as THREE.Mesh).isMesh) {
 								const material = new THREE.MeshStandardMaterial({
@@ -81,21 +105,16 @@
 					},
 					undefined,
 					(err) => {
-						error(["trackers", "visualization"], "Error loading tracker texture:", err);
+						if (!destroyed) error(["trackers", "visualization"], "Error loading tracker texture:", err);
 					},
 				);
-
-				trackerModel = object;
-				scene.add(object);
 
 				// Create initial gravity line
 				createGravityLine(new THREE.Vector3(acceleration[0], acceleration[1], acceleration[2]));
 			},
-			(xhr) => {
-				// Loading progress
-			},
+			undefined,
 			(err) => {
-				error(["trackers", "visualization"], "Error loading tracker model:", err);
+				if (!destroyed) error(["trackers", "visualization"], "Error loading tracker model:", err);
 			},
 		);
 
@@ -149,6 +168,7 @@
 	}
 
 	function animate(currentTime = 0) {
+		if (destroyed) return;
 		animationFrameId = requestAnimationFrame(animate);
 
 		if (currentTime - lastFrameTime < frameInterval) {
@@ -206,13 +226,6 @@
 		}
 	}
 
-	$effect(() => {
-		// Update FPS when visualizationFPS changes
-		if (fps !== frameInterval) {
-			frameInterval = 1000 / fps;
-		}
-	});
-
 	onMount(() => {
 		if (container) {
 			initThreeJS();
@@ -221,6 +234,7 @@
 	});
 
 	onDestroy(() => {
+		destroyed = true;
 		window.removeEventListener("resize", handleResize);
 		if (animationFrameId) {
 			cancelAnimationFrame(animationFrameId);
@@ -228,21 +242,13 @@
 
 		// Clean up Three.js resources
 		if (renderer) {
+			composer?.dispose();
 			renderer.dispose();
 		}
 
 		if (trackerModel) {
 			scene.remove(trackerModel);
-			trackerModel.traverse((child) => {
-				if ((child as THREE.Mesh).isMesh) {
-					if ((child as THREE.Mesh).material) {
-						((child as THREE.Mesh).material as THREE.Material).dispose();
-					}
-					if ((child as THREE.Mesh).geometry) {
-						(child as THREE.Mesh).geometry.dispose();
-					}
-				}
-			});
+			disposeObject(trackerModel);
 		}
 
 		if (gravityLine) {

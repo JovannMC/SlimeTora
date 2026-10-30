@@ -25,15 +25,12 @@
             name = "slimetora-dev";
 
             targetPkgs =
-              fhsPkgs:
-              (with fhsPkgs; [
+              p: with p; [
                 nodejs_24
                 pnpm
 
                 python
-
                 stdenv.cc
-                stdenv.cc.cc.lib
                 gnumake
                 pkg-config
 
@@ -41,38 +38,23 @@
                 udev
                 libusb1
 
-                alsa-lib
-                at-spi2-atk
-                cairo
-                cups
-                dbus
-                expat
-                gdk-pixbuf
                 glib
                 gtk3
-                gtk4
-                nspr
-                nss
+                cairo
                 pango
-                pciutils
-                systemd
-                libnotify
-                pipewire
-                libsecret
-                libpulseaudio
-                speechd-minimal
-                libdrm
+                expat
+                nss
+                nspr
+                dbus
+                cups
+                alsa-lib
+                at-spi2-atk
                 libgbm
                 libxkbcommon
-                libxshmfence
-                libxkbfile
-                libGL
-                vulkan-loader
-                mesa
 
-                gsettings-desktop-schemas
-                hicolor-icon-theme
-                xdg-utils
+                libGL
+                libglvnd
+                libdrm
 
                 libX11
                 libxcb
@@ -81,7 +63,9 @@
                 libXext
                 libXfixes
                 libXrandr
-              ]);
+
+                xdg-utils
+              ];
 
             profile = ''
               export PYTHON="${python}/bin/python3"

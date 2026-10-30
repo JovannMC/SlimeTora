@@ -6,6 +6,9 @@
 	import Card from "#lib/components/trackers/Card.svelte";
 	import { t } from "#lib/lang/index";
 	import { isOn, connectedTrackers, trackerOpenStates } from "#lib/store/index";
+	import { sessionState } from "#lib/backend/state";
+	import { stopInterpreting } from "#lib/backend/index";
+	import { error } from "#lib/log/index";
 	import { program } from "#lib/store/settings";
 	import { onMount } from "svelte";
 
@@ -26,6 +29,25 @@
 	// spread trackers over two columns, alternating
 	const leftColumn = $derived($connectedTrackers.filter((_, i) => i % 2 === 0));
 	const rightColumn = $derived($connectedTrackers.filter((_, i) => i % 2 === 1));
+	const statusLabel = $derived(
+		$sessionState.status === "starting"
+			? $t("home.starting")
+			: $sessionState.status === "stopping"
+				? $t("home.stopping")
+				: $sessionState.status === "error"
+					? $t("home.session_error")
+					: $sessionState.status === "on"
+						? $t("home.connected")
+						: $t("home.disconnected"),
+	);
+
+	function toggleTracking() {
+		if ($sessionState.status === "error" && !$sessionState.requestedEnabled) {
+			void stopInterpreting().catch((err) => error(["backend"], `Failed to stop tracking: ${err}`));
+			return;
+		}
+		isOn.update((on) => !on);
+	}
 
 	// expands every card, or collapses them all if any are open
 	function toggleAll() {
@@ -40,23 +62,28 @@
 
 <div class="flex flex-col gap-6 p-6">
 	<div class="relative isolate -mx-6 -mt-6 flex items-center gap-8 px-10 py-10">
-		<div class="status-bg" class:off={!$isOn}></div>
+		<div class="status-bg" class:off={$sessionState.status !== "on"}></div>
 		<button
 			class="power-button hoverable"
-			class:connected={$isOn === true}
-			aria-label={$isOn ? $t("home.connected") : $t("home.disconnected")}
-			onclick={() => isOn.update((on) => !on)}
+			class:connected={$sessionState.status === "on"}
+			aria-label={$sessionState.status === "error" && !$sessionState.requestedEnabled
+				? $t("home.retry_stop")
+				: statusLabel}
+			onclick={toggleTracking}
 		>
 			<Icon class="text-white" icon="ri:shut-down-line" width={40} />
 		</button>
 
 		<div class="flex flex-col gap-1">
 			<p class="font-heading text-2xl">
-				{$isOn ? $t("home.connected") : $t("home.disconnected")}
+				{statusLabel}
 			</p>
 			<p class="font-heading text-lg text-text-alt">
 				{$t("home.count", { value: $connectedTrackers.length })}
 			</p>
+			{#if $sessionState.error}
+				<p class="text-sm text-red-300" role="alert">{$sessionState.error}</p>
+			{/if}
 		</div>
 	</div>
 

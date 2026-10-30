@@ -19,6 +19,15 @@
 		}
 	}
 
+	async function openDataFolder() {
+		try {
+			if (!isBridgeAvailable()) throw new Error("the Electron main process is not available");
+			await getBridge().openDataFolder();
+		} catch (err) {
+			error(["settings", "advanced"], "Failed to open data folder:", err);
+		}
+	}
+
 	function setLoggingMode(value: string) {
 		advanced.update((s) => ({ ...s, loggingMode: value as LoggingMode }));
 	}
@@ -32,37 +41,6 @@
 
 	<div class="grid grid-cols-1 gap-8 md:grid-cols-2">
 		<div class="flex flex-col gap-4">
-			<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
-				{$t("settings.advanced.serial_settings.name")}
-				<Tooltip
-					content={$t("settings.advanced.serial_settings.tooltip")}
-					icon="ri:information-line"
-					position="up"
-				/>
-			</h3>
-			<div class="flex flex-col gap-3 pl-1">
-				<Checkbox
-					label={$t("settings.advanced.bypass_serial_limit.name")}
-					bind:checked={$advanced.bypassSerialLimit}
-					tooltip={$t("settings.advanced.bypass_serial_limit.tooltip")}
-					tooltipPosition="up"
-					tooltipWidth="250px"
-				/>
-			</div>
-
-			<Button
-				label={$t("home.onboarding")}
-				icon="ri:question-answer-line"
-				background="quaternary"
-				onClick={() => goto("/onboarding")}
-			/>
-		</div>
-
-		<div class="flex flex-col gap-4">
-			<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
-				{$t("settings.advanced.logging.name")}
-				<Tooltip content={$t("settings.advanced.logging.tooltip")} icon="ri:information-line" position="up" />
-			</h3>
 			<div class="flex flex-col gap-3 pl-1">
 				<Checkbox
 					label={$t("settings.advanced.write_logs.name")}
@@ -84,15 +62,29 @@
 					tooltipPosition="up"
 					tooltipWidth="250px"
 				/>
-				<div class="mt-2">
-					<Button
-						label={$t("settings.advanced.open_logs_folder.name")}
-						icon="ri:folder-open-line"
-						background="quaternary"
-						onClick={openLogsFolder}
-					/>
-				</div>
 			</div>
+		</div>
+		<div class="flex flex-col gap-4">
+			<Button
+				label={$t("settings.advanced.open_data.name")}
+				icon="ri:folder-open-line"
+				background="quaternary"
+				onClick={openDataFolder}
+			/>
+
+			<Button
+				label={$t("settings.advanced.open_logs.name")}
+				icon="ri:file-list-2-line"
+				background="quaternary"
+				onClick={openLogsFolder}
+			/>
+
+			<Button
+				label={$t("home.onboarding")}
+				icon="ri:question-answer-line"
+				background="quaternary"
+				onClick={() => goto("/onboarding")}
+			/>
 		</div>
 	</div>
 </div>

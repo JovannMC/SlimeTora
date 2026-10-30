@@ -6,6 +6,7 @@ const bridge: PlatformBridge = {
 	getCapabilities: () => ipcRenderer.invoke(Channels.capabilities),
 	log: (record) => ipcRenderer.send(Channels.log, record),
 	openLogsFolder: () => ipcRenderer.invoke(Channels.openLogsFolder),
+	openDataFolder: () => ipcRenderer.invoke(Channels.openDataFolder),
 	getSetting: (key) => ipcRenderer.invoke(Channels.settingGet, key),
 	setSetting: (key, value) => ipcRenderer.invoke(Channels.settingSet, key, value),
 	deleteSetting: (key) => ipcRenderer.invoke(Channels.settingDelete, key),

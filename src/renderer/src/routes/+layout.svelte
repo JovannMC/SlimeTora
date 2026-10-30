@@ -14,6 +14,8 @@
 	import { registerBridge } from "#lib/api/bridge";
 	import { electronBridge } from "#lib/api/electronBridge";
 	import { attachNotifications } from "#lib/backend/notifications";
+	import { attachBackendState } from "#lib/backend/state";
+	import { attachBleTargets } from "#lib/backend/ble-targets";
 
 	registerBridge(electronBridge);
 
@@ -22,6 +24,8 @@
 	onNavigate((event) => currentPath.set(event.to?.url.pathname ?? "/"));
 
 	onMount(() => {
+		const detachBackendState = attachBackendState();
+		const detachBleTargets = attachBleTargets();
 		const detachNotifications = attachNotifications();
 		currentPath.set(window.location.pathname);
 		const stopCapture = captureUncaughtErrors();
@@ -32,6 +36,8 @@
 			scrollbars: { autoHide: "leave", autoHideDelay: 100, visibility: "auto", theme: "os-theme-dark" },
 		});
 		return () => {
+			detachBackendState();
+			detachBleTargets();
 			detachNotifications();
 			stopCapture();
 			scrollbars?.destroy();

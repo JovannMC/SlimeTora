@@ -1,16 +1,17 @@
 import { invoke, listen } from "#lib/api/backend";
 import { error, info } from "#lib/log/index";
+import { confirmBleDevice } from "#lib/store/ble-devices";
 import { connectedTrackers, knownTrackers, saveTrackerConfig, type BatteryData, type Tracker } from "#lib/store/index";
 import { program } from "#lib/store/settings";
 import { ChargeStatus, SensorAutoCorrection } from "#lib/types/tracker";
+import { serialFromBleName } from "#lib/util/index";
 import { browser } from "$app/env";
 import type { UserActionName } from "$shared/backend/contract";
 import type { BatteryInfo, DeviceSnapshot, TrackerSnapshot } from "haritorax-interpreter";
 import { Quaternion as BetterQuaternion } from "quaternion";
 import { get } from "svelte/store";
 import { MAG_FROM_LIBRARY, MODE_FROM_LIBRARY, MODEL_FROM_LIBRARY } from "./mapping";
-
-const devices = new Map<string, Pick<DeviceSnapshot, "connection" | "model">>();
+import { backendSnapshot } from "./state";
 
 function updateTracker(trackerId: string, change: (tracker: Tracker) => Tracker) {
 	connectedTrackers.update((prev) => {
@@ -63,23 +64,18 @@ function onButton(deviceId: string, trackerId: string | undefined) {
 	}, BUTTON_PRESS_WINDOW_MS);
 }
 
-function onTrackerConnected(
-	payload: { trackerId: string; deviceId: string; bodyPart: string },
-	snapshot?: TrackerSnapshot,
-) {
+function onTrackerConnected(device: DeviceSnapshot, snapshot: TrackerSnapshot) {
 	if (!browser) return;
 
-	const device = devices.get(payload.deviceId);
-	if (!device) return;
-	const current = get(connectedTrackers).find((tracker) => tracker.id === payload.trackerId);
-	const saved = get(knownTrackers).find((tracker) => tracker.id === payload.trackerId);
+	const current = get(connectedTrackers).find((tracker) => tracker.id === snapshot.trackerId);
+	const saved = get(knownTrackers).find((tracker) => tracker.id === snapshot.trackerId);
 
 	const tracker: Tracker = {
-		id: payload.trackerId,
-		name: current?.name ?? saved?.name ?? payload.trackerId,
+		id: snapshot.trackerId,
+		name: current?.name ?? saved?.name ?? snapshot.trackerId,
 		connection_mode: MODE_FROM_LIBRARY[device.connection],
 		tracker_type: MODEL_FROM_LIBRARY[device.model],
-		bodyPart: payload.bodyPart,
+		bodyPart: snapshot.bodyPart,
 		settings: current?.settings ??
 			saved?.settings ?? {
 				fps: 50,
@@ -89,12 +85,12 @@ function onTrackerConnected(
 			},
 		data: {
 			...(current?.data ?? { rotation: [0, 0, 0], acceleration: [0, 0, 0] }),
-			...(snapshot?.mag === undefined ? {} : { magnetometer: MAG_FROM_LIBRARY[snapshot.mag] }),
-			...(snapshot?.rssi === undefined ? {} : { rssi: snapshot.rssi }),
+			...(snapshot.mag === undefined ? {} : { magnetometer: MAG_FROM_LIBRARY[snapshot.mag] }),
+			...(snapshot.rssi === undefined ? {} : { rssi: snapshot.rssi }),
 		},
 	};
 
-	if (!current) info(["backend", "notifications"], `Tracker connected: ${payload.trackerId} (${payload.bodyPart})`);
+	if (!current) info(["backend", "notifications"], `Tracker connected: ${snapshot.trackerId} (${snapshot.bodyPart})`);
 	const config = {
 		id: tracker.id,
 		name: tracker.name,
@@ -121,15 +117,12 @@ function onTrackerConnected(
 }
 
 function syncDevices(snapshots: DeviceSnapshot[]) {
-	devices.clear();
-	for (const device of snapshots) devices.set(device.deviceId, device);
-
 	const connectedIds = new Set<string>();
 	for (const device of snapshots) {
 		for (const tracker of device.trackers) {
 			if (!tracker.connected) continue;
 			connectedIds.add(tracker.trackerId);
-			onTrackerConnected(tracker, tracker);
+			onTrackerConnected(device, tracker);
 		}
 		if (device.battery) onBattery(device.battery);
 	}
@@ -153,31 +146,18 @@ function onBattery(battery: BatteryInfo) {
 
 export function attachNotifications(): () => void {
 	let disposed = false;
-	let revision = 0;
 	let fastData = false;
+	const confirmedBleDevices = new Set<string>();
 	const unsubscribeProgram = program.subscribe((value) => {
 		fastData = value.fastData;
 	});
 	const unlisteners = [
-		listen("devices", ({ devices: snapshots }) => {
-			revision++;
-			syncDevices(snapshots);
-		}),
-		listen("device:connected", ({ deviceId, connection, model }) => {
-			revision++;
-			devices.set(deviceId, { connection, model });
-		}),
 		listen("device:disconnected", ({ deviceId }) => {
-			revision++;
-			devices.delete(deviceId);
+			for (const identity of confirmedBleDevices)
+				if (identity.startsWith(`${deviceId}:`)) confirmedBleDevices.delete(identity);
 			connectedTrackers.update((prev) => prev.filter((t) => !t.id.startsWith(`${deviceId}:`)));
 		}),
-		listen("tracker:connected", (payload) => {
-			revision++;
-			onTrackerConnected(payload);
-		}),
 		listen("tracker:disconnected", ({ trackerId, reason }) => {
-			revision++;
 			delete lastImuUpdate[trackerId];
 			info(["backend", "notifications"], `Tracker disconnected: ${trackerId} (${reason})`);
 			connectedTrackers.update((prev) => prev.filter((t) => t.id !== trackerId));
@@ -221,17 +201,26 @@ export function attachNotifications(): () => void {
 		listen("error", ({ error: err }) => error(["backend", "notifications"], err.message)),
 	];
 
-	const initialRevision = revision;
-	void invoke("getDevices")
-		.then((snapshots) => {
-			if (!disposed && revision === initialRevision) syncDevices(snapshots);
-		})
-		.catch((err) => {
-			if (!disposed) error(["backend", "notifications"], `Failed to restore backend state: ${err}`);
-		});
+	const unsubscribeSnapshot = backendSnapshot.subscribe((snapshot) => {
+		if (disposed || snapshot.revision < 0) return;
+		syncDevices(snapshot.devices);
+		for (const device of snapshot.devices) {
+			if (device.connection !== "ble" || !device.trackers.some((tracker) => tracker.connected)) continue;
+			const endpoint = snapshot.endpoints.find((item) => item.id === device.endpointId);
+			const advertisedSerial = endpoint ? serialFromBleName(endpoint.displayName) : undefined;
+			const identity = `${device.deviceId}:${device.model}:${advertisedSerial ?? ""}`;
+			if (confirmedBleDevices.has(identity)) continue;
+			confirmedBleDevices.add(identity);
+			void confirmBleDevice(device.deviceId, MODEL_FROM_LIBRARY[device.model], advertisedSerial).catch((err) => {
+				confirmedBleDevices.delete(identity);
+				error(["backend", "notifications"], `Failed to save BLE device ${device.deviceId}: ${err}`);
+			});
+		}
+	});
 
 	return () => {
 		disposed = true;
+		unsubscribeSnapshot();
 		unsubscribeProgram();
 		for (const unlisten of unlisteners) unlisten();
 		for (const timer of Object.values(buttonActionTimeout)) {
@@ -240,7 +229,6 @@ export function attachNotifications(): () => void {
 		for (const key of Object.keys(buttonActionTimeout)) delete buttonActionTimeout[key];
 		for (const key of Object.keys(buttonPressTimestamps)) delete buttonPressTimestamps[key];
 		for (const key of Object.keys(lastImuUpdate)) delete lastImuUpdate[key];
-		devices.clear();
 		info(["backend", "notifications"], "Stopped listening to backend events");
 	};
 }

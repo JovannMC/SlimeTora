@@ -8,6 +8,7 @@ export const Channels = {
 	backendInvoke: "backend:invoke",
 	backendEvent: "backend:event",
 	openLogsFolder: "log:open-folder",
+	openDataFolder: "data:open-folder",
 	settingGet: "setting:get",
 	settingSet: "setting:set",
 	settingDelete: "setting:delete",
@@ -52,6 +53,7 @@ export interface PlatformBridge {
 	log(record: LogRecord): void;
 	backend: BackendBridge;
 	openLogsFolder(): Promise<void>;
+	openDataFolder(): Promise<void>;
 	getSetting<T = unknown>(key: string): Promise<T | undefined>;
 	setSetting(key: string, value: unknown): Promise<void>;
 	deleteSetting(key: string): Promise<void>;

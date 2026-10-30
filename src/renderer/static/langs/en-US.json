@@ -27,6 +27,10 @@
 	"home": {
 		"connected": "Trackers are enabled",
 		"disconnected": "Trackers are not enabled",
+		"starting": "Starting trackers…",
+		"stopping": "Stopping trackers…",
+		"session_error": "Tracker error",
+		"retry_stop": "Retrying to stop trackers…",
 		"count": "{{value}} connected trackers",
 		"onboarding": "Open onboarding",
 		"none": "No trackers found! Maybe connect some :)",
@@ -63,32 +67,39 @@
 			"enable_connect": "Enable trackers to connect or pair devices",
 			"bluetooth": {
 				"title": "Bluetooth (LE) Pairing",
-				"paired_devices": "Paired devices",
+				"paired_devices": "Saved devices",
 				"discovered_devices": "Discovered devices",
 				"scan_devices": "Scan for devices",
 				"stop_scanning": "Stop scanning",
-				"unpair_all": "Unpair All",
+				"unpair_all": "Disconnect All",
+				"save": "Save",
+				"forget": "Forget",
+				"unconfirmed": "Awaiting connection to confirm identity",
 				"pair": "Pair",
 				"connect": "Connect",
 				"disconnect": "Disconnect",
 				"unpair": "Unpair",
 				"connected": "Connected",
 				"disconnected": "Disconnected",
-				"no_paired_devices": "No paired devices. Scan for devices to pair them.",
+				"no_paired_devices": "No saved devices. Scan for devices to add them.",
 				"searching": "Searching for devices...",
-				"no_devices_found": "No devices found."
+				"no_devices_found": "No devices found.",
+				"body_part_unknown": "Body part not detected"
 			},
 			"serial": {
 				"title": "Serial / GX(6/2) Pairing",
 				"no_ports": "No serial ports configured. Please configure the serial ports in the connection settings first.",
 				"serial_port": "Serial port: {{port}}",
 				"channel_num": "Channel {{num}}",
+				"channel_unknown": "Channel unknown",
 				"port_id": "Port ID {{id}}",
-				"tracker": "Tracker:",
+				"body_part": "Body part:",
 				"none": "None",
 				"paired": "Paired",
-				"pairing": "Pairing",
+				"pairing": "Pairing...",
 				"unpaired": "Unpaired",
+				"unknown": "Unknown",
+				"detected": "Detected",
 				"pair": "Pair",
 				"unpair": "Unpair"
 			}
@@ -211,18 +222,6 @@
 		},
 		"advanced": {
 			"title": "Advanced Settings",
-			"serial_settings": {
-				"name": "Serial Settings",
-				"tooltip": "Advanced serial port configurations. Options with yellow text require a restart of the connection or program to apply."
-			},
-			"bypass_serial_limit": {
-				"name": "Bypass serial port limit",
-				"tooltip": "Allows bypassing the limit of 3 serial ports. Useful for multiple GX dongles or tracker sets."
-			},
-			"logging": {
-				"name": "Logging",
-				"tooltip": "Configure how the application handles logging information for the frontend and backend of the program."
-			},
 			"write_logs": {
 				"name": "Write logs",
 				"tooltip": "Enable or disable writing logs to the disk."
@@ -234,9 +233,13 @@
 				"debug": "Debug data",
 				"all": "All data (!!!)"
 			},
-			"open_logs_folder": {
+			"open_data": {
+				"name": "Open Data Folder",
+				"tooltip": "Opens the folder where SlimeTora stores its data, such as configuration files and logs, in your file browser."
+			},
+			"open_logs": {
 				"name": "Open Logs Folder",
-				"tooltip": "Opens the folder where logs are stored."
+				"tooltip": "Opens the folder where SlimeTora stores its log files in your file browser."
 			}
 		}
 	},

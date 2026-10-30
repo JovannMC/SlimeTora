@@ -1,12 +1,6 @@
 import { app } from "electron";
 import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 
-function getPaths() {
-	return {
-		dataDir: app.getPath("userData"),
-	};
-}
-
 export function getSetting<T = unknown>(path: string): T | undefined {
 	return readJson(fileFor(path)) as T | undefined;
 }
@@ -24,12 +18,10 @@ export function deleteSetting(path: string): void {
 }
 
 function fileFor(path: string): string {
-	const { dataDir } = getPaths();
-
 	const name = path.split(/[\\/]/).pop() ?? path;
 	if (name !== path || !/^[A-Za-z0-9._-]+$/.test(name)) throw new Error(`Invalid settings path: "${path}"`);
 
-	return `${dataDir}/${name}`;
+	return `${app.getPath("userData")}/${name}`;
 }
 
 function readJson(file: string): Record<string, unknown> | undefined {

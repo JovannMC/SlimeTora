@@ -28,6 +28,7 @@ export function registerIpcHandlers(): void {
 	ipcMain.handle(Channels.appInfo, () => getAppInfo());
 	ipcMain.handle(Channels.capabilities, () => getCapabilities());
 	ipcMain.handle(Channels.openLogsFolder, () => shell.openPath(logsDirectory()));
+	ipcMain.handle(Channels.openDataFolder, () => shell.openPath(app.getPath("userData")));
 	registerBackendIpc();
 	ipcMain.on(Channels.log, (_event, record: unknown) => {
 		if (isLogRecord(record)) writeRecord(record);

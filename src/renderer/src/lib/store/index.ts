@@ -72,13 +72,23 @@ export function saveTrackerConfig(tracker: TrackerSave): Promise<void> {
 		.then(async () => {
 			await trackersLoaded;
 			if (!trackersConfig) return;
-			knownTrackers.update((trackers) => [...trackers.filter((saved) => saved.id !== tracker.id), tracker]);
-			const settings = (await trackersConfig.get("trackers")) || {};
+			const settings = (await trackersConfig.get<Record<string, TrackerSave>>("trackers")) || {};
+			const saved = settings[tracker.id];
+			if (
+				saved &&
+				saved.name === tracker.name &&
+				saved.connection_mode === tracker.connection_mode &&
+				saved.tracker_type === tracker.tracker_type &&
+				saved.bodyPart === tracker.bodyPart &&
+				JSON.stringify(saved.settings ?? null) === JSON.stringify(tracker.settings ?? null)
+			)
+				return;
 			await trackersConfig.set("trackers", {
 				...settings,
 				[tracker.id]: tracker,
 			});
 			await trackersConfig.save();
+			knownTrackers.update((trackers) => [...trackers.filter((saved) => saved.id !== tracker.id), tracker]);
 			info(["store"], `Tracker ${tracker.id} saved to trackers.json`);
 		})
 		.catch((e) => {
@@ -87,26 +97,19 @@ export function saveTrackerConfig(tracker: TrackerSave): Promise<void> {
 	return trackerSaveQueue;
 }
 
-export async function getTrackerConfig(id: string): Promise<TrackerSave | undefined> {
-	if (!trackersConfig) {
-		error(["store"], "Trackers config not loaded yet.");
-		return;
-	}
-
-	try {
-		const settings = await trackersConfig.get("trackers");
-		if (!settings || typeof settings !== "object") return undefined;
-		return (settings as Record<string, TrackerSave>)[id] as TrackerSave | undefined;
-	} catch (e) {
-		error(["store"], `Failed to get tracker config for id ${id}: ${e}`);
-		return undefined;
-	}
-}
-
-export const activeModes = writable<ConnectionMode[]>([]);
 // null if first time / app just launched
 export const isOn: Writable<boolean | null> = writable(null);
+let restoringRequestedState = false;
+export function restoreRequestedState(value: boolean) {
+	restoringRequestedState = true;
+	try {
+		isOn.set(value);
+	} finally {
+		restoringRequestedState = false;
+	}
+}
 isOn.subscribe(async (value) => {
+	if (restoringRequestedState) return;
 	info(["store"], `isOn: ${value}`);
 	if (value) {
 		void startInterpreting().catch((err) => error(["backend"], `Failed to start tracking: ${err}`));

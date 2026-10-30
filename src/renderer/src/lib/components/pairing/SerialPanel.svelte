@@ -8,23 +8,27 @@
 	let {
 		ports,
 		portTrackers,
+		channels,
+		connectedEndpoints,
 		enabled,
-		onTogglePair,
+		onManageSlot,
 		onChannel,
 	}: {
 		ports: string[];
 		portTrackers: Record<string, PortSlot[]>;
+		channels: Record<string, number>;
+		connectedEndpoints: string[];
 		enabled: boolean;
-		onTogglePair: (port: string, portId: string) => void;
-		onChannel: (port: string, portId: string, channel: number) => void;
+		onManageSlot: (port: string, portId: string, action: "pair" | "unpair") => void;
+		onChannel: (port: string, channel: number) => void;
 	} = $props();
 
 	const CHANNELS = Array.from({ length: 10 }, (_, i) => i + 1);
 
 	function statusLabel(status: SlotStatus) {
-		if (status === "paired") return $t("home.pairing.paired");
+		if (status === "paired") return $t("home.pairing.serial.paired");
 		if (status === "pairing") return $t("home.pairing.serial.pairing");
-		return $t("home.pairing.serial.unpaired");
+		return $t(`home.pairing.serial.${status}`);
 	}
 
 	function statusClass(status: SlotStatus) {
@@ -53,6 +57,22 @@
 						<Icon icon="mdi:usb-port" width={20} class="text-secondary" />
 						{$t("home.pairing.serial.serial_port", { port })}
 					</h3>
+					<fieldset
+						disabled={!enabled || !connectedEndpoints.includes(port) || channels[port] === undefined}
+						class="mb-4 disabled:opacity-50"
+					>
+						<Select
+							options={channels[port] === undefined
+								? [{ value: "", label: $t("home.pairing.serial.channel_unknown") }]
+								: CHANNELS.map((num) => ({
+										value: String(num),
+										label: $t("home.pairing.serial.channel_num", { num }),
+									}))}
+							selected={channels[port] === undefined ? "" : String(channels[port])}
+							selectClassName="!bg-tertiary"
+							onChange={(value) => onChannel(port, Number(value))}
+						/>
+					</fieldset>
 
 					<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 						{#each portTrackers[port] ?? [] as slot (slot.portId)}
@@ -67,34 +87,36 @@
 								</div>
 
 								<div class="mb-4">
-									<span class="block text-base font-semibold"
-										>{$t("home.pairing.serial.tracker")}</span
-									>
+									<span class="block text-base font-bold">
+										{slot.trackerName || $t("home.pairing.serial.none")}
+									</span>
 									<span class="text-base font-normal">
-										{slot.status === "paired" ? slot.trackerName : $t("home.pairing.serial.none")}
+										{slot.bodyPart || $t("home.pairing.serial.none")}
 									</span>
 								</div>
+
 								<fieldset
-									disabled={!enabled}
+									disabled={!enabled ||
+										!connectedEndpoints.includes(port) ||
+										channels[port] === undefined ||
+										slot.status === "pairing"}
 									class="flex flex-row items-center justify-center gap-2 disabled:opacity-50"
 								>
-									<Select
-										options={CHANNELS.map((num) => ({
-											value: String(num),
-											label: $t("home.pairing.serial.channel_num", { num }),
-										}))}
-										selected={String(slot.channel)}
-										onChange={(value) => onChannel(port, slot.portId, Number(value))}
-										className="w-full"
+									<Button
+										label={$t("home.pairing.serial.pair")}
+										icon="mdi:link"
+										background="button"
+										disabled={slot.status === "paired" || slot.status === "detected"}
+										className="w-full text-xs h-8"
+										onClick={() => onManageSlot(port, slot.portId, "pair")}
 									/>
 									<Button
-										label={slot.status === "paired"
-											? $t("home.pairing.serial.unpair")
-											: $t("home.pairing.serial.pair")}
-										icon={slot.status === "paired" ? "mdi:link-off" : "mdi:link"}
-										background={slot.status === "paired" ? "danger" : "button"}
+										label={$t("home.pairing.serial.unpair")}
+										icon="mdi:link-off"
+										background="danger"
+										disabled={slot.status === "unpaired"}
 										className="w-full text-xs h-8"
-										onClick={() => onTogglePair(port, slot.portId)}
+										onClick={() => onManageSlot(port, slot.portId, "unpair")}
 									/>
 								</fieldset>
 							</div>

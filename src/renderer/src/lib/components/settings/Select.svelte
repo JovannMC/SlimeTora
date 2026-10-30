@@ -5,6 +5,7 @@
 	type Props = {
 		label?: string;
 		className?: string;
+		selectClassName?: string;
 		options: { value: string; label: string }[];
 		selected: string;
 		onChange?: (value: string) => void;
@@ -17,6 +18,7 @@
 	let {
 		label,
 		className = "",
+		selectClassName = "",
 		options,
 		selected = $bindable(),
 		onChange,
@@ -47,7 +49,7 @@
 			{id}
 			bind:value={selected}
 			onchange={() => onChange?.(selected)}
-			class="w-full appearance-none rounded-md bg-quaternary px-3 py-2 pr-8 transition-shadow focus:ring-2 focus:ring-secondary focus:outline-none"
+			class="w-full appearance-none rounded-md bg-quaternary px-3 py-2 pr-8 transition-shadow focus:ring-2 focus:ring-secondary focus:outline-none {selectClassName}"
 			style="padding-left: {icon ? '2.5rem' : '0.75rem'}"
 		>
 			{#each options as option}

@@ -15,6 +15,12 @@ export const backendSnapshot = writable<BackendSnapshot>({
 	dongleChannels: {},
 });
 
+let initialState: Promise<void> = Promise.resolve();
+
+export function backendStateLoaded(): Promise<void> {
+	return initialState;
+}
+
 export function attachBackendState(): () => void {
 	let disposed = false;
 
@@ -29,16 +35,18 @@ export function attachBackendState(): () => void {
 	}
 
 	const unlisteners = [listen("session", applySession), listen("snapshot", applySnapshot)];
-	void invoke("getSessionState")
-		.then(applySession)
-		.catch((err) => {
-			if (!disposed) error(["backend"], `Failed to read tracking state: ${err}`);
-		});
-	void invoke("getSnapshot")
-		.then(applySnapshot)
-		.catch((err) => {
-			if (!disposed) error(["backend"], `Failed to read backend snapshot: ${err}`);
-		});
+	initialState = Promise.all([
+		invoke("getSessionState")
+			.then(applySession)
+			.catch((err) => {
+				if (!disposed) error(["backend"], `Failed to read tracking state: ${err}`);
+			}),
+		invoke("getSnapshot")
+			.then(applySnapshot)
+			.catch((err) => {
+				if (!disposed) error(["backend"], `Failed to read backend snapshot: ${err}`);
+			}),
+	]).then(() => undefined);
 
 	return () => {
 		disposed = true;

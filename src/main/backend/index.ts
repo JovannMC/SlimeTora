@@ -11,6 +11,7 @@ import { Channels } from "$shared/ipc/channels";
 import { BrowserWindow, ipcMain } from "electron";
 import type { Connection, DeviceSnapshot, EndpointDescriptor, HaritoraX, LogEntry } from "haritorax-interpreter";
 import { debug, error, info, trace, warn } from "../log";
+import { getSetting } from "../store";
 import { createDiscoveryController } from "./discovery";
 import { createReconnectController, endpointIdentity } from "./reconnect";
 import { SlimeVRBridge } from "./slimevr";
@@ -397,7 +398,7 @@ function startSession(options: SessionOptions): Promise<void> {
 	return next;
 }
 
-function stopSession(): Promise<void> {
+function stopSession(turnOffTrackers = false): Promise<void> {
 	enabled = false;
 	reconnect.stop();
 	const current = ++generation;
@@ -413,6 +414,18 @@ function stopSession(): Promise<void> {
 			await stopBlePreview();
 			await cancelDiscovery;
 			await Promise.allSettled(pendingOperations);
+			await Promise.allSettled([...bridgeTasks]);
+			if (turnOffTrackers && backend) {
+				for (const device of backend.getDevices()) {
+					if (device.model === "wired" || !openEndpoints.has(device.endpointId)) continue;
+					try {
+						await backend.powerOff(device.deviceId);
+					} catch (err) {
+						warn(["backend"], `Failed to power off ${device.deviceId} on exit: ${String(err)}`);
+					}
+				}
+			}
+
 			for (const endpoint of [...openEndpoints]) {
 				try {
 					await backend?.disconnect(endpoint);
@@ -420,17 +433,22 @@ function stopSession(): Promise<void> {
 					error(["backend"], `Failed to disconnect ${endpoint}:`, err);
 				}
 			}
-			await Promise.allSettled([...bridgeTasks]);
+
 			await slimevr.dispose();
+
 			if (backend) await backend.dispose();
 			else if (bleConnection) await (await bleConnection).dispose();
+
 			backend = undefined;
 			bleConnection = undefined;
 			activeOptions = undefined;
+
 			openEndpoints.clear();
 			liveTrackers.clear();
 			dongleSlots.clear();
+
 			publishSnapshot();
+
 			if (generation === current) publishSession("off");
 		})
 		.catch((err) => {
@@ -446,7 +464,7 @@ function stopSession(): Promise<void> {
 
 export const backendCalls: BackendCalls = {
 	startSession,
-	stopSession,
+	stopSession: () => stopSession(),
 	getSessionState: () => sessionState,
 	getSnapshot,
 	updateBleTargets: (serials) => {
@@ -530,5 +548,6 @@ export function registerBackendIpc(): void {
 }
 
 export async function disposeBackend(): Promise<void> {
-	await stopSession();
+	const saved = getSetting<{ settings?: { program?: { autoOff?: boolean } } }>("settings.json");
+	await stopSession(saved?.settings?.program?.autoOff === true);
 }

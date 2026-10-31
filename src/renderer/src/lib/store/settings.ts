@@ -1,5 +1,4 @@
 import { load, type Store } from "#lib/api/store";
-import { isOn, trackersLoaded } from "#lib/store/index";
 import { error, info } from "#lib/log/index";
 import { FPSMode, SensorAutoCorrection, SensorMode, TrackerModel } from "#lib/types/tracker";
 import { derived, writable } from "svelte/store";
@@ -92,7 +91,7 @@ export const advanced = writable<AdvancedSettings>({
 // only set once the config file is loaded, so nothing is saved before the stored settings are applied
 let config: Store | undefined;
 
-(async () => {
+export const settingsLoaded = (async () => {
 	try {
 		config = await load("settings.json", { autoSave: true });
 		const loaded = await config.get<SavedSettings>("settings");
@@ -104,10 +103,6 @@ let config: Store | undefined;
 			if (loaded.advanced) advanced.set(loaded.advanced);
 		}
 		info(["store", "settings"], `Loaded settings from settings.json: ${JSON.stringify(loaded, null, 2)}`);
-
-		if (loaded?.program?.autoStart) {
-			void trackersLoaded.then(() => isOn.set(true));
-		}
 	} catch (e) {
 		error(["store", "settings"], `Failed to load settings from settings.json: ${e}`);
 	}

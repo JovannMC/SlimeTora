@@ -7,15 +7,16 @@
 	import "overlayscrollbars/overlayscrollbars.css";
 	import Toast from "#lib/components/Toast.svelte";
 	import { ToastManager } from "#lib/util/toast.svelte";
-	import { currentPath } from "#lib/store/index";
+	import { currentPath, isOn, trackersLoaded } from "#lib/store/index";
 	import { initialized, initTranslations } from "#lib/lang/index";
 	import { captureUncaughtErrors, error } from "#lib/log/index";
 	import "#lib/api/icons";
 	import { registerBridge } from "#lib/api/bridge";
 	import { electronBridge } from "#lib/api/electronBridge";
 	import { attachNotifications } from "#lib/backend/notifications";
-	import { attachBackendState } from "#lib/backend/state";
+	import { attachBackendState, backendStateLoaded } from "#lib/backend/state";
 	import { attachBleTargets } from "#lib/backend/ble-targets";
+	import { program, settingsLoaded } from "#lib/store/settings";
 
 	registerBridge(electronBridge);
 
@@ -27,15 +28,24 @@
 		const detachBackendState = attachBackendState();
 		const detachBleTargets = attachBleTargets();
 		const detachNotifications = attachNotifications();
-		currentPath.set(window.location.pathname);
 		const stopCapture = captureUncaughtErrors();
+
+		let disposed = false;
+
+		currentPath.set(window.location.pathname);
+
+		void Promise.all([backendStateLoaded(), settingsLoaded, trackersLoaded]).then(() => {
+			if (!disposed && $program.autoStart && $isOn === false) isOn.set(true);
+		});
 
 		if (!$initialized) void initTranslations("en");
 
 		const scrollbars = OverlayScrollbars(document.body, {
 			scrollbars: { autoHide: "leave", autoHideDelay: 100, visibility: "auto", theme: "os-theme-dark" },
 		});
+
 		return () => {
+			disposed = true;
 			detachBackendState();
 			detachBleTargets();
 			detachNotifications();

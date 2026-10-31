@@ -18,7 +18,7 @@ let config: Store | undefined;
 let queue = Promise.resolve();
 
 export const bleDevicesLoaded = (async () => {
-	config = await load("ble-devices.json", { autoSave: true });
+	config = await load("ble-devices.json");
 
 	const saved = await config.get<SavedBleDevice[]>("devices");
 	if (Array.isArray(saved)) {
@@ -26,7 +26,7 @@ export const bleDevicesLoaded = (async () => {
 		return;
 	}
 
-	const trackersStore = await load("trackers.json", { autoSave: true });
+	const trackersStore = await load("trackers.json");
 	const trackers = await trackersStore.get<Record<string, TrackerSave>>("trackers");
 	const migrated = new Map<string, SavedBleDevice>();
 

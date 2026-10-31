@@ -2,7 +2,8 @@
 	import Icon from "@iconify/svelte";
 	import { onMount } from "svelte";
 	import { goto } from "$app/navigation";
-	import { connection } from "#lib/store/settings";
+	import { loadPlatform, platform } from "#lib/store/platform";
+	import { advanced, connection } from "#lib/store/settings";
 	import { ConnectionMode } from "#lib/types/connection";
 	import { TrackerModel } from "#lib/types/tracker";
 	import { invoke } from "#lib/api/backend";
@@ -24,12 +25,40 @@
 		{ mode: ConnectionMode.Serial, label: "Serial / GX(6/2)" },
 	];
 
-	let availablePorts: string[] = $state([]);
+	let detectedPorts: string[] = $state([]);
+	let availablePorts = $derived(detectedPorts.filter(shouldShowPort));
+
+	function shouldShowPort(port: string): boolean {
+		if ($advanced.showAllSerialPorts) return true;
+		if ($platform === "linux") return /\/dev\/(ttyUSB|ttyACM|rfcomm)\d+/.test(port);
+		if ($platform === "darwin") return /^\/dev\/tty\.usbmodem/i.test(port);
+		return true;
+	}
+
+	function portLabel(port: string): string {
+		if ($platform === "linux") {
+			const linuxPort = port.match(/^\/dev\/tty(USB|ACM)(\d+)$/i);
+			if (linuxPort) return `${linuxPort[1]?.toUpperCase()}${linuxPort[2]}`;
+
+			const rfcommPort = port.match(/^\/dev\/rfcomm(\d+)$/i);
+			if (rfcommPort) return `rfcomm${rfcommPort[1]}`;
+		}
+
+		if ($platform === "darwin") {
+			const macPort = port.match(/^\/dev\/tty\.usbmodem(.+)$/i);
+			if (macPort) return `${macPort[1]}`;
+		}
+
+		return port;
+	}
 
 	async function refreshPorts() {
 		try {
-			availablePorts = await invoke("listSerialPorts");
-			info(["settings", "connection"], `Found serial ports: ${availablePorts}`);
+			await loadPlatform();
+			detectedPorts = (await invoke("listSerialPorts")).sort();
+
+			info(["settings", "connection"], `Retrieved serial ports: ${detectedPorts}`);
+			info(["settings", "connection"], `Filtered serial ports: ${availablePorts}`);
 		} catch (err) {
 			warn(["settings", "connection"], `Error refreshing ports: ${err}`);
 		}
@@ -145,7 +174,8 @@
 				<div class="grid grid-cols-2 gap-3 pl-1">
 					{#each availablePorts as port (port)}
 						<Switch
-							label={port}
+							label={portLabel(port)}
+							title={port}
 							bind:selected={() => $connection.ports.includes(port), (on) => setPort(port, on)}
 						/>
 					{/each}

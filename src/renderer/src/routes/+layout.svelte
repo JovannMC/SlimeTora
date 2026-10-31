@@ -17,6 +17,7 @@
 	import { attachBackendState, backendStateLoaded } from "#lib/backend/state";
 	import { attachBleTargets } from "#lib/backend/ble-targets";
 	import { program, settingsLoaded } from "#lib/store/settings";
+	import { loadPlatform } from "#lib/store/platform";
 
 	registerBridge(electronBridge);
 
@@ -29,6 +30,7 @@
 		const detachBleTargets = attachBleTargets();
 		const detachNotifications = attachNotifications();
 		const stopCapture = captureUncaughtErrors();
+		void loadPlatform();
 
 		let disposed = false;
 

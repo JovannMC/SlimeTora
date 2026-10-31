@@ -225,6 +225,10 @@
 		},
 		"advanced": {
 			"title": "Advanced Settings",
+			"show_all_ports": {
+				"name": "Show all serial ports",
+				"tooltip": "Disable platform-specific filtering and show every detected serial port."
+			},
 			"write_logs": {
 				"name": "Write logs",
 				"tooltip": "Enable or disable writing logs to the disk."

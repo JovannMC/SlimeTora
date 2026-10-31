@@ -43,6 +43,13 @@
 		<div class="flex flex-col gap-4">
 			<div class="flex flex-col gap-3 pl-1">
 				<Checkbox
+					label={$t("settings.advanced.show_all_ports.name")}
+					bind:checked={$advanced.showAllSerialPorts}
+					tooltip={$t("settings.advanced.show_all_ports.tooltip")}
+					tooltipPosition="up"
+					tooltipWidth="250px"
+				/>
+				<Checkbox
 					label={$t("settings.advanced.write_logs.name")}
 					bind:checked={$advanced.writeLogs}
 					tooltip={$t("settings.advanced.write_logs.tooltip")}

@@ -8,6 +8,7 @@ import { writable, type Writable } from "svelte/store";
 import type { TrackerSettings } from "./settings";
 
 export * as settings from "./settings";
+export * from "./platform";
 
 let trackersConfig: Awaited<ReturnType<typeof load>>;
 
@@ -48,7 +49,7 @@ export const trackerOpenStates = writable<Record<string, boolean>>({});
 // resolves once the saved trackers have been loaded into knownTrackers
 export const trackersLoaded: Promise<void> = (async () => {
 	try {
-		trackersConfig = await load("trackers.json", { autoSave: true });
+		trackersConfig = await load("trackers.json");
 
 		try {
 			const loaded = await trackersConfig.get("trackers");
@@ -71,9 +72,12 @@ export function saveTrackerConfig(tracker: TrackerSave): Promise<void> {
 	trackerSaveQueue = trackerSaveQueue
 		.then(async () => {
 			await trackersLoaded;
+
 			if (!trackersConfig) return;
+
 			const settings = (await trackersConfig.get<Record<string, TrackerSave>>("trackers")) || {};
 			const saved = settings[tracker.id];
+
 			if (
 				saved &&
 				saved.name === tracker.name &&
@@ -83,11 +87,12 @@ export function saveTrackerConfig(tracker: TrackerSave): Promise<void> {
 				JSON.stringify(saved.settings ?? null) === JSON.stringify(tracker.settings ?? null)
 			)
 				return;
+
 			await trackersConfig.set("trackers", {
 				...settings,
 				[tracker.id]: tracker,
 			});
-			await trackersConfig.save();
+
 			knownTrackers.update((trackers) => [...trackers.filter((saved) => saved.id !== tracker.id), tracker]);
 			info(["store"], `Tracker ${tracker.id} saved to trackers.json`);
 		})
@@ -102,15 +107,19 @@ export const isOn: Writable<boolean | null> = writable(null);
 let restoringRequestedState = false;
 export function restoreRequestedState(value: boolean) {
 	restoringRequestedState = true;
+
 	try {
 		isOn.set(value);
 	} finally {
 		restoringRequestedState = false;
 	}
 }
+
 isOn.subscribe(async (value) => {
 	if (restoringRequestedState) return;
+
 	info(["store"], `isOn: ${value}`);
+
 	if (value) {
 		void startInterpreting().catch((err) => error(["backend"], `Failed to start tracking: ${err}`));
 	} else if (value === false) {

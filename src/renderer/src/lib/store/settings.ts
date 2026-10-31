@@ -38,7 +38,7 @@ export type TrackerSettings = {
 };
 
 export type AdvancedSettings = {
-	bypassSerialLimit: boolean;
+	showAllSerialPorts: boolean;
 	writeLogs: boolean;
 	loggingMode: LoggingMode;
 };
@@ -83,7 +83,7 @@ export const tracker = writable<TrackerSettings>({
 });
 
 export const advanced = writable<AdvancedSettings>({
-	bypassSerialLimit: false,
+	showAllSerialPorts: false,
 	writeLogs: true,
 	loggingMode: "minimal",
 });
@@ -93,7 +93,7 @@ let config: Store | undefined;
 
 export const settingsLoaded = (async () => {
 	try {
-		config = await load("settings.json", { autoSave: true });
+		config = await load("settings.json");
 		const loaded = await config.get<SavedSettings>("settings");
 
 		if (loaded && typeof loaded === "object") {
@@ -119,7 +119,6 @@ derived([program, connection, tracker, advanced], ([$program, $connection, $trac
 
 	try {
 		await config.set("settings", settings);
-		await config.save();
 	} catch (e) {
 		error(["store", "settings"], `Failed to save settings: ${e}`);
 	}

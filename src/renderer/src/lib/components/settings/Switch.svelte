@@ -1,15 +1,16 @@
 <script lang="ts">
 	type Props = {
 		label?: string;
+		title?: string;
 		selected?: boolean;
 		className?: string;
 	};
 
-	let { label, selected = $bindable(false), className = "" }: Props = $props();
+	let { label, title, selected = $bindable(false), className = "" }: Props = $props();
 	const id = $props.id();
 </script>
 
-<div class="relative flex items-center gap-3 {className}">
+<div class="relative flex min-w-0 items-center gap-3 {className}">
 	<input {id} type="checkbox" class="sr-only" bind:checked={selected} />
 	<label
 		for={id}
@@ -23,5 +24,5 @@
 				: 'translate-x-0.5'}"
 		></span>
 	</label>
-	<span class="font-medium select-none">{label}</span>
+	<span class="min-w-0 truncate font-medium select-none" {title}>{label}</span>
 </div>

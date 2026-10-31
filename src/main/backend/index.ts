@@ -54,7 +54,10 @@ const reconnect = createReconnectController({
 	isConnected: (endpointId) => openEndpoints.has(endpointId),
 	isTargetConnected: (target) =>
 		target.connection === "ble" && isDeviceStreaming(backend?.getDevice(target.identity)),
-	onError: (target, err) => warn(["backend", "reconnect"], `Could not connect to ${target.identity}: ${String(err)}`),
+	onError: (target, err, connectedThisSession) => {
+		if (connectedThisSession)
+			warn(["backend", "reconnect"], `Could not connect to ${target.identity}: ${String(err)}`);
+	},
 });
 
 function connectEndpoint(instance: HaritoraX, endpointId: string): Promise<void> {
@@ -93,6 +96,23 @@ async function disconnectEndpoint(instance: HaritoraX, endpointId: string, check
 	await connecting.get(endpointId)?.catch(() => undefined);
 	check();
 	await instance.disconnect(endpointId);
+}
+
+async function waitForShutdownTask(task: Promise<unknown>, label: string): Promise<void> {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	await Promise.race([
+		task.then(
+			() => undefined,
+			(err) => warn(["backend"], `Shutdown task failed (${label}): ${String(err)}`),
+		),
+		new Promise<void>((resolve) => {
+			timer = setTimeout(() => {
+				warn(["backend"], `Timed out waiting for ${label} during shutdown`);
+				resolve();
+			}, 5_000);
+		}),
+	]);
+	if (timer) clearTimeout(timer);
 }
 
 function track<T>(tasks: Set<Promise<unknown>>, task: Promise<T>): Promise<T> {
@@ -263,7 +283,7 @@ async function createBackend(): Promise<HaritoraX> {
 		logLevel: "info",
 		onLog: (entry: LogEntry) => {
 			const args = entry.data ? [entry.message, entry.data] : [entry.message];
-			LOG_FUNCTIONS[entry.level](["haritorax"], ...args);
+			LOG_FUNCTIONS[entry.level](["haritorax-interpreter"], ...args);
 		},
 	});
 	for (const event of BACKEND_EVENTS) {
@@ -438,31 +458,25 @@ function stopSession(turnOffTrackers = false): Promise<void> {
 		.then(async () => {
 			await stopBlePreview();
 			await cancelDiscovery;
-			await Promise.allSettled(pendingOperations);
-			await Promise.allSettled([...bridgeTasks]);
 			if (turnOffTrackers && backend) {
 				for (const device of backend.getDevices()) {
 					if (device.model === "wired" || !openEndpoints.has(device.endpointId)) continue;
 					try {
-						await backend.powerOff(device.deviceId);
+						await waitForShutdownTask(backend.powerOff(device.deviceId), `powering off ${device.deviceId}`);
 					} catch (err) {
 						warn(["backend"], `Failed to power off ${device.deviceId} on exit: ${String(err)}`);
 					}
 				}
 			}
 
-			for (const endpoint of [...openEndpoints]) {
-				try {
-					await backend?.disconnect(endpoint);
-				} catch (err) {
-					error(["backend"], `Failed to disconnect ${endpoint}:`, err);
-				}
-			}
+			const instance = backend;
+			if (instance) await waitForShutdownTask(instance.dispose(), "backend disposal");
+			else if (bleConnection)
+				await waitForShutdownTask((await bleConnection).dispose(), "BLE connection disposal");
+			await waitForShutdownTask(Promise.allSettled(pendingOperations), "backend operations");
+			await waitForShutdownTask(Promise.allSettled([...bridgeTasks]), "SlimeVR bridge tasks");
 
 			await slimevr.dispose();
-
-			if (backend) await backend.dispose();
-			else if (bleConnection) await (await bleConnection).dispose();
 
 			backend = undefined;
 			bleConnection = undefined;

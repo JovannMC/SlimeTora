@@ -216,12 +216,14 @@
 			await invoke(action, port, portId);
 		} catch (err) {
 			if (!destroyed)
-				reportError($t("home.pairing.error.failed_slot", {
-					action: $t(`home.pairing.serial.${action}`),
-					slot: portId,
-					port,
-					error: String(err),
-				}));
+				reportError(
+					$t("home.pairing.error.failed_slot", {
+						action: $t(`home.pairing.serial.${action}`),
+						slot: portId,
+						port,
+						error: String(err),
+					}),
+				);
 		} finally {
 			if (!destroyed) busySlots = { ...busySlots, [key]: false };
 		}

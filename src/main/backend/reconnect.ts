@@ -9,6 +9,7 @@ interface TargetState {
 	target: ReconnectTarget;
 	attempts: number;
 	due: number;
+	connectedThisSession: boolean;
 	endpointId?: string;
 }
 
@@ -17,7 +18,7 @@ interface ReconnectOptions {
 	connect: (endpoint: EndpointDescriptor, current: () => boolean) => Promise<void>;
 	isConnected: (endpointId: string) => boolean;
 	isTargetConnected?: (target: ReconnectTarget) => boolean;
-	onError: (target: ReconnectTarget, err: unknown) => void;
+	onError: (target: ReconnectTarget, err: unknown, connectedThisSession: boolean) => void;
 	baseDelayMs?: number;
 	maxDelayMs?: number;
 }
@@ -71,7 +72,7 @@ export function createReconnectController(options: ReconnectOptions) {
 	function fail(state: TargetState, err: unknown) {
 		state.attempts++;
 		state.due = Date.now() + Math.min(maxDelay, baseDelay * 2 ** Math.min(state.attempts - 1, 10));
-		options.onError(state.target, err);
+		options.onError(state.target, err, state.connectedThisSession);
 	}
 
 	async function retry() {
@@ -141,7 +142,13 @@ export function createReconnectController(options: ReconnectOptions) {
 			return;
 		}
 
-		targets.set(id, { target, attempts: 0, due: Date.now() + baseDelay, endpointId });
+		targets.set(id, {
+			target,
+			attempts: 0,
+			due: Date.now() + baseDelay,
+			connectedThisSession: Boolean(endpointId && options.isConnected(endpointId)),
+			endpointId,
+		});
 	}
 
 	function updateBle(serials: string[]) {
@@ -160,16 +167,26 @@ export function createReconnectController(options: ReconnectOptions) {
 
 	function bind(endpoint: EndpointDescriptor) {
 		const state = targets.get(key({ connection: endpoint.connection, identity: endpointIdentity(endpoint) }));
-		if (state) state.endpointId = endpoint.id;
+		if (state) {
+			state.endpointId = endpoint.id;
+			if (options.isConnected(endpoint.id)) state.connectedThisSession = true;
+		}
 	}
 
 	function bindTarget(target: ReconnectTarget, endpointId: string) {
 		const state = targets.get(key(target));
-		if (state) state.endpointId = endpointId;
+		if (state) {
+			state.endpointId = endpointId;
+			if (options.isConnected(endpointId)) state.connectedThisSession = true;
+		}
 	}
 
 	function connected(endpointId: string) {
-		for (const state of targets.values()) if (state.endpointId === endpointId) state.attempts = 0;
+		for (const state of targets.values())
+			if (state.endpointId === endpointId) {
+				state.attempts = 0;
+				state.connectedThisSession = true;
+			}
 		schedule();
 	}
 

@@ -59,7 +59,7 @@
 					</h3>
 					<fieldset
 						disabled={!enabled || !connectedEndpoints.includes(port) || channels[port] === undefined}
-						class="mb-4 disabled:opacity-50"
+						class="mb-4"
 					>
 						<Select
 							options={channels[port] === undefined
@@ -100,7 +100,7 @@
 										!connectedEndpoints.includes(port) ||
 										channels[port] === undefined ||
 										slot.status === "pairing"}
-									class="flex flex-row items-center justify-center gap-2 disabled:opacity-50"
+									class="flex flex-row items-center justify-center gap-2"
 								>
 									<Button
 										label={$t("home.pairing.serial.pair")}

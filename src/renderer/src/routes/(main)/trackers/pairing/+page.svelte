@@ -8,18 +8,14 @@
 	import SerialPanel from "#lib/components/pairing/SerialPanel.svelte";
 	import type { PortSlot } from "#lib/components/pairing/types";
 	import { isOn, knownTrackers } from "#lib/store/index";
+	import { connection } from "#lib/store/settings";
 	import { forgetBleDevice, saveBleDevice, savedBleDevices } from "#lib/store/ble-devices";
 	import { backendSnapshot } from "#lib/backend/state";
 	import { serialFromBleName } from "#lib/util/index.ts";
 
 	let isScanning = $state(false);
 	let pairingError = $state("");
-	const availablePorts = $derived(
-		$backendSnapshot.endpoints
-			.filter((e) => e.connection === "serial" && e.dongle)
-			.map((e) => e.id)
-			.sort(),
-	);
+	const availablePorts = $derived([...$connection.ports].sort());
 	let busySlots: Record<string, boolean> = $state({});
 
 	const bleDevices = $derived(getBlePairingDevices($backendSnapshot, $savedBleDevices, $knownTrackers));

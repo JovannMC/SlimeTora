@@ -115,19 +115,19 @@
 			{#if isSmall}
 				<div class="flex flex-col gap-4">
 					{#each $connectedTrackers as tracker (tracker.id)}
-						<Card name={tracker.name} id={tracker.id} type={tracker.tracker_type} />
+						<Card id={tracker.id} type={tracker.tracker_type} />
 					{/each}
 				</div>
 			{:else}
 				<div class="flex flex-row gap-4">
 					<div class="flex flex-1 flex-col gap-4">
 						{#each leftColumn as tracker (tracker.id)}
-							<Card name={tracker.name} id={tracker.id} type={tracker.tracker_type} />
+							<Card id={tracker.id} type={tracker.tracker_type} />
 						{/each}
 					</div>
 					<div class="flex flex-1 flex-col gap-4">
 						{#each rightColumn as tracker (tracker.id)}
-							<Card name={tracker.name} id={tracker.id} type={tracker.tracker_type} />
+							<Card id={tracker.id} type={tracker.tracker_type} />
 						{/each}
 					</div>
 				</div>

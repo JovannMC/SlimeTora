@@ -72,6 +72,7 @@ function onTrackerConnected(device: DeviceSnapshot, snapshot: TrackerSnapshot) {
 
 	const current = get(connectedTrackers).find((tracker) => tracker.id === snapshot.trackerId);
 	const saved = get(knownTrackers).find((tracker) => tracker.id === snapshot.trackerId);
+	const rssi = snapshot.rssi ?? device.trackers.find((tracker) => tracker.rssi !== undefined)?.rssi;
 
 	const tracker: Tracker = {
 		id: snapshot.trackerId,
@@ -89,11 +90,15 @@ function onTrackerConnected(device: DeviceSnapshot, snapshot: TrackerSnapshot) {
 		data: {
 			...(current?.data ?? { rotation: [0, 0, 0], acceleration: [0, 0, 0] }),
 			...(snapshot.mag === undefined ? {} : { magnetometer: MAG_FROM_LIBRARY[snapshot.mag] }),
-			...(snapshot.rssi === undefined ? {} : { rssi: snapshot.rssi }),
+			...(rssi === undefined ? {} : { rssi }),
 		},
 	};
 
-	if (!current) info(["backend", "notifications"], `Tracker connected: ${snapshot.trackerId} (${snapshot.bodyPart})`);
+	if (!current)
+		info(
+			["backend", "notifications"],
+			`Tracker connected: ${snapshot.trackerId} (${snapshot.bodyPart}) via ${device.connection} ${device.endpointId}`,
+		);
 	const config = {
 		id: tracker.id,
 		name: tracker.name,
@@ -194,8 +199,10 @@ export function attachNotifications(): () => void {
 				data: { ...prev.data, magnetometer: MAG_FROM_LIBRARY[status] },
 			}));
 		}),
-		listen("rssi", ({ trackerId, rssi }) => {
-			updateTracker(trackerId, (prev) => ({ ...prev, data: { ...prev.data, rssi } }));
+		listen("rssi", ({ deviceId, rssi }) => {
+			for (const tracker of trackersOfDevice(deviceId)) {
+				updateTracker(tracker.id, (prev) => ({ ...prev, data: { ...prev.data, rssi } }));
+			}
 		}),
 		listen("button", ({ deviceId, trackerId, button }) => {
 			info(["backend", "notifications"], `Button ${button} pressed on ${trackerId ?? deviceId}`);

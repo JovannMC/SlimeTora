@@ -27,8 +27,7 @@ export function getBlePairingDevices(
 			endpoints.find((item) => device?.connection === "ble" && item.id === device.endpointId) ??
 			endpoints.find(
 				(item) =>
-					serialFromBleName(item.displayName) === saved.serial ||
-					item.displayName === saved.advertisedName,
+					serialFromBleName(item.displayName) === saved.serial || item.displayName === saved.advertisedName,
 			);
 		const endpointId = device?.connection === "ble" ? device.endpointId : endpoint?.id;
 		const model = device?.model ?? endpoint?.model;

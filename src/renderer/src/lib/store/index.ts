@@ -7,8 +7,8 @@ import { writable, type Writable } from "svelte/store";
 import type { TrackerSettings } from "./settings";
 import { trackerStore, updateTrackerStore } from "./tracker-storage";
 
-export * as settings from "./settings";
 export * from "./platform";
+export * as settings from "./settings";
 
 export interface BatteryData {
 	remaining?: number;

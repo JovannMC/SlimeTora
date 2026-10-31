@@ -1,6 +1,6 @@
 import { getBridge, isBridgeAvailable } from "#lib/api/bridge";
-import type { AppInfo } from "$shared/ipc/channels";
 import { error } from "#lib/log/index";
+import type { AppInfo } from "$shared/ipc/channels";
 import { writable } from "svelte/store";
 
 export const platform = writable<AppInfo["platform"] | null>(null);

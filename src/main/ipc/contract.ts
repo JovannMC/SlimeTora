@@ -1,9 +1,9 @@
 import { Channels, type AppInfo, type Capabilities } from "$shared/ipc/channels";
 import { isLogRecord } from "$shared/log/index";
 import { app, ipcMain, shell } from "electron";
-import { deleteSetting, getSetting, setSetting } from "../store";
 import { registerBackendIpc } from "../backend";
 import { logsDirectory, warn, writeRecord } from "../log";
+import { deleteSetting, getSetting, setSetting } from "../store";
 
 function getAppInfo(): AppInfo {
 	return {

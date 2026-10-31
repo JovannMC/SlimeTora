@@ -63,7 +63,7 @@
 			if ($program.autoStart && $isOn === false) isOn.set(true);
 		});
 
-		if (!$initialized) void initTranslations("en");
+		if (!$initialized) void initTranslations("en-US");
 
 		const scrollbars = OverlayScrollbars(document.body, {
 			scrollbars: { autoHide: "leave", autoHideDelay: 100, visibility: "auto", theme: "os-theme-dark" },

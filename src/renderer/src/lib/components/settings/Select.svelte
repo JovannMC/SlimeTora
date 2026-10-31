@@ -54,7 +54,7 @@
 			{disabled}
 			onchange={() => onChange?.(selected)}
 			class={clsx(
-				"w-full appearance-none rounded-md bg-quaternary px-3 py-2 pr-8 transition-shadow focus:ring-2 focus:ring-secondary focus:outline-none",
+				"w-full appearance-none rounded-md bg-quaternary px-3 py-2 pr-8 transition-shadow focus:outline-none",
 				disabled && "disabled",
 				selectClassName,
 			)}

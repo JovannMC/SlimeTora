@@ -39,12 +39,12 @@
 </script>
 
 <div
-	class="flex h-auto w-full flex-col overflow-hidden rounded-xl bg-card shadow-card transition-all duration-300"
+	class="tracker-card flex h-auto w-full flex-col overflow-hidden rounded-xl bg-card shadow-card transition-all duration-300"
 	id="tracker-card-{id}"
 >
 	<!-- collapsed header -->
 	<div
-		class="hoverable flex h-14 items-center justify-between px-4"
+		class="tracker-card-header hoverable flex h-14 items-center justify-between px-4"
 		role="button"
 		aria-expanded={isOpen}
 		tabindex="0"

@@ -43,10 +43,11 @@ function replaceVariables(text: string, params: TranslationParams): string {
 	return text.replace(/\{\{(\w+)\}\}/g, (match, key) => params[key]?.toString() || match);
 }
 
-export const t = derived([translations, locale], ([$translations, $locale]) => {
+export const t = derived([translations, locale, loading], ([$translations, $locale, $loading]) => {
 	return (key: string, params: TranslationParams = {}): string => {
 		const localeTranslations = $translations[$locale];
 		if (!localeTranslations) {
+			if ($loading) return key;
 			warn(["lang"], `No translations found for locale: ${$locale}`);
 			return key;
 		}

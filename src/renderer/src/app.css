@@ -46,6 +46,23 @@ body {
 	@apply overflow-x-hidden bg-body font-body text-white;
 }
 
+:focus-visible:not(.tracker-card-header) {
+	outline: none !important;
+	box-shadow: inset 0 0 0 2px var(--primary) !important;
+	transition: none !important;
+}
+
+.tracker-card:has(> .tracker-card-header:focus-visible) {
+	box-shadow: inset 0 0 0 2px var(--primary) !important;
+	transition: none !important;
+}
+
+.tracker-card-header:focus-visible {
+	outline: none !important;
+	box-shadow: none !important;
+	transition: none !important;
+}
+
 h1,
 h2,
 h3,

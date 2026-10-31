@@ -33,7 +33,9 @@
 				: $sessionState.status === "error"
 					? $t("home.session_error")
 					: $sessionState.status === "on"
-						? $t("home.connected")
+						? !$sessionState.slimevrConnected
+							? $t("home.slimevr_not_found")
+							: $t("home.connected")
 						: $t("home.disconnected"),
 	);
 

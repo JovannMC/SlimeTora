@@ -7,7 +7,7 @@ import type {
 	SessionState,
 } from "$shared/backend/contract";
 import { BACKEND_EVENTS } from "$shared/backend/contract";
-import { Channels } from "$shared/ipc/channels";
+import { Channels, type CapabilityStatus } from "$shared/ipc/channels";
 import { BrowserWindow, ipcMain } from "electron";
 import type { Connection, DeviceSnapshot, EndpointDescriptor, HaritoraX, LogEntry } from "haritorax-interpreter";
 import { debug, error, info, trace, warn } from "../log";
@@ -36,8 +36,12 @@ const lastButtonAt = new Map<string, Map<"main" | "sub" | "sub2", number>>();
 const dongleSlots = new Map<string, Record<string, "paired" | "unpaired">>();
 const bridgeTasks = new Set<Promise<unknown>>();
 const connecting = new Map<string, Promise<void>>();
+const bridgeStarting = new Set<string>();
+const pendingBridgeSamples = new Map<string, Map<string, import("haritorax-interpreter").ImuSample>>();
 let activeOptions: SessionOptions | undefined;
-const slimevr = new SlimeVRBridge();
+const slimevr = new SlimeVRBridge(() => {
+	if (enabled) publishSession(sessionState.status, sessionState.error);
+});
 
 const reconnect = createReconnectController({
 	discover: () => backendCalls.discover(),
@@ -247,6 +251,8 @@ function publishSession(status: SessionState["status"], failure?: unknown): void
 		status,
 		requestedEnabled: enabled,
 		revision: sessionState.revision + 1,
+		connectedTrackers: liveTrackers.size,
+		slimevrConnected: slimevr.serverConnected,
 		...(failure === undefined ? {} : { error: failure instanceof Error ? failure.message : String(failure) }),
 	};
 	send("session", sessionState);
@@ -295,6 +301,10 @@ async function createBackend(): Promise<HaritoraX> {
 	const instanceGeneration = generation;
 	const { createHaritoraX } = await import("haritorax-interpreter");
 	const connections = await loadConnections(activeOptions?.heartbeatIntervalMs);
+	const modes = activeOptions?.modes ?? [];
+	if (!connections.some((connection) => modes.includes(connection.kind))) {
+		throw new Error(`No usable connection is available for selected modes: ${modes.join(", ") || "none"}`);
+	}
 
 	backend = createHaritoraX({
 		connections,
@@ -356,13 +366,29 @@ async function createBackend(): Promise<HaritoraX> {
 	backend.on("devices", () => {
 		if (!enabled || generation !== instanceGeneration) return;
 		bindReconnectTargets();
+		for (const device of backend?.getDevices() ?? []) {
+			if (openEndpoints.has(device.endpointId) && slimevr.hasDevice(device.deviceId)) {
+				void track(bridgeTasks, slimevr.deviceConnected(device)).catch((err) =>
+					error(["backend", "slimevr"], `Failed to reconcile device ${device.deviceId}:`, err),
+				);
+			}
+		}
 		publishSnapshot();
 	});
 	backend.on("tracker:disconnected", ({ trackerId, deviceId, reason }) => {
 		if (!enabled || generation !== instanceGeneration) return;
 		liveTrackers.delete(trackerId);
+		publishSession(sessionState.status, sessionState.error);
 		lastButtonAt.delete(trackerId);
 		reconnect.refresh();
+
+		const deviceAfterDisconnect = backend?.getDevice(deviceId);
+		if (!deviceAfterDisconnect?.trackers.some((tracker) => tracker.connected)) {
+			pendingBridgeSamples.delete(deviceId);
+			void track(bridgeTasks, slimevr.deviceDisconnected(deviceId)).catch((err) =>
+				error(["backend", "slimevr"], `Failed to remove inactive device ${deviceId}:`, err),
+			);
+		}
 
 		if (reason !== "timeout") return;
 
@@ -396,17 +422,13 @@ async function createBackend(): Promise<HaritoraX> {
 		});
 	}
 
-	backend.on("device:connected", (event) => {
-		const device = backend?.getDevice(event.deviceId);
-
-		if (device && enabled && generation === instanceGeneration) {
-			void track(bridgeTasks, slimevr.deviceConnected(device)).catch((err) =>
-				error(["backend", "slimevr"], "Failed to initialize device:", err),
+	backend.on("device:disconnected", ({ deviceId }) => {
+		if (enabled && generation === instanceGeneration) {
+			pendingBridgeSamples.delete(deviceId);
+			void track(bridgeTasks, slimevr.deviceDisconnected(deviceId)).catch((err) =>
+				error(["backend", "slimevr"], `Failed to remove device ${deviceId}:`, err),
 			);
 		}
-	});
-	backend.on("device:disconnected", ({ deviceId }) => {
-		if (enabled && generation === instanceGeneration) void slimevr.deviceDisconnected(deviceId);
 	});
 	backend.on("imu", (sample) => {
 		if (!enabled || generation !== instanceGeneration) return;
@@ -418,9 +440,33 @@ async function createBackend(): Promise<HaritoraX> {
 			liveTrackers.set(sample.trackerId, device.endpointId);
 			reconnect.refresh();
 			publishSnapshot();
+			publishSession(sessionState.status, sessionState.error);
 		}
 
-		slimevr.imu(sample);
+		if (slimevr.hasDevice(sample.deviceId)) {
+			slimevr.imu(sample);
+		} else {
+			let samples = pendingBridgeSamples.get(sample.deviceId);
+			if (!samples) pendingBridgeSamples.set(sample.deviceId, (samples = new Map()));
+			samples.set(sample.trackerId, sample);
+
+			if (!bridgeStarting.has(sample.deviceId)) {
+				bridgeStarting.add(sample.deviceId);
+				const initialize = slimevr
+					.deviceConnected(device)
+					.then(() => {
+						if (!enabled || generation !== instanceGeneration) return;
+						for (const pendingSample of pendingBridgeSamples.get(sample.deviceId)?.values() ?? [])
+							slimevr.imu(pendingSample);
+					})
+					.catch((err) => error(["backend", "slimevr"], "Failed to initialize device:", err))
+					.finally(() => {
+						bridgeStarting.delete(sample.deviceId);
+						pendingBridgeSamples.delete(sample.deviceId);
+					});
+				void track(bridgeTasks, initialize);
+			}
+		}
 		send("imu", sample);
 	});
 	backend.on("battery", (battery) => {
@@ -429,6 +475,44 @@ async function createBackend(): Promise<HaritoraX> {
 
 	info(["backend"], "Backend started");
 	return backend;
+}
+
+export async function getTransportCapabilities(): Promise<import("$shared/ipc/channels").Capabilities> {
+	const probe = async (kind: "serial" | "bluetooth-le"): Promise<CapabilityStatus> => {
+		try {
+			if (kind === "serial") {
+				const { createSerialConnection } = await import("haritorax-interpreter/connections/serial");
+				const connection = createSerialConnection({ includeWired: true });
+
+				try {
+					await connection.list({ timeoutMs: 1_000 });
+				} finally {
+					await connection.dispose();
+				}
+			} else {
+				const { createBleConnection } = await import("haritorax-interpreter/connections/ble");
+				const connection = createBleConnection({ rssiPollMs: 2_000 });
+
+				try {
+					await connection.list({ timeoutMs: 1_000 });
+				} finally {
+					await connection.dispose();
+				}
+			}
+			return { available: true };
+		} catch (err) {
+			const message = String(err);
+			const reason = /permission|access denied|not authorized/i.test(message)
+				? "permission-missing"
+				: /adapter.*off|powered.*off|no adapter/i.test(message)
+					? "adapter-off"
+					: "binding-failed";
+
+			return { available: false, reason };
+		}
+	};
+	const [serial, bluetooth] = await Promise.all([probe("serial"), probe("bluetooth-le")]);
+	return { serial, "bluetooth-le": bluetooth };
 }
 
 function startSession(options: SessionOptions): Promise<void> {
@@ -443,19 +527,26 @@ function startSession(options: SessionOptions): Promise<void> {
 	const next = transition
 		.then(async () => {
 			if (!isCurrent()) return;
+
 			activeOptions = options;
 			slimevr.configure({ slimevrIp: options.slimevr.ip, slimevrPort: options.slimevr.port });
 			await stopBlePreview();
+
 			if (!isCurrent()) return;
+
 			const endpoints = await discovery.discover();
 			if (!isCurrent()) return;
+
 			previewEndpoints = [];
 			publishSnapshot();
+
 			for (const endpoint of endpoints) {
 				if (!isCurrent()) break;
+
 				if (endpoint.connection !== "serial" || !options.modes.includes("serial")) continue;
 				if (!options.ports.includes(endpoint.id)) continue;
 				if (endpoint.model && !options.models.includes(endpoint.model)) continue;
+
 				try {
 					const instance = await getBackend();
 					if (!isCurrent()) break;
@@ -464,6 +555,7 @@ function startSession(options: SessionOptions): Promise<void> {
 					error(["backend"], `Failed to connect to ${endpoint.displayName}:`, err);
 				}
 			}
+
 			if (isCurrent()) {
 				reconnect.start(
 					[
@@ -506,6 +598,7 @@ function stopSession(turnOffTrackers = false): Promise<void> {
 		.then(async () => {
 			await stopBlePreview();
 			await cancelDiscovery;
+
 			if (turnOffTrackers && backend) {
 				for (const device of backend.getDevices()) {
 					if (device.model === "wired" || !openEndpoints.has(device.endpointId)) continue;
@@ -532,6 +625,8 @@ function stopSession(turnOffTrackers = false): Promise<void> {
 
 			openEndpoints.clear();
 			connecting.clear();
+			bridgeStarting.clear();
+			pendingBridgeSamples.clear();
 			liveTrackers.clear();
 			lastButtonAt.clear();
 			dongleSlots.clear();

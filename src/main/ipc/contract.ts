@@ -1,7 +1,7 @@
-import { Channels, type AppInfo, type Capabilities } from "$shared/ipc/channels";
+import { Channels, type AppInfo } from "$shared/ipc/channels";
 import { isLogRecord } from "$shared/log/index";
 import { app, ipcMain, shell } from "electron";
-import { registerBackendIpc } from "../backend";
+import { getTransportCapabilities, registerBackendIpc } from "../backend";
 import { configureLogging, logsDirectory, warn, writeRecord } from "../log";
 import { deleteSetting, getSetting, setSetting } from "../store";
 
@@ -16,14 +16,6 @@ function getAppInfo(): AppInfo {
 	};
 }
 
-function getCapabilities(): Capabilities {
-	// temporary stuff
-	return {
-		"bluetooth-le": { available: false, reason: "binding-failed" },
-		serial: { available: false, reason: "binding-failed" },
-	};
-}
-
 export function registerIpcHandlers(): void {
 	try {
 		const saved = getSetting<{ settings?: { advanced?: unknown } }>("settings.json");
@@ -34,7 +26,7 @@ export function registerIpcHandlers(): void {
 	}
 
 	ipcMain.handle(Channels.appInfo, () => getAppInfo());
-	ipcMain.handle(Channels.capabilities, () => getCapabilities());
+	ipcMain.handle(Channels.capabilities, getTransportCapabilities);
 	ipcMain.handle(Channels.openLogsFolder, () => shell.openPath(logsDirectory()));
 	ipcMain.handle(Channels.openDataFolder, () => shell.openPath(app.getPath("userData")));
 

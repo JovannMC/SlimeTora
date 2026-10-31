@@ -26,11 +26,12 @@
 	},
 	"home": {
 		"connected": "Trackers are enabled",
-		"disconnected": "Trackers are not enabled",
+		"disconnected": "Trackers are disabled",
 		"starting": "Starting trackers…",
 		"stopping": "Stopping trackers…",
 		"session_error": "Tracker error",
 		"retry_stop": "Retrying to stop trackers…",
+		"slimevr_not_found": "Not connected to SlimeVR",
 		"count": "{{value}} connected trackers",
 		"onboarding": "Open onboarding",
 		"none": "No trackers found! Maybe connect some :)",
@@ -199,6 +200,13 @@
 			"connection_mode": {
 				"name": "Connection Mode",
 				"tooltip": "Select the connection mode used to connect to the trackers. Multiple modes can be used simultaneously."
+			},
+			"available": "available",
+			"unavailable": {
+				"unsupported-platform": "unsupported on this platform",
+				"adapter-off": "adapter is off or unavailable",
+				"permission-missing": "permission denied",
+				"binding-failed": "transport could not start"
 			},
 			"serial_ports": {
 				"name": "Serial Ports",

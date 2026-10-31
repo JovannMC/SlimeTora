@@ -16,6 +16,8 @@
 	import Input from "#lib/components/settings/Input.svelte";
 	import Switch from "#lib/components/settings/Switch.svelte";
 	import Tooltip from "#lib/components/settings/Tooltip.svelte";
+	import type { Capabilities } from "$shared/ipc/channels";
+	import clsx from "clsx";
 
 	const MODELS = [
 		{ model: TrackerModel.Wireless, label: "HaritoraX Wireless / 2" },
@@ -23,11 +25,12 @@
 	];
 
 	const MODES = [
-		{ mode: ConnectionMode.BLE, label: "Bluetooth (LE)" },
-		{ mode: ConnectionMode.Serial, label: "Serial / GX(6/2)" },
-	];
+		{ mode: ConnectionMode.BLE, label: "Bluetooth (LE)", capability: "bluetooth-le" },
+		{ mode: ConnectionMode.Serial, label: "Serial / GX(6/2)", capability: "serial" },
+	] as const;
 
 	let detectedPorts: string[] = $state([]);
+	let capabilities: Capabilities | undefined = $state();
 	let availablePorts = $derived(detectedPorts.filter(shouldShowPort));
 
 	function shouldShowPort(port: string): boolean {
@@ -66,8 +69,17 @@
 		}
 	}
 
+	async function refreshCapabilities() {
+		try {
+			capabilities = await window.slimetora?.getCapabilities();
+		} catch (err) {
+			warn(["settings", "connection"], `Could not check transport availability: ${String(err)}`);
+		}
+	}
+
 	onMount(() => {
 		void refreshPorts();
+		void refreshCapabilities();
 	});
 
 	// keeps the order of `order`, so the stored lists are always in a stable order
@@ -137,7 +149,6 @@
 					/>
 				{/each}
 			</div>
-
 			<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
 				{$t("settings.connection.connection_mode.name")}
 				<Tooltip
@@ -147,11 +158,26 @@
 				/>
 			</h3>
 			<div class="flex flex-col gap-3 pl-1">
-				{#each MODES as { mode, label }}
-					<Checkbox
-						{label}
-						bind:checked={() => $connection.modes.includes(mode), (on) => setMode(mode, on)}
-					/>
+				{#each MODES as { mode, label, capability }}
+					{@const capInfo = capabilities?.[capability]}
+					<div class="flex flex-row items-end gap-1">
+						<Checkbox
+							{label}
+							bind:checked={() => $connection.modes.includes(mode), (on) => setMode(mode, on)}
+						/>
+						{#if capabilities}
+							<p
+								class={clsx(
+									"text-sm leading-5",
+									capInfo?.available ? "text-green-400" : "text-amber-400",
+								)}
+							>
+								{capInfo?.available
+									? $t("settings.connection.available")
+									: $t(`settings.connection.unavailable.${capInfo?.reason ?? "binding-failed"}`)}
+							</p>
+						{/if}
+					</div>
 				{/each}
 			</div>
 

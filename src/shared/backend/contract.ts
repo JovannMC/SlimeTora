@@ -50,6 +50,8 @@ export interface SessionState {
 	status: "off" | "starting" | "on" | "stopping" | "error";
 	requestedEnabled: boolean;
 	revision: number;
+	connectedTrackers?: number;
+	slimevrConnected?: boolean;
 	error?: string;
 }
 

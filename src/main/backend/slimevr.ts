@@ -35,8 +35,16 @@ interface EmulatedDevice {
 	sensors: EmulatedSensor[];
 }
 
+type ServerState = "searching" | "connected" | "disconnected" | "error";
+
 export class SlimeVRBridge {
 	readonly #devices = new Map<string, EmulatedDevice>();
+	readonly #operations = new Map<string, Promise<void>>();
+	readonly #serverStates = new Map<string, ServerState>();
+
+	constructor(
+		private readonly onServerState: (deviceId: string, state: ServerState, detail?: string) => void = () => {},
+	) {}
 
 	ip = "255.255.255.255";
 	port = "6969";
@@ -48,38 +56,100 @@ export class SlimeVRBridge {
 		info(["backend", "slimevr"], `Configured SlimeVR bridge to ${this.ip}:${this.port}`);
 	}
 
-	async deviceConnected(device: DeviceSnapshot): Promise<void> {
-		if (this.#devices.has(device.deviceId)) return;
+	#serialize(deviceId: string, action: () => Promise<void>): Promise<void> {
+		const previous = this.#operations.get(deviceId) ?? Promise.resolve();
+		const next = previous.catch(() => undefined).then(action);
 
-		const tracker = new EmulatedTracker(
-			macFromSerial(device.deviceId),
-			device.version ?? "unknown",
-			new FirmwareFeatureFlags(),
-			BoardType.UNKNOWN,
-			MCUType.UNKNOWN,
-			this.ip,
-			Number(this.port),
-		);
-		await tracker.init();
+		this.#operations.set(deviceId, next);
 
-		const sensors: EmulatedSensor[] = [];
-		for (let i = 0; i < device.imuCount; i++) {
-			sensors.push(await tracker.addSensor(SensorType.UNKNOWN, SensorStatus.OK));
-		}
+		void next
+			.finally(() => {
+				if (this.#operations.get(deviceId) === next) this.#operations.delete(deviceId);
+			})
+			.catch(() => undefined);
 
-		this.#devices.set(device.deviceId, { tracker, sensors });
-		info(
-			["backend", "slimevr"],
-			`Emulating ${device.deviceId} with MAC ${macFromSerial(device.deviceId).toString()}`,
-		);
+		return next;
 	}
 
-	async deviceDisconnected(deviceId: string): Promise<void> {
-		const device = this.#devices.get(deviceId);
-		if (!device) return;
+	deviceConnected(device: DeviceSnapshot): Promise<void> {
+		return this.#serialize(device.deviceId, async () => {
+			const existing = this.#devices.get(device.deviceId);
+			if (existing?.sensors.length === device.imuCount) return;
+			if (existing) {
+				this.#devices.delete(device.deviceId);
+				await existing.tracker.deinit();
+			}
 
-		this.#devices.delete(deviceId);
-		await device.tracker.deinit();
+			const tracker = new EmulatedTracker(
+				macFromSerial(device.deviceId),
+				device.version ?? "unknown",
+				new FirmwareFeatureFlags(),
+				BoardType.UNKNOWN,
+				MCUType.UNKNOWN,
+				this.ip,
+				Number(this.port),
+			);
+
+			let initialized = false;
+			tracker.on("error", (err) => {
+				this.#serverStates.set(device.deviceId, "error");
+				this.onServerState(device.deviceId, "error", err.message);
+				error(["backend", "slimevr"], `UDP tracker ${device.deviceId} failed:`, err);
+			});
+			tracker.on("searching-for-server", () => {
+				this.#serverStates.set(device.deviceId, "searching");
+				this.onServerState(device.deviceId, "searching");
+			});
+			tracker.on("connected-to-server", () => {
+				this.#serverStates.set(device.deviceId, "connected");
+				this.onServerState(device.deviceId, "connected");
+			});
+			tracker.on("disconnected-from-server", (reason) => {
+				this.#serverStates.set(device.deviceId, "disconnected");
+				this.onServerState(device.deviceId, "disconnected", String(reason));
+			});
+
+			try {
+				await tracker.init();
+				initialized = true;
+				const sensors: EmulatedSensor[] = [];
+
+				for (let i = 0; i < device.imuCount; i++)
+					sensors.push(await tracker.addSensor(SensorType.UNKNOWN, SensorStatus.OK));
+
+				this.#devices.set(device.deviceId, { tracker, sensors });
+				this.#serverStates.set(device.deviceId, "searching");
+				this.onServerState(device.deviceId, "searching");
+
+				info(
+					["backend", "slimevr"],
+					`Emulating ${device.deviceId} with MAC ${macFromSerial(device.deviceId).toString()}`,
+				);
+			} catch (err) {
+				this.#serverStates.delete(device.deviceId);
+				if (initialized) await tracker.deinit().catch(() => undefined);
+				throw err;
+			}
+		});
+	}
+
+	deviceDisconnected(deviceId: string): Promise<void> {
+		return this.#serialize(deviceId, async () => {
+			const device = this.#devices.get(deviceId);
+			if (!device) return;
+
+			this.#devices.delete(deviceId);
+			this.#serverStates.delete(deviceId);
+			await device.tracker.deinit();
+		});
+	}
+
+	get serverConnected(): boolean {
+		return [...this.#serverStates.values()].some((state) => state === "connected");
+	}
+
+	hasDevice(deviceId: string): boolean {
+		return this.#devices.has(deviceId);
 	}
 
 	imu(sample: ImuSample): void {
@@ -102,7 +172,7 @@ export class SlimeVRBridge {
 		if (!device || battery.level === null || battery.voltage === null) return;
 
 		device.tracker
-			.changeBatteryLevel(battery.voltage, battery.level)
+			.changeBatteryLevel(battery.voltage / 1000, battery.level)
 			.catch((err) => error(["backend", "slimevr"], "Failed to send battery level:", err));
 	}
 
@@ -116,7 +186,7 @@ export class SlimeVRBridge {
 	}
 
 	async dispose(): Promise<void> {
-		const devices = [...this.#devices.keys()];
-		await Promise.all(devices.map((deviceId) => this.deviceDisconnected(deviceId)));
+		const devices = new Set([...this.#devices.keys(), ...this.#operations.keys()]);
+		await Promise.all([...devices].map((deviceId) => this.deviceDisconnected(deviceId)));
 	}
 }

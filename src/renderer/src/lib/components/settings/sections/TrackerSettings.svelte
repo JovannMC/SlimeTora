@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
-	import { tracker } from "#lib/store/settings";
+	import { sessionState } from "#lib/backend/state";
+	import { isOn } from "#lib/store/index";
+	import { restartRequired, tracker } from "#lib/store/settings";
 	import { FPSMode, SensorAutoCorrection, SensorMode } from "#lib/types/tracker";
 	import { t } from "#lib/lang/index";
 	import Input from "#lib/components/settings/Input.svelte";
@@ -13,6 +15,12 @@
 		{ kind: SensorAutoCorrection.Gyro, label: "Gyroscope" },
 		{ kind: SensorAutoCorrection.Mag, label: "Magnetometer" },
 	];
+
+	function markRestartRequired() {
+		if ($isOn && ($sessionState.status === "starting" || $sessionState.status === "on")) {
+			restartRequired.set(true);
+		}
+	}
 
 	function setFps(value: string) {
 		tracker.update((s) => ({ ...s, fps: Number(value) as FPSMode }));
@@ -125,6 +133,7 @@
 					tooltip={$t("settings.tracker.heartbeat.tooltip")}
 					tooltipPosition="up"
 					tooltipWidth="250px"
+					onchange={markRestartRequired}
 					bind:value={$tracker.heartbeat}
 				/>
 				<Input
@@ -136,6 +145,7 @@
 					tooltip={$t("settings.tracker.button_debounce.tooltip")}
 					tooltipPosition="up"
 					tooltipWidth="250px"
+					onchange={markRestartRequired}
 					bind:value={$tracker.buttonDebounce}
 				/>
 			</div>

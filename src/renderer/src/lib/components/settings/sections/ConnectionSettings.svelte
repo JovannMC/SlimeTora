@@ -3,7 +3,9 @@
 	import { onMount } from "svelte";
 	import { goto } from "$app/navigation";
 	import { loadPlatform, platform } from "#lib/store/platform";
-	import { advanced, connection } from "#lib/store/settings";
+	import { advanced, connection, restartRequired } from "#lib/store/settings";
+	import { isOn } from "#lib/store/index";
+	import { sessionState } from "#lib/backend/state";
 	import { ConnectionMode } from "#lib/types/connection";
 	import { TrackerModel } from "#lib/types/tracker";
 	import { invoke } from "#lib/api/backend";
@@ -74,6 +76,7 @@
 	}
 
 	function setModel(model: TrackerModel, on: boolean) {
+		markRestartRequired();
 		connection.update((s) => ({
 			...s,
 			models: toggleListed(
@@ -86,6 +89,7 @@
 	}
 
 	function setMode(mode: ConnectionMode, on: boolean) {
+		markRestartRequired();
 		connection.update((s) => ({
 			...s,
 			modes: toggleListed(
@@ -98,7 +102,14 @@
 	}
 
 	function setPort(port: string, on: boolean) {
+		markRestartRequired();
 		connection.update((s) => ({ ...s, ports: toggleListed(s.ports, port, on, availablePorts) }));
+	}
+
+	function markRestartRequired() {
+		if ($isOn && ($sessionState.status === "starting" || $sessionState.status === "on")) {
+			restartRequired.set(true);
+		}
 	}
 </script>
 
@@ -198,6 +209,7 @@
 						label={$t("settings.connection.server_ip")}
 						icon="ri:global-line"
 						placeholder="255.255.255.255"
+						onchange={markRestartRequired}
 						bind:value={$connection.slimevr.ip}
 					/>
 				</div>
@@ -207,6 +219,7 @@
 						type="number"
 						icon="ri:door-line"
 						placeholder="6969"
+						onchange={markRestartRequired}
 						bind:value={$connection.slimevr.port}
 					/>
 				</div>

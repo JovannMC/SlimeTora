@@ -5,23 +5,40 @@
 	import "../app.css";
 	import "@fontsource/chakra-petch";
 	import "overlayscrollbars/overlayscrollbars.css";
+	import Button from "#lib/components/settings/Button.svelte";
 	import Toast from "#lib/components/Toast.svelte";
+	import Tooltip from "#lib/components/settings/Tooltip.svelte";
 	import { ToastManager } from "#lib/util/toast.svelte";
 	import { currentPath, isOn, trackersLoaded } from "#lib/store/index";
-	import { initialized, initTranslations } from "#lib/lang/index";
-	import { captureUncaughtErrors, error } from "#lib/log/index";
+	import { initialized, initTranslations, t } from "#lib/lang/index";
+	import { captureUncaughtErrors, error, info } from "#lib/log/index";
 	import "#lib/api/icons";
 	import { registerBridge } from "#lib/api/bridge";
 	import { electronBridge } from "#lib/api/electronBridge";
 	import { attachNotifications } from "#lib/backend/notifications";
 	import { attachBackendState, backendStateLoaded } from "#lib/backend/state";
 	import { attachBleTargets } from "#lib/backend/ble-targets";
-	import { program, settingsLoaded } from "#lib/store/settings";
+	import { program, restartRequired, settingsLoaded } from "#lib/store/settings";
 	import { loadPlatform } from "#lib/store/platform";
+	import { sessionState } from "#lib/backend/state";
+	import { startInterpreting, stopInterpreting } from "#lib/backend/index";
 
 	registerBridge(electronBridge);
 
 	let { children } = $props();
+
+	async function restartConnection() {
+		if (!$isOn || $sessionState.status !== "on" || !$restartRequired) return;
+
+		try {
+			await stopInterpreting();
+			await startInterpreting();
+			restartRequired.set(false);
+			info(["settings"], "Restarted tracking connection to apply settings");
+		} catch (err) {
+			error(["settings"], `Failed to restart tracking connection: ${err}`);
+		}
+	}
 
 	onNavigate((event) => currentPath.set(event.to?.url.pathname ?? "/"));
 
@@ -58,6 +75,14 @@
 </script>
 
 {@render children()}
+
+{#if $isOn && $sessionState.status === "on" && $restartRequired}
+	<div class="fixed right-6 bottom-6 z-50">
+		<Tooltip content={$t("settings.restart")} position="left" width="280px">
+			<Button icon="ri:restart-line" background="primary" rounded onClick={restartConnection} />
+		</Tooltip>
+	</div>
+{/if}
 
 <div class="fixed right-0 bottom-28 z-50 flex flex-col-reverse gap-4 p-4 md:bottom-0">
 	{#each ToastManager.toasts as toast (toast.id)}

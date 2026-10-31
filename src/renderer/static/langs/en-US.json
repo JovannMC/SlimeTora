@@ -131,6 +131,7 @@
 
 	"settings": {
 		"title": "Settings",
+		"restart": "Some settings require a restart of the tracker connection to take effect.",
 		"program": {
 			"title": "Program Settings",
 			"app_behavior": {

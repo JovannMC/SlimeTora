@@ -9,14 +9,16 @@
 		quaternary: "bg-quaternary hover:bg-tertiary/60 active:bg-tertiary/30",
 		button: "bg-button hover:bg-button/70 active:bg-button/50",
 		danger: "bg-red-500 hover:bg-red-500/70 active:bg-red-500/50",
+		warning: "bg-yellow-500 hover:bg-yellow-500/70 active:bg-yellow-500/50",
 	};
 
 	type Props = {
-		label: string;
+		label?: string;
 		className?: string;
 		icon?: string;
 		iconPosition?: "left" | "right";
 		background?: keyof typeof backgrounds;
+		rounded?: boolean;
 		type?: "main" | "onboarding";
 		onClick: () => void;
 		disabled?: boolean;
@@ -28,6 +30,7 @@
 		icon,
 		iconPosition = "left",
 		background = "quaternary",
+		rounded = false,
 		type = "main",
 		onClick,
 		disabled = false,
@@ -36,7 +39,8 @@
 
 <button
 	class={clsx(
-		"flex w-full items-center gap-2 rounded-md px-4 py-2 transition-colors",
+		"flex w-full items-center gap-2 transition-colors",
+		rounded ? "rounded-full p-3" : "rounded-md px-4 py-2",
 		backgrounds[background],
 		{ button: type === "onboarding" },
 		disabled && "disabled",
@@ -46,12 +50,14 @@
 	onclick={onClick}
 >
 	{#if icon && iconPosition === "left"}
-		<Icon {icon} width={18} />
+		<Icon {icon} width={rounded ? 24 : 18} />
 	{/if}
 
-	<span class="flex-1 text-center">{label}</span>
+	{#if label}
+		<span class="flex-1 text-center">{label}</span>
+	{/if}
 
 	{#if icon && iconPosition === "right"}
-		<Icon {icon} width={18} />
+		<Icon {icon} width={rounded ? 24 : 18} />
 	{/if}
 </button>

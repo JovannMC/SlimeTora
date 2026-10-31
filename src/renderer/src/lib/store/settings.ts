@@ -88,6 +88,8 @@ export const advanced = writable<AdvancedSettings>({
 	loggingMode: "minimal",
 });
 
+export const restartRequired = writable(false);
+
 // only set once the config file is loaded, so nothing is saved before the stored settings are applied
 let config: Store | undefined;
 

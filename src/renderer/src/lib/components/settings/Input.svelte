@@ -10,6 +10,7 @@
 		placeholder?: string;
 		icon?: string;
 		className?: string;
+		onchange?: (value: string | number) => void;
 		tooltip?: string;
 		tooltipPosition?: TooltipPosition;
 		tooltipWidth?: string;
@@ -23,6 +24,7 @@
 		placeholder,
 		icon,
 		className = "",
+		onchange,
 		tooltip,
 		tooltipPosition,
 		tooltipWidth,
@@ -33,6 +35,7 @@
 	function onInput(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
 		value = type === "number" ? Number(input.value) : input.value;
+		onchange?.(value);
 	}
 </script>
 

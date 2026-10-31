@@ -79,7 +79,7 @@ export const tracker = writable<TrackerSettings>({
 	dynamicCalibration: [SensorAutoCorrection.Accel],
 	emulatedFeet: false,
 	heartbeat: 2000,
-	buttonDebounce: 500,
+	buttonDebounce: 100,
 });
 
 export const advanced = writable<AdvancedSettings>({

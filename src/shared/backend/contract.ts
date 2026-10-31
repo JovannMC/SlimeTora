@@ -68,6 +68,8 @@ export interface SessionOptions {
 	models: TrackerModel[];
 	ports: string[];
 	bleSerials: string[];
+	heartbeatIntervalMs: number;
+	buttonDebounceMs: number;
 	slimevr: { ip: string; port: number };
 }
 

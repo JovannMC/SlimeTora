@@ -28,19 +28,19 @@ function trackersOfDevice(deviceId: string) {
 
 const lastImuUpdate: Record<string, number> = {};
 const BUTTON_PRESS_WINDOW_MS = 750;
-const BUTTON_DEBOUNCE_MS = 200;
 const buttonPressTimestamps: Record<string, number[]> = {};
 const buttonActionTimeout: Record<string, ReturnType<typeof setTimeout> | null> = {};
 
-function onButton(deviceId: string, trackerId: string | undefined) {
-	const key = trackerId ?? deviceId;
+function onButton(deviceId: string, trackerId: string | undefined, button: "main" | "sub" | "sub2") {
+	const tracker = trackerId ?? deviceId;
+	const key = `${tracker}:${button}`;
 	const now = Date.now();
 	const timestamps = (buttonPressTimestamps[key] ??= []);
-	const last = timestamps[timestamps.length - 1] ?? 0;
-	if (now - last < BUTTON_DEBOUNCE_MS) return;
 
+	if (timestamps.length > 0 && now - timestamps[timestamps.length - 1]! > BUTTON_PRESS_WINDOW_MS) {
+		timestamps.length = 0;
+	}
 	timestamps.push(now);
-	buttonPressTimestamps[key] = timestamps.filter((ts) => now - ts <= BUTTON_PRESS_WINDOW_MS);
 
 	if (buttonActionTimeout[key]) clearTimeout(buttonActionTimeout[key]);
 
@@ -54,7 +54,10 @@ function onButton(deviceId: string, trackerId: string | undefined) {
 		const action: UserActionName | undefined = pressCount >= 4 ? "PauseTracking" : actions[pressCount];
 
 		if (action) {
-			info(["backend", "notifications"], `Sending action ${action} from ${pressCount} presses: ${key}`);
+			info(
+				["backend", "notifications"],
+				`Sending action ${action} from ${pressCount} ${pressCount === 1 ? "press" : "presses"}: ${tracker}`,
+			);
 			invoke("sendUserAction", deviceId, action).catch((err) =>
 				error(["backend", "notifications"], `Failed to send action ${action}: ${err}`),
 			);
@@ -196,7 +199,7 @@ export function attachNotifications(): () => void {
 		}),
 		listen("button", ({ deviceId, trackerId, button }) => {
 			info(["backend", "notifications"], `Button ${button} pressed on ${trackerId ?? deviceId}`);
-			onButton(deviceId, trackerId);
+			onButton(deviceId, trackerId, button);
 		}),
 		listen("error", ({ error: err }) => error(["backend", "notifications"], err.message)),
 	];

@@ -14,7 +14,17 @@ const models: Record<TrackerModel, LibraryModel> = {
 export async function startInterpreting() {
 	await bleDevicesLoaded;
 	if (!get(isOn)) return;
+
 	const { modes, models: selectedModels, ports, slimevr } = get(settings.connection);
+
+	const configuredHeartbeat = get(settings.tracker).heartbeat;
+	const heartbeatIntervalMs =
+		Number.isFinite(configuredHeartbeat) && configuredHeartbeat >= 0 ? configuredHeartbeat : 2000;
+
+	const configuredButtonDebounce = get(settings.tracker).buttonDebounce;
+	const buttonDebounceMs =
+		Number.isFinite(configuredButtonDebounce) && configuredButtonDebounce >= 0 ? configuredButtonDebounce : 500;
+
 	const bleSerials = get(savedBleDevices).map((device) => device.serial);
 
 	return invoke("startSession", {
@@ -22,6 +32,8 @@ export async function startInterpreting() {
 		models: selectedModels.map((model) => models[model]),
 		ports,
 		bleSerials,
+		heartbeatIntervalMs,
+		buttonDebounceMs,
 		slimevr,
 	});
 }

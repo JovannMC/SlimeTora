@@ -32,6 +32,7 @@ let previewEndpoints: EndpointDescriptor[] = [];
 const operations = new Set<Promise<unknown>>();
 const openEndpoints = new Set<string>();
 const liveTrackers = new Map<string, string>();
+const lastButtonAt = new Map<string, Map<"main" | "sub" | "sub2", number>>();
 const dongleSlots = new Map<string, Record<string, "paired" | "unpaired">>();
 const bridgeTasks = new Set<Promise<unknown>>();
 const connecting = new Map<string, Promise<void>>();
@@ -168,12 +169,20 @@ function scanBlePreview(): Promise<import("haritorax-interpreter").EndpointDescr
 	return result;
 }
 
-async function loadConnections(): Promise<Connection[]> {
+async function loadConnections(heartbeatIntervalMs?: number): Promise<Connection[]> {
 	const connections: Connection[] = [];
 
 	try {
 		const { createSerialConnection } = await import("haritorax-interpreter/connections/serial");
-		connections.push(createSerialConnection({ includeWired: true }));
+		const saved = getSetting<{ settings?: { tracker?: { heartbeat?: number } } }>("settings.json");
+		const configuredHeartbeat = saved?.settings?.tracker?.heartbeat;
+		const interval =
+			typeof heartbeatIntervalMs === "number" && Number.isFinite(heartbeatIntervalMs)
+				? Math.max(0, heartbeatIntervalMs)
+				: typeof configuredHeartbeat === "number" && Number.isFinite(configuredHeartbeat)
+					? Math.max(0, configuredHeartbeat)
+					: 2000;
+		connections.push(createSerialConnection({ includeWired: true, heartbeatIntervalMs: interval }));
 	} catch (err) {
 		error(["backend", "serial"], "Serial connection unavailable:", err);
 	}
@@ -247,7 +256,7 @@ function getBackend(): Promise<HaritoraX> {
 async function createBackend(): Promise<HaritoraX> {
 	const instanceGeneration = generation;
 	const { createHaritoraX } = await import("haritorax-interpreter");
-	const connections = await loadConnections();
+	const connections = await loadConnections(activeOptions?.heartbeatIntervalMs);
 
 	backend = createHaritoraX({
 		connections,
@@ -258,10 +267,25 @@ async function createBackend(): Promise<HaritoraX> {
 		},
 	});
 	for (const event of BACKEND_EVENTS) {
-		if (event === "error" || event === "imu") continue;
+		if (event === "error" || event === "imu" || event === "button") continue;
 		backend.on(event, (payload) => send(event, payload));
 	}
 	backend.on("error", ({ error: err }) => send("error", { error: { message: err.message } }));
+	backend.on("button", (event) => {
+		const trackerId = event.trackerId ?? event.deviceId;
+		const now = Date.now();
+		const configuredDebounce = activeOptions?.buttonDebounceMs;
+		const debounceMs =
+			typeof configuredDebounce === "number" && Number.isFinite(configuredDebounce)
+				? Math.max(0, configuredDebounce)
+				: 500;
+		let buttonTimes = lastButtonAt.get(trackerId);
+		if (!buttonTimes) lastButtonAt.set(trackerId, (buttonTimes = new Map()));
+		const previous = buttonTimes.get(event.button);
+		if (previous !== undefined && now - previous < debounceMs) return;
+		buttonTimes.set(event.button, now);
+		send("button", event);
+	});
 	backend.on("endpoint:connected", ({ endpointId }) => {
 		openEndpoints.add(endpointId);
 		const endpoint = backend?.getEndpoints().find((item) => item.id === endpointId);
@@ -282,6 +306,7 @@ async function createBackend(): Promise<HaritoraX> {
 	});
 	backend.on("tracker:disconnected", ({ trackerId, deviceId, reason }) => {
 		liveTrackers.delete(trackerId);
+		lastButtonAt.delete(trackerId);
 		reconnect.refresh();
 		if (reason !== "timeout" || !enabled || generation !== instanceGeneration) return;
 		const device = backend?.getDevice(deviceId);
@@ -445,6 +470,7 @@ function stopSession(turnOffTrackers = false): Promise<void> {
 
 			openEndpoints.clear();
 			liveTrackers.clear();
+			lastButtonAt.clear();
 			dongleSlots.clear();
 
 			publishSnapshot();

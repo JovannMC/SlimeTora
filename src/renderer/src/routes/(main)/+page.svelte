@@ -95,7 +95,7 @@
 			<div class="flex flex-row items-center justify-evenly gap-2">
 				<Switch label={$t("home.settings.precise_data")} bind:selected={$program.preciseData} />
 				<Switch label={$t("home.settings.fast_data")} bind:selected={$program.fastData} />
-				<Switch label="Show tracker visualization" bind:selected={$program.visualization} />
+				<Switch label={$t("home.settings.visualization")} bind:selected={$program.visualization} />
 			</div>
 		</div>
 	</div>

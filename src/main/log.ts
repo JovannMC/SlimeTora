@@ -12,11 +12,33 @@ import path from "node:path";
 
 const MAX_LOG_FILES = 10;
 const LOG_FILE_PREFIX = "slimetora-";
+const LOG_LEVEL_WEIGHT: Record<LogLevel, number> = { trace: 0, debug: 1, info: 2, warn: 3, error: 4 };
+
+export type LoggingMode = "minimal" | "debug" | "all";
+
+interface LoggingPreferences {
+	writeLogs: boolean;
+	loggingMode: LoggingMode;
+}
+
+let preferences: LoggingPreferences = { writeLogs: true, loggingMode: "minimal" };
 
 let stream: fs.WriteStream | undefined;
 
 export function logsDirectory(): string {
 	return path.join(app.getPath("userData"), "logs");
+}
+
+export function configureLogging(value: unknown): void {
+	if (typeof value !== "object" || value === null) return;
+	const settings = value as Partial<LoggingPreferences>;
+	preferences = {
+		writeLogs: typeof settings.writeLogs === "boolean" ? settings.writeLogs : true,
+		loggingMode:
+			settings.loggingMode === "minimal" || settings.loggingMode === "debug" || settings.loggingMode === "all"
+				? settings.loggingMode
+				: "minimal",
+	};
 }
 
 function openLogFile(): fs.WriteStream {
@@ -40,9 +62,13 @@ function openLogFile(): fs.WriteStream {
 }
 
 export function writeRecord(record: LogRecord): void {
+	const minimumLevel = preferences.loggingMode === "all" ? 0 : preferences.loggingMode === "debug" ? 1 : 2;
+	if (LOG_LEVEL_WEIGHT[record.level] < minimumLevel) return;
+
 	const line = formatRecord(record);
 	const echo = record.level === "error" ? console.error : record.level === "warn" ? console.warn : console.log;
 	echo(line);
+	if (!preferences.writeLogs) return;
 
 	try {
 		openLogFile().write(`${line}\n`);

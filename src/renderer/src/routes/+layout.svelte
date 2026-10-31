@@ -12,14 +12,14 @@
 	import { ToastManager } from "#lib/util/toast.svelte";
 	import { currentPath, isOn, trackersLoaded } from "#lib/store/index";
 	import { initialized, initTranslations, t } from "#lib/lang/index";
-	import { captureUncaughtErrors, error, info } from "#lib/log/index";
+	import { captureUncaughtErrors, error, info, setLoggingMode } from "#lib/log/index";
 	import "#lib/api/icons";
 	import { registerBridge } from "#lib/api/bridge";
 	import { electronBridge } from "#lib/api/electronBridge";
 	import { attachNotifications } from "#lib/backend/notifications";
 	import { attachBackendState, backendStateLoaded } from "#lib/backend/state";
 	import { attachBleTargets } from "#lib/backend/ble-targets";
-	import { firstRun, program, restartRequired, settingsLoaded } from "#lib/store/settings";
+	import { advanced, firstRun, program, restartRequired, settingsLoaded } from "#lib/store/settings";
 	import { loadPlatform } from "#lib/store/platform";
 	import { sessionState } from "#lib/backend/state";
 	import { startInterpreting, stopInterpreting } from "#lib/backend/index";
@@ -48,13 +48,19 @@
 		const detachBleTargets = attachBleTargets();
 		const detachNotifications = attachNotifications();
 		const stopCapture = captureUncaughtErrors();
+		const stopLoggingSettings = advanced.subscribe((settings) => setLoggingMode(settings.loggingMode));
 		void loadPlatform();
 
 		let disposed = false;
 
 		currentPath.set(window.location.pathname);
 
-		void Promise.all([backendStateLoaded(), settingsLoaded, trackersLoaded]).then(() => {
+		void settingsLoaded.then(async () => {
+			if (disposed || $initialized) return;
+			await initTranslations($program.locale);
+		});
+
+		void Promise.all([backendStateLoaded(), settingsLoaded, trackersLoaded]).then(async () => {
 			if (disposed) return;
 			if ($firstRun) {
 				if (!window.location.pathname.startsWith("/onboarding")) goto("/onboarding");
@@ -62,9 +68,6 @@
 			}
 			if ($program.autoStart && $isOn === false) isOn.set(true);
 		});
-
-		if (!$initialized) void initTranslations("en-US");
-
 		const scrollbars = OverlayScrollbars(document.body, {
 			scrollbars: { autoHide: "leave", autoHideDelay: 100, visibility: "auto", theme: "os-theme-dark" },
 		});
@@ -75,6 +78,7 @@
 			detachBleTargets();
 			detachNotifications();
 			stopCapture();
+			stopLoggingSettings();
 			scrollbars?.destroy();
 		};
 	});

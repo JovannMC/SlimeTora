@@ -11,9 +11,9 @@
 	import Tooltip from "#lib/components/settings/Tooltip.svelte";
 
 	const CORRECTIONS = [
-		{ kind: SensorAutoCorrection.Accel, label: "Accelerometer" },
-		{ kind: SensorAutoCorrection.Gyro, label: "Gyroscope" },
-		{ kind: SensorAutoCorrection.Mag, label: "Magnetometer" },
+		{ kind: SensorAutoCorrection.Accel, label: "settings.tracker.sensor_auto_correction.accelerometer" },
+		{ kind: SensorAutoCorrection.Gyro, label: "settings.tracker.sensor_auto_correction.gyroscope" },
+		{ kind: SensorAutoCorrection.Mag, label: "settings.tracker.sensor_auto_correction.magnetometer" },
 	];
 
 	function markRestartRequired() {
@@ -93,7 +93,7 @@
 			<div class="flex flex-col gap-3 pl-1">
 				{#each CORRECTIONS as { kind, label }}
 					<Switch
-						{label}
+						label={$t(label)}
 						bind:selected={
 							() => $tracker.dynamicCalibration.includes(kind), (on) => setCorrection(kind, on)
 						}

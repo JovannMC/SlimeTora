@@ -1,4 +1,5 @@
 import { error, info, warn } from "#lib/log/index";
+import { program } from "#lib/store/settings";
 import { browser } from "$app/env";
 import { derived, writable } from "svelte/store";
 
@@ -131,6 +132,7 @@ export function changeLocale(newLocale: string): void {
 		return;
 	}
 
+	program.update((settings) => ({ ...settings, locale: newLocale }));
 	locale.set(newLocale);
 	info(["lang"], `Locale changed to: ${newLocale}`);
 }

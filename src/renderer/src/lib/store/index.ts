@@ -53,7 +53,7 @@ export const trackersLoaded: Promise<void> = (async () => {
 				// for every Tracker in loaded, place into knownTrackers
 				knownTrackers.set(Object.values(loaded));
 			}
-			info(["store"], `Loaded settings from trackers.json: ${JSON.stringify(loaded, null, 2)}`);
+			info(["store"], `Loaded ${Object.keys(loaded ?? {}).length} saved tracker records from trackers.json`);
 		} catch (e) {
 			error(["store"], `Failed to load settings from trackers.json: ${e}`);
 		}

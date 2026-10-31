@@ -60,7 +60,6 @@ export class SlimeVRBridge {
 			this.ip,
 			Number(this.port),
 		);
-		console.log(`ip: ${this.ip}, port: ${Number(this.port)}`);
 		await tracker.init();
 
 		const sensors: EmulatedSensor[] = [];

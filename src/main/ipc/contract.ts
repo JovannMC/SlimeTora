@@ -2,7 +2,7 @@ import { Channels, type AppInfo, type Capabilities } from "$shared/ipc/channels"
 import { isLogRecord } from "$shared/log/index";
 import { app, ipcMain, shell } from "electron";
 import { registerBackendIpc } from "../backend";
-import { logsDirectory, warn, writeRecord } from "../log";
+import { configureLogging, logsDirectory, warn, writeRecord } from "../log";
 import { deleteSetting, getSetting, setSetting } from "../store";
 
 function getAppInfo(): AppInfo {
@@ -25,6 +25,9 @@ function getCapabilities(): Capabilities {
 }
 
 export function registerIpcHandlers(): void {
+	const saved = getSetting<{ settings?: { advanced?: unknown } }>("settings.json");
+	configureLogging(saved?.settings?.advanced);
+
 	ipcMain.handle(Channels.appInfo, () => getAppInfo());
 	ipcMain.handle(Channels.capabilities, () => getCapabilities());
 	ipcMain.handle(Channels.openLogsFolder, () => shell.openPath(logsDirectory()));
@@ -35,6 +38,11 @@ export function registerIpcHandlers(): void {
 		else warn("ipc", "Dropped malformed log record from renderer");
 	});
 	ipcMain.handle(Channels.settingGet, (_event, key: string) => getSetting(key));
-	ipcMain.handle(Channels.settingSet, (_event, key: string, value: unknown) => setSetting(key, value));
+	ipcMain.handle(Channels.settingSet, (_event, key: string, value: unknown) => {
+		setSetting(key, value);
+		if (key === "settings.json" && typeof value === "object" && value !== null) {
+			configureLogging((value as { settings?: { advanced?: unknown } }).settings?.advanced);
+		}
+	});
 	ipcMain.handle(Channels.settingDelete, (_event, key: string) => deleteSetting(key));
 }

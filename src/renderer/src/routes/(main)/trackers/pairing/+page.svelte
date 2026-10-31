@@ -2,6 +2,7 @@
 	import { onDestroy } from "svelte";
 	import { invoke } from "#lib/api/backend";
 	import { error, info } from "#lib/log/index";
+	import { ToastManager } from "#lib/util/toast.svelte";
 	import { t } from "#lib/lang/index";
 	import { getBlePairingDevices } from "#lib/backend/ble-pairing";
 	import BluetoothPanel from "#lib/components/pairing/BluetoothPanel.svelte";
@@ -14,7 +15,6 @@
 	import { serialFromBleName } from "#lib/util/index.ts";
 
 	let isScanning = $state(false);
-	let pairingError = $state("");
 	const availablePorts = $derived([...$connection.ports].sort());
 	let busySlots: Record<string, boolean> = $state({});
 
@@ -51,6 +51,11 @@
 	let refreshRequest = 0;
 	let destroyed = false;
 	let previewScanning = false;
+
+	function reportError(message: string) {
+		error(["trackers", "pairing"], message);
+		ToastManager.add({ type: "error", message });
+	}
 
 	async function refresh(preview = false) {
 		const request = ++refreshRequest;
@@ -106,11 +111,11 @@
 		if (!$isOn) return;
 		const serial = id.split(":")[0]!;
 		const name = pairedDevices.find((device) => device.id === serial)?.deviceName ?? id;
-		pairingError = "";
 
 		try {
 			const existing = pairedDevices.find((device) => device.id === serial);
 			if (existing?.connectedVia) return;
+
 			if (
 				existing?.endpointId &&
 				$backendSnapshot.endpoints.some((endpoint) => endpoint.id === existing.endpointId)
@@ -118,32 +123,34 @@
 				await invoke("connect", existing.endpointId);
 				return;
 			}
+
 			const endpoints = await invoke("discover");
 			if (!$isOn || destroyed) return;
+
 			const device = getBlePairingDevices(
 				{ ...$backendSnapshot, endpoints },
 				$savedBleDevices,
 				$knownTrackers,
 			).pairedDevices.find((item) => item.id === serial);
 			if (device?.connectedVia) return;
+
 			if (!device?.endpointId) {
-				pairingError = `Could not find ${name} (${serial}). Is it powered on and nearby?`;
-				error(["trackers", "pairing"], `Could not find ${name} (${serial}) — is it powered on and nearby?`);
+				reportError($t("home.pairing.error.device_not_found", { name, serial }));
 				return;
 			}
+
 			await invoke("connect", device.endpointId);
 			info(["trackers", "pairing"], `Connected to device: ${name}`);
 		} catch (err) {
-			if (!destroyed) pairingError = `Failed to connect to ${name}: ${err}`;
-			error(["trackers", "pairing"], `Failed to connect to ${name}: ${err}`);
+			const message = $t("home.pairing.error.failed_connect", { name, error: String(err) });
+			if (!destroyed) reportError(message);
 		}
 	}
 
 	async function pair(endpointId: string, name: string) {
-		pairingError = "";
 		try {
 			const serial = serialFromBleName(name).trim();
-			if (!name.includes("-") || !serial) throw new Error("The advertisement does not contain a tracker serial");
+			if (!name.includes("-") || !serial) throw new Error($t("home.pairing.error.invalid_advertisement"));
 			await saveBleDevice({
 				serial,
 				advertisedName: name,
@@ -153,8 +160,8 @@
 			await invoke("connect", endpointId);
 			info(["trackers", "pairing"], `Connected to device: ${name}`);
 		} catch (err) {
-			if (!destroyed) pairingError = `Failed to ${$isOn ? "connect" : "save"} ${name}: ${err}`;
-			error(["trackers", "pairing"], `Failed to connect to ${name}: ${err}`);
+			const message = $t("home.pairing.error.failed_save", { name, error: String(err) });
+			if (!destroyed) reportError(message);
 		}
 	}
 
@@ -163,8 +170,8 @@
 			await invoke("disconnect", endpointId);
 			info(["trackers", "pairing"], `Disconnected device: ${endpointId}`);
 		} catch (err) {
-			if (!destroyed) pairingError = `Failed to disconnect ${endpointId}: ${err}`;
-			error(["trackers", "pairing"], pairingError);
+			if (!destroyed)
+				reportError($t("home.pairing.error.failed_disconnect", { device: endpointId, error: String(err) }));
 		}
 	}
 
@@ -175,8 +182,8 @@
 			if ($isOn) await invoke("forgetBleTarget", id);
 			await forgetBleDevice(id);
 		} catch (err) {
-			if (!destroyed) pairingError = `Failed to forget ${device.deviceName}: ${err}`;
-			error(["trackers", "pairing"], pairingError);
+			if (!destroyed)
+				reportError($t("home.pairing.error.failed_forget", { name: device.deviceName, error: String(err) }));
 		}
 	}
 
@@ -187,7 +194,11 @@
 			try {
 				await invoke("disconnect", device.endpointId);
 			} catch (err) {
-				error(["trackers", "pairing"], `Failed to disconnect ${device.endpointId}: ${err}`);
+				const message = $t("home.pairing.error.failed_disconnect", {
+					device: device.endpointId,
+					error: String(err),
+				});
+				if (!destroyed) reportError(message);
 			}
 		}
 		info(["trackers", "pairing"], "Disconnected all devices");
@@ -196,14 +207,21 @@
 	async function manageSlot(port: string, portId: string, action: "pair" | "unpair") {
 		if (!$isOn) return;
 		const key = `${port}:${portId}`;
+
 		if (busySlots[key]) return;
+
 		busySlots = { ...busySlots, [key]: true };
-		pairingError = "";
+
 		try {
 			await invoke(action, port, portId);
 		} catch (err) {
-			if (!destroyed) pairingError = `Failed to ${action} slot ${portId} on ${port}: ${err}`;
-			error(["trackers", "pairing"], pairingError);
+			if (!destroyed)
+				reportError($t("home.pairing.error.failed_slot", {
+					action: $t(`home.pairing.serial.${action}`),
+					slot: portId,
+					port,
+					error: String(err),
+				}));
 		} finally {
 			if (!destroyed) busySlots = { ...busySlots, [key]: false };
 		}
@@ -214,8 +232,8 @@
 		try {
 			await invoke("setChannel", port, channel);
 		} catch (err) {
-			if (!destroyed) pairingError = `Failed to set channel: ${err}`;
-			error(["trackers", "pairing"], `Failed to set channel: ${err}`);
+			const message = $t("home.pairing.error.failed_channel", { error: String(err) });
+			if (!destroyed) reportError(message);
 		}
 	}
 </script>
@@ -228,10 +246,6 @@
 			<p class="mt-2 text-sm">{$t("home.pairing.enable_connect")}</p>
 		{/if}
 	</div>
-	{#if pairingError}
-		<p class="rounded-lg bg-panel p-4 text-sm text-red-300" role="alert">{pairingError}</p>
-	{/if}
-
 	<BluetoothPanel
 		{pairedDevices}
 		{discoveredDevices}

@@ -1,6 +1,15 @@
 import { getBridge, isBridgeAvailable } from "#lib/api/bridge";
 import { formatCategories, formatMessage, toCategories, type LogCategory, type LogLevel } from "$shared/log/index";
 
+type LoggingMode = "minimal" | "debug" | "all";
+
+const logWeight: Record<LogLevel, number> = { trace: 0, debug: 1, info: 2, warn: 3, error: 4 };
+let loggingMode: LoggingMode = "minimal";
+
+export function setLoggingMode(mode: LoggingMode): void {
+	loggingMode = mode;
+}
+
 const consoleMethod = {
 	trace: "debug",
 	debug: "debug",
@@ -11,7 +20,8 @@ const consoleMethod = {
 
 function emit(level: LogLevel, category: LogCategory, args: unknown[]) {
 	const categories = toCategories(category);
-	console[consoleMethod[level]](formatCategories(categories), ...args);
+	const minimumLevel = loggingMode === "all" ? 0 : loggingMode === "debug" ? 1 : 2;
+	if (logWeight[level] >= minimumLevel) console[consoleMethod[level]](formatCategories(categories), ...args);
 
 	if (isBridgeAvailable()) {
 		getBridge().log({ timestamp: Date.now(), level, categories, message: formatMessage(args) });

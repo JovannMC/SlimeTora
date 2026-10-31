@@ -6,6 +6,7 @@ import { derived, get, writable } from "svelte/store";
 export type LoggingMode = "minimal" | "debug" | "all";
 
 export type ProgramSettings = {
+	locale: string;
 	autoUpdate: boolean;
 	checkUpdatesApp: boolean;
 	checkUpdatesLanguage: boolean;
@@ -51,6 +52,7 @@ type SavedSettings = {
 };
 
 export const program = writable<ProgramSettings>({
+	locale: "en-US",
 	autoUpdate: false,
 	checkUpdatesApp: true,
 	checkUpdatesLanguage: true,
@@ -101,12 +103,12 @@ export const settingsLoaded = (async () => {
 		firstRun.set(loaded === undefined);
 
 		if (loaded && typeof loaded === "object") {
-			if (loaded.program) program.set(loaded.program);
+			if (loaded.program) program.set({ ...get(program), ...loaded.program });
 			if (loaded.connection) connection.set(loaded.connection);
 			if (loaded.tracker) tracker.set(loaded.tracker);
 			if (loaded.advanced) advanced.set(loaded.advanced);
 		}
-		info(["store", "settings"], `Loaded settings from settings.json: ${JSON.stringify(loaded, null, 2)}`);
+		info(["store", "settings"], "Loaded settings from settings.json");
 	} catch (e) {
 		error(["store", "settings"], `Failed to load settings from settings.json: ${e}`);
 	}

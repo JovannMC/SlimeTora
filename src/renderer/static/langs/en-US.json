@@ -65,6 +65,16 @@
 			"title": "Pairing management",
 			"subtitle": "Pair and manage your HaritoraX trackers via Bluetooth (LE) or Serial/GX(6/2) connections",
 			"enable_connect": "Enable trackers to connect or pair devices",
+			"error": {
+				"device_not_found": "Could not find {{name}} ({{serial}}). Is it powered on and nearby?",
+				"failed_connect": "Failed to connect to {{name}}: {{error}}",
+				"invalid_advertisement": "The Bluetooth advertisement does not contain a tracker serial number.",
+				"failed_save": "Failed to save or connect {{name}}: {{error}}",
+				"failed_disconnect": "Failed to disconnect {{device}}: {{error}}",
+				"failed_forget": "Failed to forget {{name}}: {{error}}",
+				"failed_slot": "Failed to {{action}} slot {{slot}} on {{port}}: {{error}}",
+				"failed_channel": "Failed to set the channel: {{error}}"
+			},
 			"bluetooth": {
 				"title": "Bluetooth (LE) Pairing",
 				"paired_devices": "Saved devices",
@@ -116,7 +126,10 @@
 			},
 			"sensor_auto_correction": {
 				"name": "Sensor auto correction",
-				"tooltip": "Enable or disable sensor auto correction (dynamic calibration) features. Usually not needed to be changed and results vary between environments."
+				"tooltip": "Enable or disable sensor auto correction (dynamic calibration) features. Usually not needed to be changed and results vary between environments.",
+				"accelerometer": "Accelerometer",
+				"gyroscope": "Gyroscope",
+				"magnetometer": "Magnetometer"
 			},
 			"virtual_feet": {
 				"name": "Virtual feet trackers",
@@ -204,7 +217,10 @@
 			},
 			"sensor_auto_correction": {
 				"name": "Sensor auto correction",
-				"tooltip": "Enable or disable sensor auto correction (dynamic calibration) features. Usually not needed to be changed and results vary between environments."
+				"tooltip": "Enable or disable sensor auto correction (dynamic calibration) features. Usually not needed to be changed and results vary between environments.",
+				"accelerometer": "Accelerometer",
+				"gyroscope": "Gyroscope",
+				"magnetometer": "Magnetometer"
 			},
 			"virtual_feet": {
 				"name": "Virtual feet trackers",
@@ -235,7 +251,7 @@
 			},
 			"logging_mode": {
 				"name": "Logging Mode",
-				"tooltip": "Select the level of detail for logging. Higher levels may impact performance, do not change if you don't have issues!",
+				"tooltip": "Minimal includes basic information, warnings, and errors. Debug adds debug messages. All includes trace messages. More detail can affect performance.",
 				"minimal": "Minimal data",
 				"debug": "Debug data",
 				"all": "All data (!!!)"

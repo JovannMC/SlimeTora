@@ -57,7 +57,7 @@
 					<span class="flex items-center gap-1">
 						<Icon icon="ri:battery-fill" width={14} class="text-text-alt" />
 						<span class="text-sm text-text-alt" id="battery-small">
-							{batteryPercent === undefined ? "N/A" : `${batteryPercent}%`}
+							{batteryPercent === undefined ? $t("home.card.status.unknown") : `${batteryPercent}%`}
 						</span>
 					</span>
 					<span class="flex items-center gap-1 text-sm text-text-alt" id="mag-small">
@@ -99,7 +99,7 @@
 
 	{#if isOpen}
 		<div id="tracker-details-{id}" class="m-4 mt-0 flex flex-col gap-2 rounded-lg bg-panel p-4">
-			1<!-- basic details -->
+			<!-- basic details -->
 			<p class="flex items-center gap-1">
 				<b>{$t("home.card.device")}</b>
 				<span id="device-type">{id} ({type})</span>
@@ -116,8 +116,8 @@
 				<b>{$t("home.card.battery")}</b>
 				<span class="ml-1 flex flex-row items-center justify-center gap-1" id="battery-main">
 					<span>
-						{batteryPercent === undefined ? "N/A" : `${batteryPercent}%`}
-						({batteryVoltage === undefined ? "N/A" : `${batteryVoltage / 1000}V`})
+						{batteryPercent === undefined ? $t("home.card.status.unknown") : `${batteryPercent}%`}
+						({batteryVoltage === undefined ? $t("home.card.status.unknown") : `${batteryVoltage / 1000}V`})
 					</span>
 					{#if batteryStatus === ChargeStatus.Charging}
 						<Icon icon="ri:flashlight-fill" width={16} class="ml-1 inline-block text-yellow-500" />

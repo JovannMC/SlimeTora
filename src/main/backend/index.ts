@@ -62,14 +62,18 @@ const reconnect = createReconnectController({
 
 function connectEndpoint(instance: HaritoraX, endpointId: string): Promise<void> {
 	if (openEndpoints.has(endpointId)) return Promise.resolve();
+
 	const endpoint = instance.getEndpoints().find((item) => item.id === endpointId);
 	if (endpoint?.connection === "ble" && isDeviceStreaming(instance.getDevice(endpointIdentity(endpoint))))
 		return Promise.resolve();
+
 	const existing = connecting.get(endpointId);
 	if (existing) return existing;
+
 	const attempt = instance.connect(endpointId).finally(() => {
 		if (connecting.get(endpointId) === attempt) connecting.delete(endpointId);
 	});
+
 	connecting.set(endpointId, attempt);
 	return attempt;
 }
@@ -135,6 +139,7 @@ function runEnabled<T>(action: (check: () => void) => Promise<T>): Promise<T> {
 		if (!enabled || generation !== current) throw new Error("Tracking session changed");
 	};
 	const ready = transition;
+
 	return track(
 		operations,
 		ready.then(() => {
@@ -174,13 +179,16 @@ function scanBlePreview(): Promise<import("haritorax-interpreter").EndpointDescr
 	const result = (async () => {
 		await discovery.stopDiscovery();
 		if (abort.signal.aborted) return [];
+
 		const connection = await getBleConnection();
 		if (abort.signal.aborted) return [];
+
 		const endpoints = await connection.list({ timeoutMs: 5_000, signal: abort.signal });
 		if (!abort.signal.aborted) {
 			previewEndpoints = endpoints;
 			publishSnapshot();
 		}
+
 		return endpoints;
 	})().finally(() => {
 		if (previewScan?.abort === abort) previewScan = undefined;
@@ -202,6 +210,7 @@ async function loadConnections(heartbeatIntervalMs?: number): Promise<Connection
 				: typeof configuredHeartbeat === "number" && Number.isFinite(configuredHeartbeat)
 					? Math.max(0, configuredHeartbeat)
 					: 2000;
+
 		connections.push(createSerialConnection({ includeWired: true, heartbeatIntervalMs: interval }));
 	} catch (err) {
 		error(["backend", "serial"], "Serial connection unavailable:", err);
@@ -288,10 +297,15 @@ async function createBackend(): Promise<HaritoraX> {
 	});
 	for (const event of BACKEND_EVENTS) {
 		if (event === "error" || event === "imu" || event === "button") continue;
-		backend.on(event, (payload) => send(event, payload));
+		backend.on(event, (payload) => {
+			if (enabled && generation === instanceGeneration) send(event, payload);
+		});
 	}
-	backend.on("error", ({ error: err }) => send("error", { error: { message: err.message } }));
+	backend.on("error", ({ error: err }) => {
+		if (enabled && generation === instanceGeneration) send("error", { error: { message: err.message } });
+	});
 	backend.on("button", (event) => {
+		if (!enabled || generation !== instanceGeneration) return;
 		const trackerId = event.trackerId ?? event.deviceId;
 		const now = Date.now();
 		const configuredDebounce = activeOptions?.buttonDebounceMs;
@@ -299,44 +313,61 @@ async function createBackend(): Promise<HaritoraX> {
 			typeof configuredDebounce === "number" && Number.isFinite(configuredDebounce)
 				? Math.max(0, configuredDebounce)
 				: 500;
+
 		let buttonTimes = lastButtonAt.get(trackerId);
 		if (!buttonTimes) lastButtonAt.set(trackerId, (buttonTimes = new Map()));
+
 		const previous = buttonTimes.get(event.button);
 		if (previous !== undefined && now - previous < debounceMs) return;
+
 		buttonTimes.set(event.button, now);
 		send("button", event);
 	});
 	backend.on("endpoint:connected", ({ endpointId }) => {
+		if (!enabled || generation !== instanceGeneration) return;
 		openEndpoints.add(endpointId);
+
 		const endpoint = backend?.getEndpoints().find((item) => item.id === endpointId);
 		if (endpoint) reconnect.bind(endpoint);
+
 		reconnect.connected(endpointId);
 		publishSnapshot();
 	});
 	backend.on("endpoint:disconnected", ({ endpointId, reason }) => {
+		if (!enabled || generation !== instanceGeneration) return;
 		openEndpoints.delete(endpointId);
+
 		for (const [trackerId, endpoint] of liveTrackers) if (endpoint === endpointId) liveTrackers.delete(trackerId);
+
 		dongleSlots.delete(endpointId);
+
 		if (reason !== "requested") reconnect.disconnected(endpointId);
 		publishSnapshot();
 	});
 	backend.on("devices", () => {
+		if (!enabled || generation !== instanceGeneration) return;
 		bindReconnectTargets();
 		publishSnapshot();
 	});
 	backend.on("tracker:disconnected", ({ trackerId, deviceId, reason }) => {
+		if (!enabled || generation !== instanceGeneration) return;
 		liveTrackers.delete(trackerId);
 		lastButtonAt.delete(trackerId);
 		reconnect.refresh();
-		if (reason !== "timeout" || !enabled || generation !== instanceGeneration) return;
+
+		if (reason !== "timeout") return;
+
 		const device = backend?.getDevice(deviceId);
 		if (!device || device.connection !== "ble" || device.trackers.some((tracker) => tracker.connected)) return;
 		if (!openEndpoints.has(device.endpointId)) return;
+
 		void runEnabled(async (check) => {
 			const instance = await getBackend();
 			check();
+
 			const latest = instance.getDevice(deviceId);
 			if (!latest || latest.trackers.some((tracker) => tracker.connected)) return;
+
 			await instance.disconnect(device.endpointId);
 			check();
 			reconnect.disconnected(device.endpointId);
@@ -345,9 +376,12 @@ async function createBackend(): Promise<HaritoraX> {
 				warn(["backend", "reconnect"], `Could not reset stalled BLE device ${deviceId}: ${String(err)}`);
 		});
 	});
-	backend.on("channel", () => publishSnapshot());
+	backend.on("channel", () => {
+		if (enabled && generation === instanceGeneration) publishSnapshot();
+	});
 	for (const event of ["paired", "unpaired"] as const) {
 		backend.on(event, ({ endpointId, slot }) => {
+			if (!enabled || generation !== instanceGeneration) return;
 			dongleSlots.set(endpointId, { ...dongleSlots.get(endpointId), [slot]: event });
 			publishSnapshot();
 		});
@@ -355,13 +389,16 @@ async function createBackend(): Promise<HaritoraX> {
 
 	backend.on("device:connected", (event) => {
 		const device = backend?.getDevice(event.deviceId);
+
 		if (device && enabled && generation === instanceGeneration) {
 			void track(bridgeTasks, slimevr.deviceConnected(device)).catch((err) =>
 				error(["backend", "slimevr"], "Failed to initialize device:", err),
 			);
 		}
 	});
-	backend.on("device:disconnected", ({ deviceId }) => void slimevr.deviceDisconnected(deviceId));
+	backend.on("device:disconnected", ({ deviceId }) => {
+		if (enabled && generation === instanceGeneration) void slimevr.deviceDisconnected(deviceId);
+	});
 	backend.on("imu", (sample) => {
 		if (!enabled || generation !== instanceGeneration) return;
 
@@ -388,9 +425,12 @@ async function createBackend(): Promise<HaritoraX> {
 function startSession(options: SessionOptions): Promise<void> {
 	if (enabled) return transition;
 	enabled = true;
+
 	const current = ++generation;
 	const isCurrent = () => enabled && generation === current;
+
 	publishSession("starting");
+
 	const next = transition
 		.then(async () => {
 			if (!isCurrent()) return;
@@ -404,13 +444,9 @@ function startSession(options: SessionOptions): Promise<void> {
 			publishSnapshot();
 			for (const endpoint of endpoints) {
 				if (!isCurrent()) break;
-				if (!options.modes.includes(endpoint.connection)) continue;
-				if (endpoint.connection === "ble") {
-					if (!options.bleSerials.includes(endpointIdentity(endpoint))) continue;
-				} else {
-					if (!options.ports.includes(endpoint.id)) continue;
-					if (endpoint.model && !options.models.includes(endpoint.model)) continue;
-				}
+				if (endpoint.connection !== "serial" || !options.modes.includes("serial")) continue;
+				if (!options.ports.includes(endpoint.id)) continue;
+				if (endpoint.model && !options.models.includes(endpoint.model)) continue;
 				try {
 					const instance = await getBackend();
 					if (!isCurrent()) break;
@@ -447,8 +483,11 @@ function stopSession(turnOffTrackers = false): Promise<void> {
 	enabled = false;
 	reconnect.stop();
 	const current = ++generation;
+
 	publishSession("stopping");
+
 	pendingStops++;
+
 	const pendingOperations = [...operations];
 	const cancelDiscovery = discovery.stopDiscovery().catch((err) => {
 		error(["backend"], "Failed to stop discovery:", err);
@@ -483,6 +522,7 @@ function stopSession(turnOffTrackers = false): Promise<void> {
 			activeOptions = undefined;
 
 			openEndpoints.clear();
+			connecting.clear();
 			liveTrackers.clear();
 			lastButtonAt.clear();
 			dongleSlots.clear();
@@ -518,11 +558,13 @@ export const backendCalls: BackendCalls = {
 		return runEnabled(async (check) => {
 			const instance = await getBackend();
 			check();
+
 			const endpointId =
 				bound ??
 				instance.getEndpoints().find((item) => item.connection === "ble" && endpointIdentity(item) === serial)
 					?.id;
 			if (!endpointId) return;
+
 			await disconnectEndpoint(instance, endpointId, check);
 		});
 	},
@@ -539,10 +581,13 @@ export const backendCalls: BackendCalls = {
 		runEnabled(async (check) => {
 			await stopBlePreview();
 			check();
+
 			const endpoints = await discovery.discover();
 			check();
+
 			previewEndpoints = [];
 			publishSnapshot();
+
 			return endpoints;
 		}),
 	stopDiscovery: discovery.stopDiscovery,
@@ -550,13 +595,16 @@ export const backendCalls: BackendCalls = {
 		runEnabled(async (check) => {
 			const instance = await getBackend();
 			check();
+
 			const endpoint = instance.getEndpoints().find((item) => item.id === endpointId);
 			if (endpoint) reconnect.resume(endpoint);
+
 			await connectEndpoint(instance, endpointId);
 		}),
 	disconnect: (endpointId) => {
 		requireEnabled();
 		reconnect.suppress(endpointId);
+
 		return runEnabled(async (check) => {
 			const instance = await getBackend();
 			check();

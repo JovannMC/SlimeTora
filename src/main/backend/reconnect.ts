@@ -10,6 +10,7 @@ interface TargetState {
 	attempts: number;
 	due: number;
 	connectedThisSession: boolean;
+	connecting: boolean;
 	endpointId?: string;
 }
 
@@ -57,7 +58,7 @@ export function createReconnectController(options: ReconnectOptions) {
 
 		if (!active || pending) return;
 
-		const pendingTargets = [...targets.entries()].filter(([id, state]) => waiting(id, state));
+		const pendingTargets = [...targets.entries()].filter(([id, state]) => !state.connecting && waiting(id, state));
 		if (!pendingTargets.length) return;
 
 		const delay = Math.max(0, Math.min(...pendingTargets.map(([, state]) => state.due)) - Date.now());
@@ -75,6 +76,41 @@ export function createReconnectController(options: ReconnectOptions) {
 		options.onError(state.target, err, state.connectedThisSession);
 	}
 
+	function connectTarget(id: string, state: TargetState, endpoint: EndpointDescriptor, currentEpoch: number) {
+		const current = () => active && epoch === currentEpoch && targets.get(id) === state && !suppressed.has(id);
+
+		state.endpointId = endpoint.id;
+		state.connecting = true;
+
+		void (async () => {
+			try {
+				await options.connect(endpoint, () => current() && waiting(id, state));
+
+				if (current()) {
+					if (options.isConnected(endpoint.id) || options.isTargetConnected?.(state.target)) {
+						state.attempts = 0;
+						state.due = Date.now() + baseDelay;
+					} else fail(state, new Error("Device disconnected during connection"));
+				}
+			} catch (err) {
+				if (current()) fail(state, err);
+			} finally {
+				state.connecting = false;
+				if (current()) schedule();
+			}
+		})();
+	}
+
+	function findEndpoint(state: TargetState, endpoints: EndpointDescriptor[]): EndpointDescriptor | undefined {
+		return (
+			endpoints.find((item) => item.connection === state.target.connection && item.id === state.endpointId) ??
+			endpoints.find(
+				(item) =>
+					item.connection === state.target.connection && endpointIdentity(item) === state.target.identity,
+			)
+		);
+	}
+
 	async function retry() {
 		if (!active || pending) return;
 
@@ -84,7 +120,9 @@ export function createReconnectController(options: ReconnectOptions) {
 			active && epoch === currentEpoch && targets.get(id) === state && !suppressed.has(id);
 
 		try {
-			const due = [...targets.entries()].filter(([id, state]) => waiting(id, state) && state.due <= Date.now());
+			const due = [...targets.entries()].filter(
+				([id, state]) => !state.connecting && waiting(id, state) && state.due <= Date.now(),
+			);
 			if (!due.length) return;
 
 			let endpoints: EndpointDescriptor[];
@@ -96,40 +134,21 @@ export function createReconnectController(options: ReconnectOptions) {
 			}
 
 			for (const [id, state] of due) {
-				if (!current(id, state) || !waiting(id, state)) continue;
+				if (!current(id, state) || state.connecting || !waiting(id, state)) continue;
 
-				const endpoint =
-					endpoints.find(
-						(item) => item.connection === state.target.connection && item.id === state.endpointId,
-					) ??
-					endpoints.find(
-						(item) =>
-							item.connection === state.target.connection &&
-							endpointIdentity(item) === state.target.identity,
-					);
+				const endpoint = findEndpoint(state, endpoints);
 
 				if (!endpoint) {
 					fail(state, new Error("Device not found"));
 					continue;
 				}
-				state.endpointId = endpoint.id;
-				if (!waiting(id, state)) continue;
-
-				try {
-					await options.connect(endpoint, () => current(id, state) && waiting(id, state));
-					if (current(id, state)) {
-						if (options.isConnected(endpoint.id) || options.isTargetConnected?.(state.target)) {
-							state.attempts = 0;
-							state.due = Date.now() + baseDelay;
-						} else fail(state, new Error("Device disconnected during connection"));
-					}
-				} catch (err) {
-					if (current(id, state)) fail(state, err);
-				}
+				connectTarget(id, state, endpoint, currentEpoch);
 			}
 		} finally {
-			pending = false;
-			schedule();
+			if (epoch === currentEpoch) {
+				pending = false;
+				schedule();
+			}
 		}
 	}
 
@@ -147,6 +166,7 @@ export function createReconnectController(options: ReconnectOptions) {
 			attempts: 0,
 			due: Date.now() + baseDelay,
 			connectedThisSession: Boolean(endpointId && options.isConnected(endpointId)),
+			connecting: false,
 			endpointId,
 		});
 	}
@@ -225,6 +245,11 @@ export function createReconnectController(options: ReconnectOptions) {
 
 		for (const target of initial) add(target);
 		for (const endpoint of endpoints) bind(endpoint);
+		for (const [id, state] of targets) {
+			if (!waiting(id, state)) continue;
+			const endpoint = findEndpoint(state, endpoints);
+			if (endpoint) connectTarget(id, state, endpoint, epoch);
+		}
 
 		schedule();
 	}
@@ -232,6 +257,7 @@ export function createReconnectController(options: ReconnectOptions) {
 	function stop() {
 		active = false;
 		epoch++;
+		pending = false;
 		if (timer) clearTimeout(timer);
 		timer = undefined;
 		targets.clear();

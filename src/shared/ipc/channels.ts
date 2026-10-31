@@ -52,8 +52,8 @@ export interface PlatformBridge {
 	getCapabilities(): Promise<Capabilities>;
 	log(record: LogRecord): void;
 	backend: BackendBridge;
-	openLogsFolder(): Promise<void>;
-	openDataFolder(): Promise<void>;
+	openLogsFolder(): Promise<string>;
+	openDataFolder(): Promise<string>;
 	getSetting<T = unknown>(key: string): Promise<T | undefined>;
 	setSetting(key: string, value: unknown): Promise<void>;
 	deleteSetting(key: string): Promise<void>;

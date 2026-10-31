@@ -66,7 +66,20 @@ export const info = (category: LogCategory, ...args: unknown[]) => emit("info", 
 export const warn = (category: LogCategory, ...args: unknown[]) => emit("warn", category, args);
 export const error = (category: LogCategory, ...args: unknown[]) => emit("error", category, args);
 
-export function closeLogFile(): void {
-	stream?.end();
+export function closeLogFile(): Promise<void> {
+	const current = stream;
 	stream = undefined;
+	if (!current || current.destroyed || current.writableFinished) return Promise.resolve();
+
+	return new Promise((resolve) => {
+		const finish = () => {
+			current.off("finish", finish);
+			current.off("error", finish);
+			resolve();
+		};
+
+		current.once("finish", finish);
+		current.once("error", finish);
+		current.end();
+	});
 }

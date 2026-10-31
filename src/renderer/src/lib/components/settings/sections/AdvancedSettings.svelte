@@ -3,6 +3,7 @@
 	import { goto } from "$app/navigation";
 	import { getBridge, isBridgeAvailable } from "#lib/api/bridge";
 	import { error } from "#lib/log/index";
+	import { ToastManager } from "#lib/util/toast.svelte";
 	import { advanced, type LoggingMode } from "#lib/store/settings";
 	import { t } from "#lib/lang/index";
 	import Button from "#lib/components/settings/Button.svelte";
@@ -13,18 +14,22 @@
 	async function openLogsFolder() {
 		try {
 			if (!isBridgeAvailable()) throw new Error("the Electron main process is not available");
-			await getBridge().openLogsFolder();
+			const result = await getBridge().openLogsFolder();
+			if (result) throw new Error(result);
 		} catch (err) {
 			error(["settings", "advanced"], "Failed to open logs folder:", err);
+			ToastManager.add({ type: "error", message: `Failed to open logs folder: ${err}` });
 		}
 	}
 
 	async function openDataFolder() {
 		try {
 			if (!isBridgeAvailable()) throw new Error("the Electron main process is not available");
-			await getBridge().openDataFolder();
+			const result = await getBridge().openDataFolder();
+			if (result) throw new Error(result);
 		} catch (err) {
 			error(["settings", "advanced"], "Failed to open data folder:", err);
+			ToastManager.add({ type: "error", message: `Failed to open data folder: ${err}` });
 		}
 	}
 

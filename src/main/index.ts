@@ -38,14 +38,32 @@ app.on("window-all-closed", () => {
 });
 
 let quitting = false;
+const SHUTDOWN_TIMEOUT_MS = 15_000;
+let shutdownTimedOut = false;
 app.on("before-quit", (event) => {
 	if (quitting) return;
 	event.preventDefault();
 	quitting = true;
+	const shutdownTimeout = setTimeout(() => {
+		shutdownTimedOut = true;
+		error("main", `Backend shutdown timed out after ${SHUTDOWN_TIMEOUT_MS}ms, forcing application exit`);
+		void closeLogFile();
+		setTimeout(() => app.exit(1), 1_000);
+	}, SHUTDOWN_TIMEOUT_MS);
+
 	void disposeBackend()
 		.catch((err) => error("main", "Failed to shut down backend:", err))
-		.finally(() => {
-			closeLogFile();
+		.then(async () => {
+			if (shutdownTimedOut) return;
+			clearTimeout(shutdownTimeout);
+
+			const flushTimeout = setTimeout(() => {
+				error("main", "Log flush timed out after 2 seconds, forcing application exit");
+				app.exit(1);
+			}, 2_000);
+
+			await closeLogFile();
+			clearTimeout(flushTimeout);
 			app.quit();
 		});
 });

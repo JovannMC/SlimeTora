@@ -23,8 +23,8 @@
 
 	const rotation = $derived(tracker?.data.rotation?.map((v) => Number(v.toFixed(decimals))) ?? [0, 0, 0]);
 	const acceleration = $derived(tracker?.data.acceleration?.map((v) => Number(v.toFixed(decimals))) ?? [0, 0, 0]);
-	const batteryPercent = $derived(tracker?.data.battery?.remaining ?? -1);
-	const batteryVoltage = $derived(tracker?.data.battery?.voltage ?? -1);
+	const batteryPercent = $derived(tracker?.data.battery?.remaining);
+	const batteryVoltage = $derived(tracker?.data.battery?.voltage);
 	const batteryStatus = $derived(tracker?.data.battery?.status ?? ChargeStatus.Discharging);
 	const magStatus = $derived(tracker?.data.magnetometer ?? "N/A");
 	const rssi = $derived(tracker?.data.rssi);
@@ -43,80 +43,93 @@
 	id="tracker-card-{id}"
 >
 	<!-- collapsed header -->
-	<div
-		class="tracker-card-header hoverable flex h-14 items-center justify-between px-4"
-		role="button"
-		aria-expanded={isOpen}
-		tabindex="0"
-		onclick={toggleOpen}
-		onkeydown={(e) => e.key === "Enter" && toggleOpen()}
-	>
-		<div>
-			<p class="text-left font-body">{displayName}</p>
-			<div class="flex items-center gap-2 text-sm">
-				<Icon icon={connectionIcon} width={14} class="text-text-alt" />
-				<div class="flex items-center gap-1">
-					<Icon icon="ri:battery-fill" width={14} class="text-text-alt" />
-					<p class="text-sm text-text-alt" id="battery-small">{batteryPercent}%</p>
-				</div>
-				<p class="flex items-center gap-1 text-sm text-text-alt" id="mag-small">
-					<Icon icon="ri:compass-3-fill" width={14} class="bg-transparent! {magClass}" id="mag-icon" />
-					<span class="bg-transparent! uppercase {magClass}" id="mag-text">{magStatus}</span>
-				</p>
-				<div class="flex items-center gap-1" id="rssi-status">
-					<Icon icon="ri:signal-wifi-fill" width={14} class="text-text-alt" />
-					<span class="text-text-alt" id="rssi">{rssi === undefined ? "N/A" : `${rssi} dBm`}</span>
-				</div>
-			</div>
-		</div>
-		<div class="flex items-center gap-1">
+	<div class="tracker-card-header flex h-14 items-center justify-between px-4">
+		<button
+			type="button"
+			class="hoverable flex h-full min-w-0 flex-1 items-center justify-between text-left"
+			aria-expanded={isOpen}
+			onclick={toggleOpen}
+		>
+			<span class="min-w-0">
+				<span class="block text-left font-body">{displayName}</span>
+				<span class="flex items-center gap-2 text-sm">
+					<Icon icon={connectionIcon} width={14} class="text-text-alt" />
+					<span class="flex items-center gap-1">
+						<Icon icon="ri:battery-fill" width={14} class="text-text-alt" />
+						<span class="text-sm text-text-alt" id="battery-small">
+							{batteryPercent === undefined ? "N/A" : `${batteryPercent}%`}
+						</span>
+					</span>
+					<span class="flex items-center gap-1 text-sm text-text-alt" id="mag-small">
+						<Icon icon="ri:compass-3-fill" width={14} class="bg-transparent! {magClass}" id="mag-icon" />
+						<span class="bg-transparent! uppercase {magClass}" id="mag-text">{magStatus}</span>
+					</span>
+					<span class="flex items-center gap-1" id="rssi-status">
+						<Icon icon="ri:signal-wifi-fill" width={14} class="text-text-alt" />
+						<span class="text-text-alt" id="rssi">{rssi === undefined ? "N/A" : `${rssi} dBm`}</span>
+					</span>
+				</span>
+			</span>
+			<Icon icon={isOpen ? "ri:arrow-up-s-line" : "ri:arrow-down-s-line"} width={24} class="text-text-alt" />
+		</button>
+		<div class="flex shrink-0 items-center gap-1">
 			<button
+				type="button"
 				class="rounded-md p-1 hover:bg-secondary/20 active:bg-secondary/10"
 				aria-label={$t("home.card.power_off", { name: displayName })}
-				onclick={(e) => {
-					e.stopPropagation();
+				onclick={() => {
 					info(["trackers", "card"], `Powered off tracker: ${displayName} (${id})`);
 				}}
 			>
 				<Icon icon="ri:shut-down-line" width={18} class="text-text-alt" />
 			</button>
 			<button
+				type="button"
 				class="rounded-md p-1 hover:bg-secondary/20 active:bg-secondary/10"
 				aria-label={$t("home.card.settings", { name: displayName })}
-				onclick={(e) => {
-					e.stopPropagation();
+				onclick={() => {
 					info(["trackers", "card"], `Settings clicked for: ${displayName}`);
 					goto(`/trackers/settings?trackerId=${id}`);
 				}}
 			>
 				<Icon icon="ri:settings-3-line" width={18} class="text-text-alt" />
 			</button>
-			<Icon icon={isOpen ? "ri:arrow-up-s-line" : "ri:arrow-down-s-line"} width={24} class="text-text-alt" />
 		</div>
 	</div>
 
 	{#if isOpen}
-		<div class="m-4 mt-0 flex flex-col gap-2 rounded-lg bg-panel p-4">
+		<div id="tracker-details-{id}" class="m-4 mt-0 flex flex-col gap-2 rounded-lg bg-panel p-4">
+			1<!-- basic details -->
 			<p class="flex items-center gap-1">
 				<b>{$t("home.card.device")}</b>
 				<span id="device-type">{id} ({type})</span>
 				<Icon icon={connectionIcon} width={16} class="text-text-alt" />
 			</p>
+
+			<!-- imu data -->
 			<p>
 				<b>{$t("home.card.imu")}</b> <span id="imu">{rotation.join(", ")} ({acceleration.join(", ")})</span>
 			</p>
+
+			<!-- battery data -->
 			<p class="flex flex-row items-center">
 				<b>{$t("home.card.battery")}</b>
 				<span class="ml-1 flex flex-row items-center justify-center gap-1" id="battery-main">
-					<span>{batteryPercent}% ({batteryVoltage / 1000}V)</span>
+					<span>
+						{batteryPercent === undefined ? "N/A" : `${batteryPercent}%`}
+						({batteryVoltage === undefined ? "N/A" : `${batteryVoltage / 1000}V`})
+					</span>
 					{#if batteryStatus === ChargeStatus.Charging}
 						<Icon icon="ri:flashlight-fill" width={16} class="ml-1 inline-block text-yellow-500" />
 					{/if}
 				</span>
 			</p>
+
+			<!-- status data -->
 			<div id="status" class="flex items-center gap-1 text-center">
 				<b>{$t("home.card.status.text")}</b>
 				<div class="flex items-center gap-2" id="battery-status">
+					<!-- mag status -->
 					<div class="flex items-center gap-1" id="mag-status">
 						<Tooltip content={$t("home.card.tooltip.mag_status")} position="up" width="200px">
 							<Icon
@@ -132,6 +145,7 @@
 								: $t(`home.card.status.${magStatus.toLowerCase()}`)}
 						</span>
 					</div>
+					<!-- rssi status -->
 					<div class="flex items-center gap-1" id="rssi-status">
 						<Tooltip content={$t("home.card.tooltip.rssi")} position="up" width="200px">
 							<Icon icon="ri:signal-wifi-fill" width={16} class="text-text-alt" />

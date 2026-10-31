@@ -13,17 +13,13 @@
 	import { onMount } from "svelte";
 
 	let isSmall = $state(window.matchMedia("(max-width: 768px)").matches);
+	function updateIsSmall() {
+		isSmall = window.matchMedia("(max-width: 768px)").matches;
+	}
 
 	onMount(() => {
-		window.addEventListener("resize", () => {
-			isSmall = window.matchMedia("(max-width: 768px)").matches;
-		});
-
-		return () => {
-			window.removeEventListener("resize", () => {
-				isSmall = window.matchMedia("(max-width: 768px)").matches;
-			});
-		};
+		window.addEventListener("resize", updateIsSmall);
+		return () => window.removeEventListener("resize", updateIsSmall);
 	});
 
 	// spread trackers over two columns, alternating
@@ -51,12 +47,9 @@
 
 	// expands every card, or collapses them all if any are open
 	function toggleAll() {
-		const anyOpen = Object.values($trackerOpenStates).some(Boolean);
-		trackerOpenStates.update((states) => Object.fromEntries(Object.keys(states).map((id) => [id, !anyOpen])));
-
-		requestAnimationFrame(() => {
-			window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" });
-		});
+		const trackerIds = $connectedTrackers.map((tracker) => tracker.id);
+		const anyOpen = trackerIds.some((id) => $trackerOpenStates[id]);
+		trackerOpenStates.set(Object.fromEntries(trackerIds.map((id) => [id, !anyOpen])));
 	}
 </script>
 

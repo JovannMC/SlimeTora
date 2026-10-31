@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { onMount } from "svelte";
+	import { get } from "svelte/store";
 	import { onNavigate } from "$app/navigation";
 	import { OverlayScrollbars } from "overlayscrollbars";
 	import "../app.css";
@@ -19,7 +20,14 @@
 	import { attachNotifications } from "#lib/backend/notifications";
 	import { attachBackendState, backendStateLoaded } from "#lib/backend/state";
 	import { attachBleTargets } from "#lib/backend/ble-targets";
-	import { advanced, firstRun, program, restartRequired, settingsLoaded } from "#lib/store/settings";
+	import {
+		advanced,
+		firstRun,
+		program,
+		restartRequired,
+		settingsLoaded,
+		settingsFileErrors,
+	} from "#lib/store/settings";
 	import { loadPlatform } from "#lib/store/platform";
 	import { sessionState } from "#lib/backend/state";
 	import { startInterpreting, stopInterpreting } from "#lib/backend/index";
@@ -52,12 +60,26 @@
 		void loadPlatform();
 
 		let disposed = false;
+		let shownFileErrors = 0;
+		const showFileErrors = () => {
+			if (!get(initialized)) return;
+			const errors = get(settingsFileErrors);
+			for (const item of errors.slice(shownFileErrors)) {
+				ToastManager.add({
+					type: "error",
+					message: get(t)(`settings.file.${item.kind}_failed`, { error: item.detail }),
+				});
+			}
+			shownFileErrors = errors.length;
+		};
+		const stopFileErrors = settingsFileErrors.subscribe(showFileErrors);
 
 		currentPath.set(window.location.pathname);
 
 		void settingsLoaded.then(async () => {
-			if (disposed || $initialized) return;
-			await initTranslations($program.locale);
+			if (disposed) return;
+			if (!$initialized) await initTranslations($program.locale);
+			showFileErrors();
 		});
 
 		void Promise.all([backendStateLoaded(), settingsLoaded, trackersLoaded]).then(async () => {
@@ -77,6 +99,7 @@
 			detachBackendState();
 			detachBleTargets();
 			detachNotifications();
+			stopFileErrors();
 			stopCapture();
 			stopLoggingSettings();
 			scrollbars?.destroy();

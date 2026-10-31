@@ -25,19 +25,26 @@ function getCapabilities(): Capabilities {
 }
 
 export function registerIpcHandlers(): void {
-	const saved = getSetting<{ settings?: { advanced?: unknown } }>("settings.json");
-	configureLogging(saved?.settings?.advanced);
+	try {
+		const saved = getSetting<{ settings?: { advanced?: unknown } }>("settings.json");
+		configureLogging(saved?.settings?.advanced);
+	} catch (err) {
+		warn(["store"], `Could not load settings for logging configuration: ${String(err)}`);
+		configureLogging(undefined);
+	}
 
 	ipcMain.handle(Channels.appInfo, () => getAppInfo());
 	ipcMain.handle(Channels.capabilities, () => getCapabilities());
 	ipcMain.handle(Channels.openLogsFolder, () => shell.openPath(logsDirectory()));
 	ipcMain.handle(Channels.openDataFolder, () => shell.openPath(app.getPath("userData")));
+
 	registerBackendIpc();
+
 	ipcMain.on(Channels.log, (_event, record: unknown) => {
 		if (isLogRecord(record)) writeRecord(record);
 		else warn("ipc", "Dropped malformed log record from renderer");
 	});
-	ipcMain.handle(Channels.settingGet, (_event, key: string) => getSetting(key));
+	ipcMain.handle(Channels.settingGet, (_event, key: string) => getSetting(key, { backupCorrupt: true }));
 	ipcMain.handle(Channels.settingSet, (_event, key: string, value: unknown) => {
 		setSetting(key, value);
 		if (key === "settings.json" && typeof value === "object" && value !== null) {

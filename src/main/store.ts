@@ -1,8 +1,9 @@
 import { app } from "electron";
-import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { unlinkSync } from "node:fs";
+import { readSettingsFile, writeSettingsFile } from "./settings-file";
 
-export function getSetting<T = unknown>(path: string): T | undefined {
-	return readJson(fileFor(path)) as T | undefined;
+export function getSetting<T = unknown>(path: string, options: { backupCorrupt?: boolean } = {}): T | undefined {
+	return readSettingsFile(fileFor(path), options);
 }
 
 export function setSetting(path: string, value: unknown): void {
@@ -12,8 +13,8 @@ export function setSetting(path: string, value: unknown): void {
 export function deleteSetting(path: string): void {
 	try {
 		unlinkSync(fileFor(path));
-	} catch {
-		// already gone
+	} catch (err) {
+		if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
 	}
 }
 
@@ -24,15 +25,6 @@ function fileFor(path: string): string {
 	return `${app.getPath("userData")}/${name}`;
 }
 
-function readJson(file: string): Record<string, unknown> | undefined {
-	try {
-		return JSON.parse(readFileSync(file, "utf-8")) ?? {};
-	} catch {
-		return undefined;
-	}
-}
-
 function writeJson(file: string, value: unknown): void {
-	mkdirSync(app.getPath("userData"), { recursive: true });
-	writeFileSync(file, JSON.stringify(value, null, 2), "utf-8");
+	writeSettingsFile(file, value);
 }

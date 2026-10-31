@@ -202,7 +202,16 @@ async function loadConnections(heartbeatIntervalMs?: number): Promise<Connection
 
 	try {
 		const { createSerialConnection } = await import("haritorax-interpreter/connections/serial");
-		const saved = getSetting<{ settings?: { tracker?: { heartbeat?: number } } }>("settings.json");
+		let saved: { settings?: { tracker?: { heartbeat?: number } } } | undefined;
+		try {
+			saved = getSetting("settings.json");
+		} catch (err) {
+			warn(
+				["backend", "settings"],
+				`Ignoring unreadable settings while loading serial connection: ${String(err)}`,
+			);
+		}
+
 		const configuredHeartbeat = saved?.settings?.tracker?.heartbeat;
 		const interval =
 			typeof heartbeatIntervalMs === "number" && Number.isFinite(heartbeatIntervalMs)
@@ -636,6 +645,13 @@ export function registerBackendIpc(): void {
 }
 
 export async function disposeBackend(): Promise<void> {
-	const saved = getSetting<{ settings?: { program?: { autoOff?: boolean } } }>("settings.json");
+	let saved: { settings?: { program?: { autoOff?: boolean } } } | undefined;
+
+	try {
+		saved = getSetting("settings.json");
+	} catch (err) {
+		warn(["backend", "settings"], `Ignoring unreadable settings during shutdown: ${String(err)}`);
+	}
+
 	await stopSession(saved?.settings?.program?.autoOff === true);
 }

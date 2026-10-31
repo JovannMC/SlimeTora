@@ -19,6 +19,6 @@ export async function load(path: string): Promise<Store> {
 			>) ?? {};
 			data[key] = value;
 			await window.slimetora!.setSetting(path, data);
-		},
+		}
 	};
 }

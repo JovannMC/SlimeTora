@@ -1,4 +1,3 @@
-import { load } from "#lib/api/store";
 import { startInterpreting, stopInterpreting } from "#lib/backend/index";
 import { error, info } from "#lib/log/index";
 import type { ConnectionMode } from "#lib/types/connection";
@@ -6,11 +5,10 @@ import type { ChargeStatus, MagStatus, TrackerModel } from "#lib/types/tracker";
 import { DISCORD_URL, GITHUB_URL } from "#lib/util/consts.ts";
 import { writable, type Writable } from "svelte/store";
 import type { TrackerSettings } from "./settings";
+import { trackerStore, updateTrackerStore } from "./tracker-storage";
 
 export * as settings from "./settings";
 export * from "./platform";
-
-let trackersConfig: Awaited<ReturnType<typeof load>>;
 
 export interface BatteryData {
 	remaining?: number;
@@ -49,10 +47,8 @@ export const trackerOpenStates = writable<Record<string, boolean>>({});
 // resolves once the saved trackers have been loaded into knownTrackers
 export const trackersLoaded: Promise<void> = (async () => {
 	try {
-		trackersConfig = await load("trackers.json");
-
 		try {
-			const loaded = await trackersConfig.get("trackers");
+			const loaded = await (await trackerStore()).get("trackers");
 			if (loaded && typeof loaded === "object") {
 				// for every Tracker in loaded, place into knownTrackers
 				knownTrackers.set(Object.values(loaded));
@@ -66,40 +62,34 @@ export const trackersLoaded: Promise<void> = (async () => {
 	}
 })();
 
-let trackerSaveQueue = Promise.resolve();
-
 export function saveTrackerConfig(tracker: TrackerSave): Promise<void> {
-	trackerSaveQueue = trackerSaveQueue
+	return trackersLoaded
 		.then(async () => {
-			await trackersLoaded;
+			let changed = false;
+			await updateTrackerStore<Record<string, TrackerSave>>("trackers", (current) => {
+				const settings = current ?? {};
+				const saved = settings[tracker.id];
+				if (
+					saved &&
+					saved.name === tracker.name &&
+					saved.connection_mode === tracker.connection_mode &&
+					saved.tracker_type === tracker.tracker_type &&
+					saved.bodyPart === tracker.bodyPart &&
+					JSON.stringify(saved.settings ?? null) === JSON.stringify(tracker.settings ?? null)
+				)
+					return settings;
 
-			if (!trackersConfig) return;
-
-			const settings = (await trackersConfig.get<Record<string, TrackerSave>>("trackers")) || {};
-			const saved = settings[tracker.id];
-
-			if (
-				saved &&
-				saved.name === tracker.name &&
-				saved.connection_mode === tracker.connection_mode &&
-				saved.tracker_type === tracker.tracker_type &&
-				saved.bodyPart === tracker.bodyPart &&
-				JSON.stringify(saved.settings ?? null) === JSON.stringify(tracker.settings ?? null)
-			)
-				return;
-
-			await trackersConfig.set("trackers", {
-				...settings,
-				[tracker.id]: tracker,
+				changed = true;
+				return { ...settings, [tracker.id]: tracker };
 			});
 
+			if (!changed) return;
 			knownTrackers.update((trackers) => [...trackers.filter((saved) => saved.id !== tracker.id), tracker]);
 			info(["store"], `Tracker ${tracker.id} saved to trackers.json`);
 		})
 		.catch((e) => {
 			error(["store"], `Failed to save tracker ${tracker.id} to trackers.json: ${e}`);
 		});
-	return trackerSaveQueue;
 }
 
 // null if first time / app just launched

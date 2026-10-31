@@ -74,7 +74,6 @@
 				"unpair_all": "Disconnect All",
 				"save": "Save",
 				"forget": "Forget",
-				"unconfirmed": "Awaiting connection to confirm identity",
 				"pair": "Pair",
 				"connect": "Connect",
 				"disconnect": "Disconnect",
@@ -84,7 +83,7 @@
 				"no_paired_devices": "No saved devices. Scan for devices to add them.",
 				"searching": "Searching for devices...",
 				"no_devices_found": "No devices found.",
-				"body_part_unknown": "Body part not detected"
+				"body_part_unknown": "Unknown body part"
 			},
 			"serial": {
 				"title": "Serial / GX(6/2) Pairing",

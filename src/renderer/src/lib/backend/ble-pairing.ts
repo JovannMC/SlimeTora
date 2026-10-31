@@ -21,11 +21,14 @@ export function getBlePairingDevices(
 	const open = new Set(snapshot.connectedEndpointIds);
 
 	const pairedDevices = savedDevices.map((saved): PairedDevice => {
+		const trackerRecords = knownTrackers.filter((tracker) => tracker.id.startsWith(`${saved.serial}:`));
 		const device = snapshot.devices.find((item) => item.deviceId === saved.serial);
 		const endpoint =
 			endpoints.find((item) => device?.connection === "ble" && item.id === device.endpointId) ??
 			endpoints.find(
-				(item) => serialFromBleName(item.displayName) === saved.serial || item.displayName === saved.name,
+				(item) =>
+					serialFromBleName(item.displayName) === saved.serial ||
+					item.displayName === saved.advertisedName,
 			);
 		const endpointId = device?.connection === "ble" ? device.endpointId : endpoint?.id;
 		const model = device?.model ?? endpoint?.model;
@@ -33,18 +36,17 @@ export function getBlePairingDevices(
 		return {
 			id: saved.serial,
 			endpointId,
-			deviceName: saved.name,
+			deviceName: trackerRecords[0]?.name ?? saved.serial,
 			connectedVia:
 				endpointId && open.has(endpointId)
 					? "ble"
 					: device?.trackers.some((tracker) => tracker.connected)
 						? device.connection
 						: undefined,
-			trackerType: model ? MODEL_FROM_LIBRARY[model] : saved.model,
+			trackerType: model ? MODEL_FROM_LIBRARY[model] : trackerRecords[0]?.tracker_type,
 			bodyPart:
 				device?.trackers.map((tracker) => tracker.bodyPart).join(", ") ||
-				knownTrackers
-					.filter((tracker) => tracker.id.startsWith(`${saved.serial}:`))
+				trackerRecords
 					.map((tracker) => tracker.bodyPart)
 					.filter(Boolean)
 					.join(", ") ||

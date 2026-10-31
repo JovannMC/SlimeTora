@@ -50,7 +50,7 @@
 		<h2 class="text-xl font-semibold">{$t("home.pairing.bluetooth.title")}</h2>
 	</div>
 
-	<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+	<div class="grid grid-cols-1 gap-4">
 		<!-- paired devices -->
 		<div class="rounded-lg bg-quaternary p-4">
 			<div class="mb-3 flex items-center justify-between">
@@ -67,9 +67,9 @@
 					</div>
 				{/if}
 			</div>
-			<div class="grid grid-cols-2 gap-2">
+			<div class="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-4">
 				{#if pairedDevices.length === 0}
-					<div class="col-span-2 py-4 text-center text-sm">
+					<div class="py-4 text-center text-sm sm:col-span-2 xl:col-span-3">
 						<Icon icon="mdi:bluetooth-off" width={24} class="mx-auto mb-2 opacity-50" />
 						<p>{$t("home.pairing.bluetooth.no_paired_devices")}</p>
 					</div>
@@ -102,9 +102,6 @@
 									</span>
 								{/if}
 							</div>
-							{#if !device.confirmed}
-								<p class="text-xs text-text-alt">{$t("home.pairing.bluetooth.unconfirmed")}</p>
-							{/if}
 							{#if connected && device.endpointId}
 								<Button
 									label={$t("home.pairing.bluetooth.disconnect")}
@@ -153,9 +150,9 @@
 				</div>
 			</div>
 
-			<div class="grid grid-cols-2 gap-2">
+			<div class="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-4">
 				{#if discoveredDevices.length === 0}
-					<div class="col-span-2 py-4 text-center text-sm">
+					<div class="col-span-1 py-4 text-center text-sm sm:col-span-4">
 						{#if isScanning}
 							<Icon icon="mdi:loading" width={24} class="mx-auto mb-2 animate-spin" />
 							<p>{$t("home.pairing.bluetooth.searching")}</p>

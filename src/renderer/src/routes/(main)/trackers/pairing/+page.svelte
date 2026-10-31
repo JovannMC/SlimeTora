@@ -22,7 +22,6 @@
 	);
 	let busySlots: Record<string, boolean> = $state({});
 
-	const savedBle = $derived(new Map($savedBleDevices.map((device) => [device.serial, device])));
 	const bleDevices = $derived(getBlePairingDevices($backendSnapshot, $savedBleDevices, $knownTrackers));
 	const pairedDevices = $derived(bleDevices.pairedDevices);
 	const discoveredDevices = $derived(bleDevices.discoveredDevices);
@@ -110,8 +109,7 @@
 	async function connectSaved(id: string) {
 		if (!$isOn) return;
 		const serial = id.split(":")[0]!;
-		const saved = savedBle.get(serial);
-		const name = saved?.name ?? id;
+		const name = pairedDevices.find((device) => device.id === serial)?.deviceName ?? id;
 		pairingError = "";
 
 		try {
@@ -152,8 +150,7 @@
 			if (!name.includes("-") || !serial) throw new Error("The advertisement does not contain a tracker serial");
 			await saveBleDevice({
 				serial,
-				name,
-				model: discoveredDevices.find((device) => device.endpointId === endpointId)?.trackerType,
+				advertisedName: name,
 				confirmed: false,
 			});
 			if (!$isOn || destroyed) return;

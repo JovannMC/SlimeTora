@@ -214,7 +214,7 @@ export function attachNotifications(): () => void {
 			const identity = `${device.deviceId}:${device.model}:${advertisedSerial ?? ""}`;
 			if (confirmedBleDevices.has(identity)) continue;
 			confirmedBleDevices.add(identity);
-			void confirmBleDevice(device.deviceId, MODEL_FROM_LIBRARY[device.model], advertisedSerial).catch((err) => {
+			void confirmBleDevice(device.deviceId, advertisedSerial).catch((err) => {
 				confirmedBleDevices.delete(identity);
 				error(["backend", "notifications"], `Failed to save BLE device ${device.deviceId}: ${err}`);
 			});

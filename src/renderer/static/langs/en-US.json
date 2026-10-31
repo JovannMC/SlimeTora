@@ -149,6 +149,9 @@
 				"name": "Tracker Visualization FPS",
 				"tooltip": "Sets the framerate for the 3D tracker visualization. Lower values save resources."
 			},
+			"language": {
+				"name": "Language"
+			},
 			"update_settings": {
 				"name": "Update Settings",
 				"tooltip": "Manage how the app and language updates are handled.",

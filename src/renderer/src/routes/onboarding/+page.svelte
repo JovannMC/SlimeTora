@@ -6,7 +6,6 @@
 </script>
 
 <div class="flex min-h-screen flex-col justify-between text-center">
-	<!-- TODO: add to main window also -->
 	<div class="absolute top-4 left-4">
 		<Select
 			options={$locales.map((loc) => ({ value: loc, label: loc }))}

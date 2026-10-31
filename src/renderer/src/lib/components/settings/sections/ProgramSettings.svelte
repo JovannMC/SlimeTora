@@ -5,10 +5,9 @@
 	import Input from "#lib/components/settings/Input.svelte";
 	import Select from "#lib/components/settings/Select.svelte";
 	import Tooltip from "#lib/components/settings/Tooltip.svelte";
-	import { t } from "#lib/lang/index";
+	import { changeLocale, locale, locales, t } from "#lib/lang/index";
 </script>
 
-<!-- TODO: fix reloading default to stable even if we load beta from config (only happens when ctrl+r on page) -->
 <div class="rounded-lg bg-panel p-6 shadow">
 	<h2 class="mb-6 flex items-center gap-2 font-heading text-2xl">
 		<Icon icon="ri:settings-4-line" class="text-secondary" width={28} />
@@ -37,6 +36,13 @@
 				tooltip={$t("settings.program.visualization_fps.tooltip")}
 				tooltipPosition="up"
 				tooltipWidth="250px"
+			/>
+			<Select
+				label={$t("settings.program.language.name")}
+				options={$locales.map((loc) => ({ value: loc, label: loc }))}
+				selected={$locale}
+				onChange={changeLocale}
+				icon="ri:translate"
 			/>
 		</div>
 

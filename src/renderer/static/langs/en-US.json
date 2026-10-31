@@ -40,6 +40,9 @@
 			"battery": "Battery:",
 			"settings": "Open tracker settings: {{name}}",
 			"power_off": "Power off tracker: {{name}}",
+			"error": {
+				"power_off_failed": "Failed to power off {{name}}: {{error}}"
+			},
 			"status": {
 				"text": "Status:",
 				"great": "GREAT",
@@ -116,6 +119,11 @@
 		"per_tracker": {
 			"title": "{{name}} Settings",
 			"description": "Override the hardware settings for this tracker. Can be useful if only certain trackers have bad magnetometer statuses.",
+			"error": {
+				"apply_failed": "Failed to apply tracker settings: {{error}}",
+				"get_failed": "Failed to get tracker settings: {{error}}",
+				"settings_unavailable": "Settings are not available from the connected device."
+			},
 			"fps": {
 				"name": "FPS transfer rate",
 				"tooltip": "Select how many times the trackers send data per second. 50 FPS may be more stable on Bluetooth and use less battery, but isn't as smooth as 100 FPS."

@@ -56,10 +56,11 @@
 				/>
 			</h3>
 			<div class="flex flex-col gap-3 pl-1">
-				<Checkbox label={$t("settings.program.update_settings.app")} bind:checked={$program.checkUpdatesApp} />
+				<Checkbox label={$t("settings.program.update_settings.app")} bind:checked={$program.checkUpdatesApp} disabled />
 				<Checkbox
 					label={$t("settings.program.update_settings.language")}
 					bind:checked={$program.checkUpdatesLanguage}
+					disabled
 				/>
 			</div>
 			<Select
@@ -72,6 +73,7 @@
 				tooltip={$t("settings.program.update_settings.channel.tooltip")}
 				tooltipPosition="up"
 				tooltipWidth="250px"
+				disabled
 			/>
 		</div>
 	</div>

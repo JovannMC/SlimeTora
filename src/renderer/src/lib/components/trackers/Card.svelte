@@ -1,10 +1,12 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
 	import { goto } from "$app/navigation";
+	import { invoke } from "#lib/api/backend";
 	import { connectedTrackers, trackerOpenStates } from "#lib/store/index";
 	import { ConnectionMode } from "#lib/types/connection";
 	import { program } from "#lib/store/settings";
-	import { info } from "#lib/log/index";
+	import { error, info } from "#lib/log/index";
+	import { ToastManager } from "#lib/util/toast.svelte";
 	import { t } from "#lib/lang/index";
 	import { ChargeStatus } from "#lib/types/tracker";
 	import Tooltip from "../settings/Tooltip.svelte";
@@ -32,6 +34,25 @@
 
 	const visualization = $derived($program.visualization ?? true);
 	const visualizationFPS = $derived($program.visualizationFPS ?? 60);
+	let poweringOff = $state(false);
+
+	async function powerOffTracker() {
+		if (poweringOff) return;
+		const deviceId = id.slice(0, id.lastIndexOf(":"));
+		poweringOff = true;
+		try {
+			await invoke("powerOff", deviceId);
+			info(["trackers", "card"], `Powered off tracker device: ${displayName} (${deviceId})`);
+		} catch (err) {
+			error(["trackers", "card"], `Failed to power off tracker ${deviceId}: ${String(err)}`);
+			ToastManager.add({
+				type: "error",
+				message: $t("home.card.error.power_off_failed", { name: displayName, error: String(err) }),
+			});
+		} finally {
+			poweringOff = false;
+		}
+	}
 
 	function toggleOpen() {
 		trackerOpenStates.update((states) => ({ ...states, [id]: !isOpen }));
@@ -75,11 +96,10 @@
 		<div class="flex shrink-0 items-center gap-1">
 			<button
 				type="button"
-				class="rounded-md p-1 hover:bg-secondary/20 active:bg-secondary/10"
+				class="rounded-md p-1 hover:bg-secondary/20 active:bg-secondary/10 disabled:opacity-50"
+				disabled={poweringOff}
 				aria-label={$t("home.card.power_off", { name: displayName })}
-				onclick={() => {
-					info(["trackers", "card"], `Powered off tracker: ${displayName} (${id})`);
-				}}
+				onclick={powerOffTracker}
 			>
 				<Icon icon="ri:shut-down-line" width={18} class="text-text-alt" />
 			</button>

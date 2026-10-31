@@ -1,7 +1,7 @@
 import { load, type Store } from "#lib/api/store";
 import { error, info } from "#lib/log/index";
 import { FPSMode, SensorAutoCorrection, SensorMode, TrackerModel } from "#lib/types/tracker";
-import { derived, writable } from "svelte/store";
+import { derived, get, writable } from "svelte/store";
 
 export type LoggingMode = "minimal" | "debug" | "all";
 
@@ -89,6 +89,7 @@ export const advanced = writable<AdvancedSettings>({
 });
 
 export const restartRequired = writable(false);
+export const firstRun = writable(false);
 
 // only set once the config file is loaded, so nothing is saved before the stored settings are applied
 let config: Store | undefined;
@@ -97,6 +98,7 @@ export const settingsLoaded = (async () => {
 	try {
 		config = await load("settings.json");
 		const loaded = await config.get<SavedSettings>("settings");
+		firstRun.set(loaded === undefined);
 
 		if (loaded && typeof loaded === "object") {
 			if (loaded.program) program.set(loaded.program);
@@ -109,6 +111,19 @@ export const settingsLoaded = (async () => {
 		error(["store", "settings"], `Failed to load settings from settings.json: ${e}`);
 	}
 })();
+
+export async function completeFirstRun(): Promise<void> {
+	await settingsLoaded;
+	if (!config || !get(firstRun)) return;
+
+	await config.set("settings", {
+		program: get(program),
+		connection: get(connection),
+		tracker: get(tracker),
+		advanced: get(advanced),
+	});
+	firstRun.set(false);
+}
 
 // save the whole settings object whenever any of the stores change
 derived([program, connection, tracker, advanced], ([$program, $connection, $tracker, $advanced]): SavedSettings => ({

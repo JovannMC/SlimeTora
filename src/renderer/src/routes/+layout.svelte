@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from "$app/navigation";
 	import { onMount } from "svelte";
 	import { onNavigate } from "$app/navigation";
 	import { OverlayScrollbars } from "overlayscrollbars";
@@ -18,7 +19,7 @@
 	import { attachNotifications } from "#lib/backend/notifications";
 	import { attachBackendState, backendStateLoaded } from "#lib/backend/state";
 	import { attachBleTargets } from "#lib/backend/ble-targets";
-	import { program, restartRequired, settingsLoaded } from "#lib/store/settings";
+	import { firstRun, program, restartRequired, settingsLoaded } from "#lib/store/settings";
 	import { loadPlatform } from "#lib/store/platform";
 	import { sessionState } from "#lib/backend/state";
 	import { startInterpreting, stopInterpreting } from "#lib/backend/index";
@@ -54,7 +55,12 @@
 		currentPath.set(window.location.pathname);
 
 		void Promise.all([backendStateLoaded(), settingsLoaded, trackersLoaded]).then(() => {
-			if (!disposed && $program.autoStart && $isOn === false) isOn.set(true);
+			if (disposed) return;
+			if ($firstRun) {
+				if (!window.location.pathname.startsWith("/onboarding")) goto("/onboarding");
+				return;
+			}
+			if ($program.autoStart && $isOn === false) isOn.set(true);
 		});
 
 		if (!$initialized) void initTranslations("en");

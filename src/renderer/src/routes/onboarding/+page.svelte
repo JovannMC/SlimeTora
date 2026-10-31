@@ -3,6 +3,17 @@
 	import Button from "#lib/components/settings/Button.svelte";
 	import Select from "#lib/components/settings/Select.svelte";
 	import { t, locales, locale, changeLocale } from "#lib/lang/index";
+	import { error } from "#lib/log/index";
+	import { completeFirstRun } from "#lib/store/settings";
+
+	async function skipOnboarding() {
+		try {
+			await completeFirstRun();
+		} catch (err) {
+			error(["onboarding"], `Failed to save initial settings: ${err}`);
+		}
+		await goto("/");
+	}
 </script>
 
 <div class="flex min-h-screen flex-col justify-between text-center">
@@ -34,8 +45,9 @@
 				label={$t("onboarding.start")}
 				background="secondary"
 				onClick={() => goto("/onboarding/setup")}
+				disabled
 			/>
-			<Button type="onboarding" label={$t("onboarding.skip")} background="button" onClick={() => goto("/")} />
+			<Button type="onboarding" label={$t("onboarding.skip")} background="button" onClick={skipOnboarding} />
 		</div>
 	</div>
 </div>

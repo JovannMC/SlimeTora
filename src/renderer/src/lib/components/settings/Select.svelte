@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
+	import clsx from "clsx";
 	import Tooltip, { type TooltipPosition } from "./Tooltip.svelte";
 
 	type Props = {
@@ -13,6 +14,7 @@
 		tooltipPosition?: TooltipPosition;
 		tooltipWidth?: string;
 		icon?: string;
+		disabled?: boolean;
 	};
 
 	let {
@@ -26,11 +28,12 @@
 		tooltipPosition,
 		tooltipWidth,
 		icon,
+		disabled = false,
 	}: Props = $props();
 	const id = $props.id();
 </script>
 
-<div class="flex flex-col gap-2 {className}">
+<div class={clsx("flex flex-col gap-2", className)}>
 	{#if label || tooltip}
 		<div class="flex flex-row items-center gap-2">
 			{#if label}
@@ -48,8 +51,13 @@
 		<select
 			{id}
 			bind:value={selected}
+			{disabled}
 			onchange={() => onChange?.(selected)}
-			class="w-full appearance-none rounded-md bg-quaternary px-3 py-2 pr-8 transition-shadow focus:ring-2 focus:ring-secondary focus:outline-none {selectClassName}"
+			class={clsx(
+				"w-full appearance-none rounded-md bg-quaternary px-3 py-2 pr-8 transition-shadow focus:ring-2 focus:ring-secondary focus:outline-none",
+				disabled && "disabled",
+				selectClassName,
+			)}
 			style="padding-left: {icon ? '2.5rem' : '0.75rem'}"
 		>
 			{#each options as option}

@@ -190,6 +190,9 @@ importers:
       '@stoprocent/noble':
         specifier: ^2.8.0
         version: 2.8.0(dbus-next@0.10.2)(supports-color@10.2.2)
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       dbus-next:
         specifier: ^0.10.2
         version: 0.10.2

@@ -115,7 +115,7 @@
 						width="250px"
 					/>
 				</h3>
-				<Switch label={$t("home.per_tracker.virtual_feet.name")} bind:selected={emulatedFeet} />
+				<Switch label={$t("home.per_tracker.virtual_feet.name")} bind:selected={emulatedFeet} disabled />
 			</div>
 
 			<div class="col-span-2 flex flex-col gap-4">

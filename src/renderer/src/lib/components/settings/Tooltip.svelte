@@ -21,6 +21,7 @@
 	let hoverable: HTMLElement;
 	let tooltipEl: HTMLElement | undefined = $state();
 	let tooltipStyle = $state({ top: 0, left: 0 });
+	// svelte-ignore state_referenced_locally - position the preferred position, gets updated if it doesn't fit in viewport
 	let placement: TooltipPosition = $state(position);
 
 	function fits(pos: TooltipPosition, trigger: DOMRect, tip: DOMRect) {

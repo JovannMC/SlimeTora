@@ -55,6 +55,19 @@ h6 {
 	@apply font-heading text-white;
 }
 
+.disabled,
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+	@apply cursor-not-allowed! opacity-50;
+}
+
+button:disabled:hover,
+button:disabled:active {
+	filter: grayscale(0.35);
+}
+
 .hoverable {
 	@apply cursor-pointer transition duration-200 ease-in-out;
 }

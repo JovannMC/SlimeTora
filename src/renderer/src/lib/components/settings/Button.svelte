@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
+	import clsx from "clsx";
 
 	const backgrounds = {
 		primary: "bg-primary hover:bg-primary/70 active:bg-primary/50",
@@ -34,9 +35,13 @@
 </script>
 
 <button
-	class="flex w-full items-center gap-2 rounded-md px-4 py-2 transition-colors {backgrounds[background]} {className}"
-	class:button={type === "onboarding"}
-	class:opacity-50={disabled}
+	class={clsx(
+		"flex w-full items-center gap-2 rounded-md px-4 py-2 transition-colors",
+		backgrounds[background],
+		{ button: type === "onboarding" },
+		disabled && "disabled",
+		className,
+	)}
 	{disabled}
 	onclick={onClick}
 >

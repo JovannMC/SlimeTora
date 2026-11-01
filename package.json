@@ -43,7 +43,7 @@
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
 		"package": "pnpm run build && electron-builder --dir",
-		"dist": "pnpm run build && electron-builder"
+		"dist": "pnpm run build && electron-builder --publish never"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

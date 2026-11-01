@@ -18,4 +18,4 @@ overrides:
     "usocket@0.3.0>node-gyp": "13.1.0"
 
 patchedDependencies:
-  dbus-next@0.10.2: patches/dbus-next@0.10.2.patch
+    dbus-next@0.10.2: patches/dbus-next@0.10.2.patch

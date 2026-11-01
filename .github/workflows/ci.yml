@@ -55,14 +55,42 @@ jobs:
             - name: Package
               run: pnpm run dist
 
-            - name: Upload packaged app
+            - name: Upload Linux (DEB)
+              if: runner.os == 'Linux'
               uses: actions/upload-artifact@v7
               with:
-                  name: slimetora-${{ matrix.os }}
-                  path: |
-                      release/*.exe
-                      release/*.dmg
-                      release/*.zip
-                      release/*.AppImage
-                      release/*.deb
+                  path: release/*.deb
+                  archive: false
+                  if-no-files-found: error
+
+            - name: Upload Linux (AppImage)
+              if: runner.os == 'Linux'
+              uses: actions/upload-artifact@v7
+              with:
+                  path: release/*.AppImage
+                  archive: false
+                  if-no-files-found: error
+
+            - name: Upload Windows (installer)
+              if: runner.os == 'Windows'
+              uses: actions/upload-artifact@v7
+              with:
+                  path: release/*.exe
+                  archive: false
+                  if-no-files-found: error
+
+            - name: Upload macOS (Disk Image)
+              if: runner.os == 'macOS'
+              uses: actions/upload-artifact@v7
+              with:
+                  path: release/*.dmg
+                  archive: false
+                  if-no-files-found: error
+
+            - name: Upload macOS (ZIP)
+              if: runner.os == 'macOS'
+              uses: actions/upload-artifact@v7
+              with:
+                  path: release/*-mac.zip
+                  archive: false
                   if-no-files-found: error

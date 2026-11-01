@@ -28,15 +28,26 @@
 	let trackerModel: THREE.Object3D;
 	let gravityLine: THREE.Line;
 	let animationFrameId = 0;
+	let frameTimer: ReturnType<typeof setTimeout> | undefined;
 	let lastFrameTime = 0;
 	let destroyed = false;
 	let visible = false;
+	let focused = false;
 	const quaternion = new THREE.Quaternion();
 	const euler = new THREE.Euler();
 	const gravity = new THREE.Vector3();
 	const gravityEnd = new THREE.Vector3();
 
 	const frameInterval = $derived(1000 / (Number.isFinite(fps) && fps > 0 ? fps : 10));
+	let previousMotion: number[] = [];
+
+	$effect(() => {
+		const motion = [...rotation, ...acceleration];
+		if (motion.length !== previousMotion.length || motion.some((value, index) => value !== previousMotion[index])) {
+			previousMotion = motion;
+			scheduleRender();
+		}
+	});
 
 	function disposeObject(object: THREE.Object3D) {
 		object.traverse((child: THREE.Object3D) => {
@@ -59,7 +70,7 @@
 		camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
 		camera.position.z = 5;
 
-		renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+		renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false });
 		renderer.setSize(width, height);
 		container.appendChild(renderer.domElement);
 
@@ -110,6 +121,7 @@
 								mesh.material = material;
 							}
 						});
+						scheduleRender();
 					},
 					undefined,
 					(err: unknown) => {
@@ -118,6 +130,7 @@
 				);
 
 				createGravityLine(new THREE.Vector3(acceleration[0], acceleration[1], acceleration[2]));
+				scheduleRender();
 			},
 			undefined,
 			(err: unknown) => {
@@ -169,14 +182,9 @@
 		position.needsUpdate = true;
 	}
 
-	function animate(currentTime: number) {
+	function renderFrame(currentTime: number) {
 		animationFrameId = 0;
-		if (destroyed || !visible || document.hidden) return;
-		animationFrameId = requestAnimationFrame(animate);
-
-		if (currentTime - lastFrameTime < frameInterval) {
-			return;
-		}
+		if (destroyed || !visible || !focused || document.hidden) return;
 
 		lastFrameTime = currentTime;
 
@@ -200,6 +208,37 @@
 		composer.render();
 	}
 
+	function scheduleRender() {
+		if (
+			destroyed ||
+			!visible ||
+			!focused ||
+			document.hidden ||
+			!renderer ||
+			animationFrameId ||
+			frameTimer !== undefined
+		)
+			return;
+
+		const delay = Math.max(0, lastFrameTime + frameInterval - performance.now());
+		if (delay > 0) {
+			frameTimer = setTimeout(() => {
+				frameTimer = undefined;
+				if (!destroyed && visible && focused && !document.hidden)
+					animationFrameId = requestAnimationFrame(renderFrame);
+			}, delay);
+		} else {
+			animationFrameId = requestAnimationFrame(renderFrame);
+		}
+	}
+
+	function cancelRender() {
+		if (animationFrameId) cancelAnimationFrame(animationFrameId);
+		if (frameTimer !== undefined) clearTimeout(frameTimer);
+		animationFrameId = 0;
+		frameTimer = undefined;
+	}
+
 	function handleResize() {
 		if (!container || !camera || !renderer || !composer) return;
 
@@ -215,28 +254,39 @@
 
 		const fxaaPass = composer.passes.find((pass): pass is ShaderPass => pass instanceof ShaderPass);
 		if (fxaaPass) fxaaPass.material.uniforms["resolution"]?.value?.set(1 / width, 1 / height);
+		scheduleRender();
 	}
 
 	function updateVisibility() {
-		if (!visible || document.hidden) {
-			if (animationFrameId) cancelAnimationFrame(animationFrameId);
-			animationFrameId = 0;
+		if (!visible || !focused || document.hidden) {
+			cancelRender();
 			return;
 		}
 
 		if (!renderer) initThreeJS();
 		handleResize();
 
-		if (!animationFrameId) {
-			lastFrameTime = 0;
-			animationFrameId = requestAnimationFrame(animate);
-		}
+		scheduleRender();
+	}
+
+	function onFocus() {
+		focused = true;
+		updateVisibility();
+	}
+
+	function onBlur() {
+		focused = false;
+		updateVisibility();
 	}
 
 	onMount(() => {
 		let observer: IntersectionObserver | undefined;
+		focused = document.hasFocus();
 		window.addEventListener("resize", handleResize);
+		window.addEventListener("focus", onFocus);
+		window.addEventListener("blur", onBlur);
 		document.addEventListener("visibilitychange", updateVisibility);
+
 		if (typeof IntersectionObserver === "undefined") {
 			visible = true;
 			updateVisibility();
@@ -252,8 +302,10 @@
 			destroyed = true;
 			observer?.disconnect();
 			window.removeEventListener("resize", handleResize);
+			window.removeEventListener("focus", onFocus);
+			window.removeEventListener("blur", onBlur);
 			document.removeEventListener("visibilitychange", updateVisibility);
-			if (animationFrameId) cancelAnimationFrame(animationFrameId);
+			cancelRender();
 
 			if (trackerModel) {
 				scene.remove(trackerModel);

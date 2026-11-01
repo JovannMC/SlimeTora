@@ -4,6 +4,7 @@ import { error, info } from "#lib/log/index";
 import { confirmBleDevice } from "#lib/store/ble-devices";
 import { connectedTrackers, knownTrackers, saveTrackerConfig, type BatteryData, type Tracker } from "#lib/store/index";
 import { program } from "#lib/store/settings";
+import { setTrackerMotion } from "#lib/store/tracker-motion";
 import { ChargeStatus, SensorAutoCorrection } from "#lib/types/tracker";
 import { serialFromBleName } from "#lib/util/index";
 import { browser } from "$app/env";
@@ -178,20 +179,10 @@ export function attachNotifications(): () => void {
 		listen("imu", ({ trackerId, rotation, acceleration }) => {
 			const euler = new BetterQuaternion(rotation.w, rotation.x, rotation.y, rotation.z).toEuler();
 
-			const rotationDisplay = {
-				x: euler[0] * (180 / Math.PI),
-				y: euler[1] * (180 / Math.PI),
-				z: euler[2] * (180 / Math.PI),
-			};
-
-			updateTracker(trackerId, (prev) => ({
-				...prev,
-				data: {
-					...prev.data,
-					rotation: [rotationDisplay.x, rotationDisplay.y, rotationDisplay.z],
-					acceleration: [acceleration.x, acceleration.y, acceleration.z],
-				},
-			}));
+			setTrackerMotion(trackerId, {
+				rotation: euler.map((value) => value * (180 / Math.PI)),
+				acceleration: [acceleration.x, acceleration.y, acceleration.z],
+			});
 		}),
 		listen("battery", onBattery),
 		listen("mag", ({ trackerId, status }) => {

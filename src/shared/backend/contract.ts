@@ -82,6 +82,7 @@ export interface BackendCalls {
 	getSessionState(): SessionState;
 	getSnapshot(): BackendSnapshot;
 	setFastData(enabled: boolean): void;
+	setVisibleTrackers(trackerIds: string[]): void;
 	updateBleTargets(serials: string[]): void;
 	forgetBleTarget(serial: string): Promise<void>;
 	listSerialPorts(): Promise<string[]>;

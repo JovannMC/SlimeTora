@@ -3,6 +3,8 @@
 	import { goto } from "$app/navigation";
 	import { invoke } from "#lib/api/backend";
 	import { connectedTrackers, trackerOpenStates } from "#lib/store/index";
+	import { trackerMotion } from "#lib/store/tracker-motion";
+	import { observeTrackerMotion } from "#lib/backend/motion-visibility";
 	import { ConnectionMode } from "#lib/types/connection";
 	import { program } from "#lib/store/settings";
 	import { error, info } from "#lib/log/index";
@@ -10,8 +12,10 @@
 	import { t } from "#lib/lang/index";
 	import { ChargeStatus } from "#lib/types/tracker";
 	import Tooltip from "../settings/Tooltip.svelte";
+	import { untrack } from "svelte";
 
 	let { id, type }: { id: string; type: string } = $props();
+	const motion = trackerMotion(untrack(() => id));
 
 	const tracker = $derived($connectedTrackers.find((t) => t.id === id));
 	const displayName = $derived(tracker?.bodyPart || id);
@@ -22,8 +26,8 @@
 	const isOpen = $derived($trackerOpenStates[id] ?? false);
 	const decimals = $derived($program.preciseData ? 2 : 0);
 
-	const rotation = $derived(tracker?.data.rotation?.map((v) => Number(v.toFixed(decimals))) ?? [0, 0, 0]);
-	const acceleration = $derived(tracker?.data.acceleration?.map((v) => Number(v.toFixed(decimals))) ?? [0, 0, 0]);
+	const rotation = $derived($motion.rotation.map((v) => Number(v.toFixed(decimals))));
+	const acceleration = $derived($motion.acceleration.map((v) => Number(v.toFixed(decimals))));
 	const batteryPercent = $derived(tracker?.data.battery?.remaining);
 	const batteryVoltage = $derived(tracker?.data.battery?.voltage);
 	const batteryStatus = $derived(tracker?.data.battery?.status ?? ChargeStatus.Discharging);
@@ -117,7 +121,11 @@
 	</div>
 
 	{#if isOpen}
-		<div id="tracker-details-{id}" class="m-4 mt-0 flex flex-col gap-2 rounded-lg bg-panel p-4">
+		<div
+			id="tracker-details-{id}"
+			class="m-4 mt-0 flex flex-col gap-2 rounded-lg bg-panel p-4"
+			use:observeTrackerMotion={id}
+		>
 			<!-- basic details -->
 			<p class="flex items-center gap-1">
 				<b>{$t("home.card.device")}</b>

@@ -660,6 +660,7 @@ export const backendCalls: BackendCalls = {
 	getSessionState: () => sessionState,
 	getSnapshot,
 	setFastData: (enabled) => uiImuForwarding.setFastData(enabled),
+	setVisibleTrackers: (trackerIds) => uiImuForwarding.setVisibleTrackers(trackerIds),
 	updateBleTargets: (serials) => {
 		if (!enabled || !activeOptions?.modes.includes("ble")) return;
 		reconnect.updateBle(serials);

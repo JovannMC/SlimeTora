@@ -18,6 +18,7 @@
 	import { registerBridge } from "#lib/api/bridge";
 	import { electronBridge } from "#lib/api/electronBridge";
 	import { attachNotifications } from "#lib/backend/notifications";
+	import { attachMotionVisibility } from "#lib/backend/motion-visibility";
 	import { attachBackendState, backendStateLoaded } from "#lib/backend/state";
 	import { attachBleTargets } from "#lib/backend/ble-targets";
 	import {
@@ -55,6 +56,7 @@
 		const detachBackendState = attachBackendState();
 		const detachBleTargets = attachBleTargets();
 		const detachNotifications = attachNotifications();
+		const detachMotionVisibility = attachMotionVisibility();
 		const stopCapture = captureUncaughtErrors();
 		const stopLoggingSettings = advanced.subscribe((settings) => setLoggingMode(settings.loggingMode));
 		void loadPlatform();
@@ -91,6 +93,9 @@
 			if ($program.autoStart && $isOn === false) isOn.set(true);
 		});
 		const scrollbars = OverlayScrollbars(document.body, {
+			update: {
+				ignoreMutation: ({ target, type }) => type === "characterData" && target.parentElement?.id === "imu",
+			},
 			scrollbars: { autoHide: "leave", autoHideDelay: 100, visibility: "auto", theme: "os-theme-dark" },
 		});
 
@@ -99,6 +104,7 @@
 			detachBackendState();
 			detachBleTargets();
 			detachNotifications();
+			detachMotionVisibility();
 			stopFileErrors();
 			stopCapture();
 			stopLoggingSettings();

@@ -3,6 +3,8 @@ name: CI
 on:
     push:
         branches: [main]
+        tags:
+            - "v*"
         paths:
             - "src/**"
             - "scripts/**"
@@ -21,6 +23,9 @@ on:
             - "electron-builder.yml"
             - ".github/workflows/**"
     workflow_dispatch:
+
+permissions:
+    contents: read
 
 jobs:
     verify:
@@ -105,3 +110,28 @@ jobs:
                   path: release/*.dmg
                   archive: false
                   if-no-files-found: error
+
+    release:
+        if: startsWith(github.ref, 'refs/tags/v')
+        needs: verify
+        runs-on: ubuntu-24.04
+        permissions:
+            contents: write
+
+        steps:
+            - name: Download packaged artifacts
+              uses: actions/download-artifact@v8
+              with:
+                  pattern: "*"
+                  merge-multiple: true
+                  path: release-assets
+
+            - name: Create draft release
+              uses: softprops/action-gh-release@v3
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  tag_name: ${{ github.ref_name }}
+                  draft: true
+                  prerelease: ${{ contains(github.ref_name, '-') }}
+                  files: release-assets/*
+                  fail_on_unmatched_files: true

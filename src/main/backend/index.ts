@@ -686,6 +686,15 @@ export const backendCalls: BackendCalls = {
 		const { autoDetect } = await import("@serialport/bindings-cpp");
 		return (await autoDetect().list()).map((port: { path: string }) => port.path).sort();
 	},
+	discoverSerialPorts: async () => {
+		const { createSerialConnection } = await import("haritorax-interpreter/connections/serial");
+		const serial = createSerialConnection({ includeWired: true });
+		try {
+			return await serial.list({ signal: AbortSignal.timeout(10_000) });
+		} finally {
+			await serial.dispose();
+		}
+	},
 	scanBlePreview: () => {
 		if (enabled || pendingStops) throw new Error("BLE preview is only available while tracking is off");
 		return scanBlePreview();

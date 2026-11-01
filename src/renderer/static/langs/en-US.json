@@ -213,6 +213,8 @@
 				"name": "Serial Ports",
 				"tooltip": "Select the serial port(s) your GX(6/2) dongles or HaritoraX 1.1b/1.1/1.0 trackers are using.",
 				"none": "No serial ports detected",
+				"dongle": "{{model}} dongle",
+				"wired": "Wired tracker",
 				"refresh": "Refresh"
 			},
 			"slimevr_server": {

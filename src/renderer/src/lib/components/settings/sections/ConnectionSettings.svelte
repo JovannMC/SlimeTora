@@ -30,6 +30,7 @@
 	] as const;
 
 	let detectedPorts: string[] = $state([]);
+	let identifiedPorts: Record<string, { kind: "dongle"; model: string } | { kind: "wired" }> = $state({});
 	let capabilities: Capabilities | undefined = $state();
 	let availablePorts = $derived(detectedPorts.filter(shouldShowPort));
 
@@ -61,6 +62,22 @@
 		try {
 			await loadPlatform();
 			detectedPorts = (await invoke("listSerialPorts")).sort();
+			try {
+				const endpoints = await invoke("discoverSerialPorts");
+				identifiedPorts = Object.fromEntries(
+					endpoints
+						.filter((endpoint) => endpoint.dongle || endpoint.model === "wired")
+						.map((endpoint) => [
+							endpoint.id,
+							endpoint.dongle
+								? { kind: "dongle" as const, model: endpoint.dongle }
+								: { kind: "wired" as const },
+						]),
+				);
+			} catch (err) {
+				identifiedPorts = {};
+				warn(["settings", "connection"], `Could not identify serial devices: ${String(err)}`);
+			}
 
 			info(["settings", "connection"], `Retrieved serial ports: ${detectedPorts}`);
 			info(["settings", "connection"], `Filtered serial ports: ${availablePorts}`);
@@ -210,11 +227,27 @@
 			{#if availablePorts.length > 0}
 				<div class="grid grid-cols-2 gap-3 pl-1">
 					{#each availablePorts as port (port)}
-						<Switch
-							label={portLabel(port)}
-							title={port}
-							bind:selected={() => $connection.ports.includes(port), (on) => setPort(port, on)}
-						/>
+						<div
+							class={clsx(
+								"flex items-center justify-between gap-3 rounded-md p-2",
+								identifiedPorts[port] && "bg-primary/10",
+							)}
+						>
+							<Switch
+								label={portLabel(port)}
+								title={port}
+								bind:selected={() => $connection.ports.includes(port), (on) => setPort(port, on)}
+							/>
+							{#if identifiedPorts[port]}
+								<span class="shrink-0 rounded bg-primary/70 px-2 py-1 text-xs font-medium text-white">
+									{identifiedPorts[port].kind === "dongle"
+										? $t("settings.connection.serial_ports.dongle", {
+												model: identifiedPorts[port].model,
+											})
+										: $t("settings.connection.serial_ports.wired")}
+								</span>
+							{/if}
+						</div>
 					{/each}
 				</div>
 			{:else}

@@ -1,0 +1,17 @@
+diff --git a/lib/connection.js b/lib/connection.js
+index 780dc041c58e83ebfcd84434e500ec471020813a..0463315f47b13984b48a10a0707a12fe41b7b3ef 100644
+--- a/lib/connection.js
++++ b/lib/connection.js
+@@ -44,6 +44,12 @@ function createStream (opts) {
+           if (params.socket) {
+             return net.createConnection(params.socket);
+           }
++          // Use Node's Unix sockets unless descriptor passing is requested.
++          // This avoids loading usocket's native addon for ordinary D-Bus use.
++          if (!negotiateUnixFd) {
++            if (params.abstract) return net.createConnection('\u0000' + params.abstract);
++            if (params.path) return net.createConnection(params.path);
++          }
+           if (params.abstract) {
+             const usocket = require('usocket');
+             const sock = new usocket.USocket({ path: '\u0000' + params.abstract });

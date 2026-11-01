@@ -11,7 +11,7 @@ export function createDiscoveryController(getBackend: () => Promise<DiscoveryBac
 		if (pending) return pending;
 
 		pending = getBackend()
-			.then((backend) => backend.discover({ timeoutMs: 5_000 }))
+			.then((backend) => backend.discover({ signal: AbortSignal.timeout(20_000) }))
 			.finally(() => {
 				pending = undefined;
 			});

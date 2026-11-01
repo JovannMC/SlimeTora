@@ -28,12 +28,13 @@
 	function statusLabel(status: SlotStatus) {
 		if (status === "paired") return $t("home.pairing.serial.paired");
 		if (status === "pairing") return $t("home.pairing.serial.pairing");
+		if (status === "unpairing") return $t("home.pairing.serial.unpairing");
 		return $t(`home.pairing.serial.${status}`);
 	}
 
 	function statusClass(status: SlotStatus) {
-		if (status === "paired") return "bg-green-500 text-white";
-		if (status === "pairing") return "bg-yellow-500 text-white";
+		if (status === "paired") return "bg-green-600 text-white";
+		if (status === "pairing" || status === "unpairing") return "bg-blue-600 text-white";
 		return "bg-gray-500 text-white";
 	}
 </script>
@@ -99,7 +100,8 @@
 									disabled={!enabled ||
 										!connectedEndpoints.includes(port) ||
 										channels[port] === undefined ||
-										slot.status === "pairing"}
+										slot.status === "pairing" ||
+										slot.status === "unpairing"}
 									class="flex flex-row items-center justify-center gap-2"
 								>
 									<Button

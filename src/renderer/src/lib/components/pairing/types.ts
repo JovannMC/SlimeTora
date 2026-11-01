@@ -18,7 +18,7 @@ export interface PairedDevice {
 	confirmed: boolean;
 }
 
-export type SlotStatus = "paired" | "unpaired" | "pairing" | "detected" | "unknown";
+export type SlotStatus = "paired" | "unpaired" | "pairing" | "unpairing" | "detected" | "unknown";
 
 // one of the two tracker slots on a GX dongle port
 export interface PortSlot {

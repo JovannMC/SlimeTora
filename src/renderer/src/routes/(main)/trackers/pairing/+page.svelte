@@ -16,7 +16,7 @@
 
 	let isScanning = $state(false);
 	const availablePorts = $derived([...$connection.ports].sort());
-	let busySlots: Record<string, boolean> = $state({});
+	let busySlots: Record<string, "pair" | "unpair"> = $state({});
 
 	const bleDevices = $derived(getBlePairingDevices($backendSnapshot, $savedBleDevices, $knownTrackers));
 	const pairedDevices = $derived(bleDevices.pairedDevices);
@@ -31,8 +31,9 @@
 						(item) => item.endpointId === port && item.slot === portId,
 					);
 					const reported = $backendSnapshot.dongleSlots[port]?.[portId];
-					const status = busySlots[`${port}:${portId}`]
-						? "pairing"
+					const busyAction = busySlots[`${port}:${portId}`];
+					const status = busyAction
+						? busyAction === "pair" ? "pairing" : "unpairing"
 						: (reported ?? (device ? "detected" : "unknown"));
 					return {
 						portId,
@@ -210,7 +211,7 @@
 
 		if (busySlots[key]) return;
 
-		busySlots = { ...busySlots, [key]: true };
+		busySlots = { ...busySlots, [key]: action };
 
 		try {
 			await invoke(action, port, portId);
@@ -225,7 +226,10 @@
 					}),
 				);
 		} finally {
-			if (!destroyed) busySlots = { ...busySlots, [key]: false };
+			if (!destroyed) {
+				const { [key]: _finished, ...remaining } = busySlots;
+				busySlots = remaining;
+			}
 		}
 	}
 

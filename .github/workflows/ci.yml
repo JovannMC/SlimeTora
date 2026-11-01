@@ -54,3 +54,10 @@ jobs:
 
             - name: Package
               run: pnpm run package
+
+            - name: Upload packaged app
+              uses: actions/upload-artifact@v7
+              with:
+                  name: slimetora-${{ matrix.os }}
+                  path: release/
+                  if-no-files-found: error

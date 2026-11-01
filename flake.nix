@@ -52,6 +52,11 @@
                 libgbm
                 libxkbcommon
 
+                # electron-builder stuff
+                libxcrypt-legacy
+                openjpeg
+                zlib
+
                 libGL
                 libglvnd
                 libdrm

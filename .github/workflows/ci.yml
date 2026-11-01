@@ -53,11 +53,16 @@ jobs:
               run: pnpm run format:check
 
             - name: Package
-              run: pnpm run package
+              run: pnpm run dist
 
             - name: Upload packaged app
               uses: actions/upload-artifact@v7
               with:
                   name: slimetora-${{ matrix.os }}
-                  path: release/
+                  path: |
+                      release/*.exe
+                      release/*.dmg
+                      release/*.zip
+                      release/*.AppImage
+                      release/*.deb
                   if-no-files-found: error

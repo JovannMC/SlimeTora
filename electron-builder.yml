@@ -25,6 +25,7 @@ mac:
 
 linux:
     category: Utility
+    syncDesktopName: true
     target:
         - AppImage
         - deb

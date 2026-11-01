@@ -69,7 +69,7 @@
 			</div>
 			<div class="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-4">
 				{#if pairedDevices.length === 0}
-					<div class="py-4 text-center text-sm sm:col-span-2 xl:col-span-3">
+					<div class="col-span-1 py-4 text-center text-sm sm:col-span-4">
 						<Icon icon="mdi:bluetooth-off" width={24} class="mx-auto mb-2 opacity-50" />
 						<p>{$t("home.pairing.bluetooth.no_paired_devices")}</p>
 					</div>

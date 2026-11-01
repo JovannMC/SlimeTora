@@ -81,6 +81,7 @@ export interface BackendCalls {
 	stopSession(): Promise<void>;
 	getSessionState(): SessionState;
 	getSnapshot(): BackendSnapshot;
+	setFastData(enabled: boolean): void;
 	updateBleTargets(serials: string[]): void;
 	forgetBleTarget(serial: string): Promise<void>;
 	listSerialPorts(): Promise<string[]>;

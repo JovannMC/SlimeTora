@@ -13,6 +13,7 @@ import type { Connection, DeviceSnapshot, EndpointDescriptor, HaritoraX, LogEntr
 import { debug, error, info, trace, warn } from "../log";
 import { getSetting } from "../store";
 import { createDiscoveryController } from "./discovery";
+import { createImuForwarding } from "./imu-forwarding";
 import { createReconnectController, endpointIdentity } from "./reconnect";
 import { SlimeVRBridge } from "./slimevr";
 
@@ -38,6 +39,7 @@ const bridgeTasks = new Set<Promise<unknown>>();
 const connecting = new Map<string, Promise<void>>();
 const bridgeStarting = new Set<string>();
 const pendingBridgeSamples = new Map<string, Map<string, import("haritorax-interpreter").ImuSample>>();
+const uiImuForwarding = createImuForwarding();
 let activeOptions: SessionOptions | undefined;
 const slimevr = new SlimeVRBridge(() => {
 	if (enabled) publishSession(sessionState.status, sessionState.error);
@@ -356,7 +358,11 @@ async function createBackend(): Promise<HaritoraX> {
 		if (!enabled || generation !== instanceGeneration) return;
 		openEndpoints.delete(endpointId);
 
-		for (const [trackerId, endpoint] of liveTrackers) if (endpoint === endpointId) liveTrackers.delete(trackerId);
+		for (const [trackerId, endpoint] of liveTrackers) {
+			if (endpoint !== endpointId) continue;
+			liveTrackers.delete(trackerId);
+			uiImuForwarding.forget(trackerId);
+		}
 
 		dongleSlots.delete(endpointId);
 
@@ -378,6 +384,7 @@ async function createBackend(): Promise<HaritoraX> {
 	backend.on("tracker:disconnected", ({ trackerId, deviceId, reason }) => {
 		if (!enabled || generation !== instanceGeneration) return;
 		liveTrackers.delete(trackerId);
+		uiImuForwarding.forget(trackerId);
 		publishSession(sessionState.status, sessionState.error);
 		lastButtonAt.delete(trackerId);
 		reconnect.refresh();
@@ -467,7 +474,7 @@ async function createBackend(): Promise<HaritoraX> {
 				void track(bridgeTasks, initialize);
 			}
 		}
-		send("imu", sample);
+		if (uiImuForwarding.shouldSend(sample.trackerId)) send("imu", sample);
 	});
 	backend.on("battery", (battery) => {
 		if (enabled && generation === instanceGeneration) slimevr.battery(battery);
@@ -582,6 +589,7 @@ function startSession(options: SessionOptions): Promise<void> {
 
 function stopSession(turnOffTrackers = false): Promise<void> {
 	enabled = false;
+	uiImuForwarding.reset();
 	reconnect.stop();
 	const current = ++generation;
 
@@ -651,6 +659,7 @@ export const backendCalls: BackendCalls = {
 	stopSession: () => stopSession(),
 	getSessionState: () => sessionState,
 	getSnapshot,
+	setFastData: (enabled) => uiImuForwarding.setFastData(enabled),
 	updateBleTargets: (serials) => {
 		if (!enabled || !activeOptions?.modes.includes("ble")) return;
 		reconnect.updateBle(serials);

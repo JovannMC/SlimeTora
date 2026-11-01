@@ -47,7 +47,7 @@
 	<div class="space-y-6">
 		{#if ports.length === 0}
 			<div class="py-8 text-center text-secondary">
-				<Icon icon="mdi:usb-off" width={32} class="mx-auto mb-2 opacity-50" />
+				<Icon icon="mdi:usb-port" width={32} class="mx-auto mb-2 opacity-50" />
 				<p>{$t("home.pairing.serial.no_ports")}</p>
 			</div>
 		{:else}

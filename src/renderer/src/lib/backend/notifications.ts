@@ -1,4 +1,5 @@
 import { invoke, listen } from "#lib/api/backend";
+import { isBridgeAvailable } from "#lib/api/bridge";
 import { error, info } from "#lib/log/index";
 import { confirmBleDevice } from "#lib/store/ble-devices";
 import { connectedTrackers, knownTrackers, saveTrackerConfig, type BatteryData, type Tracker } from "#lib/store/index";
@@ -26,7 +27,6 @@ function trackersOfDevice(deviceId: string) {
 	return get(connectedTrackers).filter((t) => t.id.startsWith(`${deviceId}:`));
 }
 
-const lastImuUpdate: Record<string, number> = {};
 const BUTTON_PRESS_WINDOW_MS = 750;
 const buttonPressTimestamps: Record<string, number[]> = {};
 const buttonActionTimeout: Record<string, ReturnType<typeof setTimeout> | null> = {};
@@ -154,10 +154,16 @@ function onBattery(battery: BatteryInfo) {
 
 export function attachNotifications(): () => void {
 	let disposed = false;
-	let fastData = false;
+	let fastData: boolean | undefined;
 	const confirmedBleDevices = new Set<string>();
 	const unsubscribeProgram = program.subscribe((value) => {
+		if (fastData === value.fastData) return;
 		fastData = value.fastData;
+		if (isBridgeAvailable()) {
+			void invoke("setFastData", fastData).catch((err) =>
+				error(["backend", "notifications"], `Failed to update data rate: ${String(err)}`),
+			);
+		}
 	});
 	const unlisteners = [
 		listen("device:disconnected", ({ deviceId }) => {
@@ -166,15 +172,10 @@ export function attachNotifications(): () => void {
 			connectedTrackers.update((prev) => prev.filter((t) => !t.id.startsWith(`${deviceId}:`)));
 		}),
 		listen("tracker:disconnected", ({ trackerId, reason }) => {
-			delete lastImuUpdate[trackerId];
 			info(["backend", "notifications"], `Tracker disconnected: ${trackerId} (${reason})`);
 			connectedTrackers.update((prev) => prev.filter((t) => t.id !== trackerId));
 		}),
 		listen("imu", ({ trackerId, rotation, acceleration }) => {
-			const now = Date.now();
-			if (!fastData && lastImuUpdate[trackerId] && now - lastImuUpdate[trackerId] < 50) return;
-			lastImuUpdate[trackerId] = now;
-
 			const euler = new BetterQuaternion(rotation.w, rotation.x, rotation.y, rotation.z).toEuler();
 
 			const rotationDisplay = {
@@ -238,7 +239,6 @@ export function attachNotifications(): () => void {
 		}
 		for (const key of Object.keys(buttonActionTimeout)) delete buttonActionTimeout[key];
 		for (const key of Object.keys(buttonPressTimestamps)) delete buttonPressTimestamps[key];
-		for (const key of Object.keys(lastImuUpdate)) delete lastImuUpdate[key];
 		info(["backend", "notifications"], "Stopped listening to backend events");
 	};
 }

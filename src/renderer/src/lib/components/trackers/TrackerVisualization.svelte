@@ -1,6 +1,6 @@
 <!-- based off code on pre-v2 SlimeTora by BracketProto -->
 <script lang="ts">
-	import { onMount, onDestroy } from "svelte";
+	import { onMount } from "svelte";
 	import { error } from "#lib/log/index";
 	import * as THREE from "three";
 	import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
@@ -23,13 +23,20 @@
 	let camera: THREE.PerspectiveCamera;
 	let renderer: THREE.WebGLRenderer;
 	let composer: EffectComposer;
+	let outlinePass: OutlinePass;
+	let axesHelper: THREE.AxesHelper;
 	let trackerModel: THREE.Object3D;
 	let gravityLine: THREE.Line;
-	let animationFrameId: number;
+	let animationFrameId = 0;
 	let lastFrameTime = 0;
 	let destroyed = false;
+	let visible = false;
+	const quaternion = new THREE.Quaternion();
+	const euler = new THREE.Euler();
+	const gravity = new THREE.Vector3();
+	const gravityEnd = new THREE.Vector3();
 
-	const frameInterval = $derived(1000 / fps);
+	const frameInterval = $derived(1000 / (Number.isFinite(fps) && fps > 0 ? fps : 10));
 
 	function disposeObject(object: THREE.Object3D) {
 		object.traverse((child: THREE.Object3D) => {
@@ -63,7 +70,7 @@
 		const ambientLight = new THREE.AmbientLight(0x404040, 2);
 		scene.add(ambientLight);
 
-		const axesHelper = new THREE.AxesHelper(2);
+		axesHelper = new THREE.AxesHelper(2);
 		scene.add(axesHelper);
 
 		const fbxLoader = new FBXLoader();
@@ -77,6 +84,7 @@
 				object.scale.set(0.01, 0.01, 0.01);
 				trackerModel = object;
 				scene.add(object);
+				if (outlinePass) outlinePass.selectedObjects = [object];
 
 				const textureLoader = new THREE.TextureLoader();
 				textureLoader.load(
@@ -88,12 +96,18 @@
 						}
 						object.traverse((child: THREE.Object3D) => {
 							if ((child as THREE.Mesh).isMesh) {
+								const mesh = child as THREE.Mesh;
+								const previousMaterials = Array.isArray(mesh.material)
+									? mesh.material
+									: [mesh.material];
+								for (const material of previousMaterials) material.dispose();
+
 								const material = new THREE.MeshStandardMaterial({
 									map: texture,
 									roughness: 0.5,
 									metalness: 0,
 								});
-								(child as THREE.Mesh).material = material;
+								mesh.material = material;
 							}
 						});
 					},
@@ -116,7 +130,7 @@
 		const renderPass = new RenderPass(scene, camera);
 		composer.addPass(renderPass);
 
-		const outlinePass = new OutlinePass(new THREE.Vector2(width, height), scene, camera);
+		outlinePass = new OutlinePass(new THREE.Vector2(width, height), scene, camera);
 		outlinePass.edgeStrength = 10;
 		outlinePass.edgeGlow = 0;
 		outlinePass.edgeThickness = 0.5;
@@ -127,8 +141,6 @@
 		const fxaaPass = new ShaderPass(FXAAShader);
 		fxaaPass.material.uniforms["resolution"]?.value?.set(1 / width, 1 / height);
 		composer.addPass(fxaaPass);
-
-		animate();
 	}
 
 	function createGravityLine(gravity: THREE.Vector3) {
@@ -145,21 +157,21 @@
 	function updateGravityLineLength(gravity: THREE.Vector3, rot: THREE.Quaternion) {
 		if (!gravityLine) return;
 
-		const normalizedGravity = gravity.clone().normalize().multiplyScalar(3);
-		const endPoint = normalizedGravity.clone().applyQuaternion(rot);
+		gravityEnd.copy(gravity).normalize().multiplyScalar(3).applyQuaternion(rot);
 
 		const position = gravityLine.geometry.attributes.position;
 		if (!position) return;
 
 		const positions = position.array;
-		positions[3] = endPoint.x;
-		positions[4] = endPoint.y;
-		positions[5] = endPoint.z;
+		positions[3] = gravityEnd.x;
+		positions[4] = gravityEnd.y;
+		positions[5] = gravityEnd.z;
 		position.needsUpdate = true;
 	}
 
-	function animate(currentTime = 0) {
-		if (destroyed) return;
+	function animate(currentTime: number) {
+		animationFrameId = 0;
+		if (destroyed || !visible || document.hidden) return;
 		animationFrameId = requestAnimationFrame(animate);
 
 		if (currentTime - lastFrameTime < frameInterval) {
@@ -169,25 +181,20 @@
 		lastFrameTime = currentTime;
 
 		if (trackerModel) {
-			const quaternion = new THREE.Quaternion();
-			quaternion.setFromEuler(
-				new THREE.Euler(
-					THREE.MathUtils.degToRad(rotation[0] ?? 0),
-					THREE.MathUtils.degToRad(rotation[1] ?? 0),
-					THREE.MathUtils.degToRad(rotation[2] ?? 0),
-					"XYZ",
-				),
+			euler.set(
+				THREE.MathUtils.degToRad(rotation[0] ?? 0),
+				THREE.MathUtils.degToRad(rotation[1] ?? 0),
+				THREE.MathUtils.degToRad(rotation[2] ?? 0),
+				"XYZ",
 			);
+			quaternion.setFromEuler(euler);
 
 			trackerModel.quaternion.copy(quaternion);
 
 			if (gravityLine) {
-				const gravity = new THREE.Vector3(acceleration[0], acceleration[1], acceleration[2]);
+				gravity.set(acceleration[0] ?? 0, acceleration[1] ?? 0, acceleration[2] ?? 0);
 				updateGravityLineLength(gravity, quaternion);
 			}
-
-			const outlinePass = composer.passes.find((pass): pass is OutlinePass => pass instanceof OutlinePass);
-			if (outlinePass) outlinePass.selectedObjects = [trackerModel];
 		}
 
 		composer.render();
@@ -198,6 +205,7 @@
 
 		const width = container.clientWidth;
 		const height = 200;
+		if (width === 0) return;
 
 		camera.aspect = width / height;
 		camera.updateProjectionMatrix();
@@ -209,35 +217,63 @@
 		if (fxaaPass) fxaaPass.material.uniforms["resolution"]?.value?.set(1 / width, 1 / height);
 	}
 
+	function updateVisibility() {
+		if (!visible || document.hidden) {
+			if (animationFrameId) cancelAnimationFrame(animationFrameId);
+			animationFrameId = 0;
+			return;
+		}
+
+		if (!renderer) initThreeJS();
+		handleResize();
+
+		if (!animationFrameId) {
+			lastFrameTime = 0;
+			animationFrameId = requestAnimationFrame(animate);
+		}
+	}
+
 	onMount(() => {
-		if (container) {
-			initThreeJS();
-			window.addEventListener("resize", handleResize);
-		}
-	});
-
-	onDestroy(() => {
-		destroyed = true;
-		window.removeEventListener("resize", handleResize);
-		if (animationFrameId) {
-			cancelAnimationFrame(animationFrameId);
-		}
-
-		if (renderer) {
-			composer?.dispose();
-			renderer.dispose();
+		let observer: IntersectionObserver | undefined;
+		window.addEventListener("resize", handleResize);
+		document.addEventListener("visibilitychange", updateVisibility);
+		if (typeof IntersectionObserver === "undefined") {
+			visible = true;
+			updateVisibility();
+		} else {
+			observer = new IntersectionObserver(([entry]) => {
+				visible = entry?.isIntersecting ?? false;
+				updateVisibility();
+			});
+			observer.observe(container);
 		}
 
-		if (trackerModel) {
-			scene.remove(trackerModel);
-			disposeObject(trackerModel);
-		}
+		return () => {
+			destroyed = true;
+			observer?.disconnect();
+			window.removeEventListener("resize", handleResize);
+			document.removeEventListener("visibilitychange", updateVisibility);
+			if (animationFrameId) cancelAnimationFrame(animationFrameId);
 
-		if (gravityLine) {
-			scene.remove(gravityLine);
-			gravityLine.geometry.dispose();
-			(gravityLine.material as THREE.Material).dispose();
-		}
+			if (trackerModel) {
+				scene.remove(trackerModel);
+				disposeObject(trackerModel);
+			}
+
+			if (gravityLine) {
+				scene.remove(gravityLine);
+				gravityLine.geometry.dispose();
+				(gravityLine.material as THREE.Material).dispose();
+			}
+
+			axesHelper?.dispose();
+			if (renderer) {
+				for (const pass of composer.passes) pass.dispose();
+				composer.dispose();
+				renderer.dispose();
+				renderer.forceContextLoss();
+			}
+		};
 	});
 </script>
 

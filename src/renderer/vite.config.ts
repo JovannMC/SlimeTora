@@ -4,11 +4,13 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
+import { offlineIcons } from "./offline-icons.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
 	plugins: [
+		offlineIcons(here),
 		tailwindcss(),
 		sveltekit({
 			adapter: adapter({

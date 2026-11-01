@@ -10,7 +10,6 @@
 	import { t } from "#lib/lang/index";
 	import { ChargeStatus } from "#lib/types/tracker";
 	import Tooltip from "../settings/Tooltip.svelte";
-	import TrackerVisualization from "./TrackerVisualization.svelte";
 
 	let { id, type }: { id: string; type: string } = $props();
 
@@ -176,7 +175,11 @@
 			</div>
 
 			{#if visualization}
-				<TrackerVisualization {rotation} {acceleration} fps={visualizationFPS} />
+				{#await import("./TrackerVisualization.svelte")}
+					<img src="/tracker.png" alt="Tracker" class="mx-auto mt-2" style="width: 150px;" />
+				{:then { default: TrackerVisualization }}
+					<TrackerVisualization {rotation} {acceleration} fps={visualizationFPS} />
+				{/await}
 			{:else}
 				<img src="/tracker.png" alt="Tracker" class="mx-auto mt-2" style="width: 150px;" />
 			{/if}

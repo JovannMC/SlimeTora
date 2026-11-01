@@ -27,8 +27,27 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                os: [ubuntu-latest, windows-latest, macos-latest]
-        runs-on: ${{ matrix.os }}
+                include:
+                    - name: Linux x64
+                      runner: ubuntu-24.04
+                      arch: x64
+                    - name: Linux ARM64
+                      runner: ubuntu-24.04-arm
+                      arch: arm64
+                    - name: Windows x64
+                      runner: windows-2025
+                      arch: x64
+                    - name: Windows ARM64
+                      runner: windows-11-arm
+                      arch: arm64
+                    - name: macOS Intel
+                      runner: macos-15-intel
+                      arch: x64
+                    - name: macOS Apple Silicon
+                      runner: macos-15
+                      arch: arm64
+        name: Verify (${{ matrix.name }})
+        runs-on: ${{ matrix.runner }}
 
         steps:
             - uses: actions/checkout@v7
@@ -53,7 +72,7 @@ jobs:
               run: pnpm run format:check
 
             - name: Package
-              run: pnpm run dist
+              run: pnpm run build && pnpm exec electron-builder --publish never --${{ matrix.arch }}
 
             - name: Upload Linux (DEB)
               if: runner.os == 'Linux'
@@ -84,13 +103,5 @@ jobs:
               uses: actions/upload-artifact@v7
               with:
                   path: release/*.dmg
-                  archive: false
-                  if-no-files-found: error
-
-            - name: Upload macOS (ZIP)
-              if: runner.os == 'macOS'
-              uses: actions/upload-artifact@v7
-              with:
-                  path: release/*-mac.zip
                   archive: false
                   if-no-files-found: error

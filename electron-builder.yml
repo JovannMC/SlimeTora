@@ -1,6 +1,7 @@
 appId: me.jovann.slimetora
 productName: SlimeTora
 copyright: Copyright © JovannMC
+artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
 
 directories:
     output: release
@@ -21,7 +22,6 @@ mac:
     category: public.app-category.utilities
     target:
         - dmg
-        - zip
 
 linux:
     category: Utility

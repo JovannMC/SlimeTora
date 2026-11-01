@@ -197,8 +197,8 @@ importers:
         specifier: ^0.10.2
         version: 0.10.2
       haritorax-interpreter:
-        specifier: file:../haritorax-interpreter
-        version: file:../haritorax-interpreter(@serialport/bindings-cpp@13.0.1(supports-color@10.2.2))(@serialport/stream@13.0.0(supports-color@10.2.2))(@stoprocent/noble@2.8.0(dbus-next@0.10.2)(supports-color@10.2.2))(dbus-next@0.10.2)
+        specifier: ^4.0.0
+        version: 4.0.0(@serialport/bindings-cpp@13.0.1(supports-color@10.2.2))(@serialport/stream@13.0.0(supports-color@10.2.2))(@stoprocent/noble@2.8.0(dbus-next@0.10.2)(supports-color@10.2.2))(dbus-next@0.10.2)
       overlayscrollbars:
         specifier: ^2.17.0
         version: 2.17.0
@@ -1779,9 +1779,10 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  haritorax-interpreter@file:../haritorax-interpreter:
-    resolution: {directory: ../haritorax-interpreter, type: directory}
-    engines: {node: '>=23.6.0'}
+  haritorax-interpreter@4.0.0:
+    resolution: {integrity: sha512-UhzLii6hCIO77633LakCPu5vgcRAiQXTrUUhoDehVmJi+PSOTPvV9E2Zc6cCxgQQMixulFVvNT0835ORGHqTgQ==}
+    engines: {node: '>=24.0.0'}
+    hasBin: true
     peerDependencies:
       '@serialport/bindings-cpp': ^13.0.1
       '@serialport/stream': ^13.0.0
@@ -4584,7 +4585,7 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  haritorax-interpreter@file:../haritorax-interpreter(@serialport/bindings-cpp@13.0.1(supports-color@10.2.2))(@serialport/stream@13.0.0(supports-color@10.2.2))(@stoprocent/noble@2.8.0(dbus-next@0.10.2)(supports-color@10.2.2))(dbus-next@0.10.2):
+  haritorax-interpreter@4.0.0(@serialport/bindings-cpp@13.0.1(supports-color@10.2.2))(@serialport/stream@13.0.0(supports-color@10.2.2))(@stoprocent/noble@2.8.0(dbus-next@0.10.2)(supports-color@10.2.2))(dbus-next@0.10.2):
     dependencies:
       base64-js: 1.5.1
     optionalDependencies:

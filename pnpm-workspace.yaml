@@ -10,6 +10,9 @@ allowBuilds:
     usocket: true
     electron-winstaller: true
 
+minimumReleaseAgeExclude:
+    - haritorax-interpreter@4.0.0
+
 overrides:
     # stupid dumb electron builder using usocker which is stupid old causing native compilation errors for noble
     "usocket@0.3.0>node-gyp": "13.1.0"

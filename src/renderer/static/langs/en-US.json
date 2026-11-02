@@ -58,7 +58,7 @@
 			}
 		},
 		"settings": {
-			"title": "Tracker view settings",
+			"title": "Home view settings",
 			"collapse_expand": "Collapse/expand all trackers",
 			"pairing": "Tracker pairing",
 			"precise_data": "Precise data",

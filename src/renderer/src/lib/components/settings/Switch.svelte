@@ -18,7 +18,7 @@
 	<label
 		for={id}
 		class={clsx(
-			"relative h-5 w-10 cursor-pointer rounded-full transition-colors duration-200",
+			"relative h-5 w-10 shrink-0 cursor-pointer rounded-full transition-colors duration-200",
 			disabled && "disabled",
 			selected ? "bg-primary" : "bg-quaternary",
 		)}
@@ -30,5 +30,5 @@
 			)}
 		></span>
 	</label>
-	<span class="min-w-0 truncate font-medium select-none" {title}>{label}</span>
+	<span class="min-w-0 flex-1 truncate font-medium select-none" {title}>{label}</span>
 </div>

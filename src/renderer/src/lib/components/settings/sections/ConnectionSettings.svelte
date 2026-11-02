@@ -229,21 +229,20 @@
 					{#each availablePorts as port (port)}
 						<div
 							class={clsx(
-								"flex items-center justify-between gap-3 rounded-md p-2",
+								"flex min-w-0 items-center justify-between gap-3 rounded-md p-2",
 								identifiedPorts[port] && "bg-primary/10",
 							)}
 						>
 							<Switch
 								label={portLabel(port)}
 								title={port}
+								className="min-w-0 flex-1"
 								bind:selected={() => $connection.ports.includes(port), (on) => setPort(port, on)}
 							/>
 							{#if identifiedPorts[port]}
 								<span class="shrink-0 rounded bg-primary/70 px-2 py-1 text-xs font-medium text-white">
 									{identifiedPorts[port].kind === "dongle"
-										? $t("settings.connection.serial_ports.dongle", {
-												model: identifiedPorts[port].model,
-											})
+										? identifiedPorts[port].model
 										: $t("settings.connection.serial_ports.wired")}
 								</span>
 							{/if}

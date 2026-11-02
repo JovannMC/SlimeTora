@@ -587,7 +587,7 @@ function startSession(options: SessionOptions): Promise<void> {
 	return next;
 }
 
-function stopSession(turnOffTrackers = false): Promise<void> {
+function stopSession(powerOffTrackers = false): Promise<void> {
 	enabled = false;
 	uiImuForwarding.reset();
 	reconnect.stop();
@@ -607,7 +607,7 @@ function stopSession(turnOffTrackers = false): Promise<void> {
 			await stopBlePreview();
 			await cancelDiscovery;
 
-			if (turnOffTrackers && backend) {
+			if (powerOffTrackers && backend) {
 				for (const device of backend.getDevices()) {
 					if (device.model === "wired" || !openEndpoints.has(device.endpointId)) continue;
 					try {
@@ -736,7 +736,10 @@ export const backendCalls: BackendCalls = {
 	},
 	setSettings: (deviceId, settings) => withBackend((instance) => instance.setSettings(deviceId, settings)),
 	setBodyPart: (deviceId, bodyPart) => withBackend((instance) => instance.setBodyPart(deviceId, bodyPart)),
-	powerOff: (deviceId) => withBackend((instance) => instance.powerOff(deviceId)),
+	powerOff: (deviceIds) => withBackend((instance) => {
+		if (!Array.isArray(deviceIds)) deviceIds = [deviceIds];
+		return Promise.all(deviceIds.map((id) => instance.powerOff(id)));
+	}),
 	switchCommunication: (deviceId, mode) => withBackend((instance) => instance.switchCommunication(deviceId, mode)),
 	setChannel: (endpointId, channel) => withBackend((instance) => instance.setChannel(endpointId, channel)),
 	pair: (endpointId, slot) => withBackend((instance) => instance.pair(endpointId, slot)),

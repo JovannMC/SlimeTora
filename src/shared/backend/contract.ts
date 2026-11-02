@@ -95,7 +95,7 @@ export interface BackendCalls {
 	disconnect(endpointId: string): Promise<void>;
 	setSettings(deviceId: string, settings: TrackerSettings): Promise<void>;
 	setBodyPart(deviceId: string, bodyPart: BodyPart): Promise<void>;
-	powerOff(deviceId: string): Promise<void>;
+	powerOff(deviceId: string | string[]): Promise<void[]>;
 	switchCommunication(deviceId: string, mode: "ble" | "serial"): Promise<void>;
 	setChannel(endpointId: string, channel: number): Promise<void>;
 	pair(endpointId: string, slot: string): Promise<void>;

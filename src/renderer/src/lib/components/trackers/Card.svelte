@@ -20,9 +20,6 @@
 	const tracker = $derived($connectedTrackers.find((t) => t.id === id));
 	const displayName = $derived(tracker?.bodyPart || id);
 	const connectionIcon = $derived(tracker?.connection_mode === ConnectionMode.BLE ? "mdi:bluetooth" : "mdi:usb");
-	const connectionName = $derived(
-		tracker?.connection_mode === ConnectionMode.BLE ? "BLE connection" : "Serial connection",
-	);
 	const isOpen = $derived($trackerOpenStates[id] ?? false);
 	const decimals = $derived($program.preciseData ? 2 : 0);
 

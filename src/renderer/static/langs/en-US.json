@@ -59,7 +59,8 @@
 		},
 		"settings": {
 			"title": "Home view settings",
-			"collapse_expand": "Collapse/expand all trackers",
+			"collapse_expand": "Toggle trackers cards",
+			"turn_off": "Turn off all trackers",
 			"pairing": "Tracker pairing",
 			"precise_data": "Precise data",
 			"fast_data": "Fast data",

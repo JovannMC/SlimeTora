@@ -8,19 +8,15 @@
 	import { isOn, connectedTrackers, trackerOpenStates } from "#lib/store/index";
 	import { sessionState } from "#lib/backend/state";
 	import { stopInterpreting } from "#lib/backend/index";
-	import { error } from "#lib/log/index";
+	import { error, info } from "#lib/log/index";
 	import { program } from "#lib/store/settings";
 	import { onMount } from "svelte";
+	import { invoke } from "#lib/api/backend.ts";
+	import { ToastManager } from "#lib/util/toast.svelte.ts";
 
+	let isExpanded = $state(false);
+	let poweringOff = $state(false);
 	let isSmall = $state(window.matchMedia("(max-width: 768px)").matches);
-	function updateIsSmall() {
-		isSmall = window.matchMedia("(max-width: 768px)").matches;
-	}
-
-	onMount(() => {
-		window.addEventListener("resize", updateIsSmall);
-		return () => window.removeEventListener("resize", updateIsSmall);
-	});
 
 	// spread trackers over two columns, alternating
 	const leftColumn = $derived($connectedTrackers.filter((_, i) => i % 2 === 0));
@@ -39,6 +35,15 @@
 						: $t("home.disconnected"),
 	);
 
+	onMount(() => {
+		window.addEventListener("resize", updateIsSmall);
+		return () => window.removeEventListener("resize", updateIsSmall);
+	});
+
+	function updateIsSmall() {
+		isSmall = window.matchMedia("(max-width: 768px)").matches;
+	}
+
 	function toggleTracking() {
 		if ($sessionState.status === "error" && !$sessionState.requestedEnabled) {
 			void stopInterpreting().catch((err) => error(["backend"], `Failed to stop tracking: ${err}`));
@@ -49,9 +54,29 @@
 
 	// expands every card, or collapses them all if any are open
 	function toggleAll() {
-		const trackerIds = $connectedTrackers.map((tracker) => tracker.id);
-		const anyOpen = trackerIds.some((id) => $trackerOpenStates[id]);
-		trackerOpenStates.set(Object.fromEntries(trackerIds.map((id) => [id, !anyOpen])));
+		const anyOpen = Object.values($trackerOpenStates).some((open) => open);
+		trackerOpenStates.set(Object.fromEntries($connectedTrackers.map((tracker) => [tracker.id, !anyOpen])));
+		isExpanded = !anyOpen;
+	}
+
+	async function powerOffTrackers() {
+		if (poweringOff) return;
+		const deviceIds = $connectedTrackers.map((tracker) => tracker.id.split(":")[0] as string);
+		const displayNames = $connectedTrackers.map((tracker) => tracker.name).join(", ");
+
+		poweringOff = true;
+		try {
+			await invoke("powerOff", deviceIds);
+			info(["trackers", "card"], `Powered off tracker devices: ${displayNames} (${deviceIds.join(", ")})`);
+		} catch (err) {
+			error(["trackers", "card"], `Failed to power off tracker ${deviceIds.join(", ")}: ${String(err)}`);
+			ToastManager.add({
+				type: "error",
+				message: $t("home.card.error.power_off_failed", { name: displayNames, error: String(err) }),
+			});
+		} finally {
+			poweringOff = false;
+		}
 	}
 </script>
 
@@ -86,12 +111,22 @@
 		<h2 class="mb-4 text-lg font-semibold">{$t("home.settings.title")}</h2>
 		<div class="flex flex-col gap-4">
 			<div class="flex flex-row gap-2">
-				<Button label={$t("home.settings.collapse_expand")} onClick={toggleAll} />
+				<Button
+					label={$t("home.settings.collapse_expand")}
+					icon={!isExpanded ?  "ri:expand-diagonal-2-line" :"ri:collapse-diagonal-2-line"}
+					onClick={toggleAll}
+				/>
 				<Button
 					label={$t("home.settings.pairing")}
 					icon="ri:bluetooth-connect-line"
 					background="quaternary"
 					onClick={() => goto("/trackers/pairing")}
+				/>
+				<Button
+					label={$t("home.settings.turn_off")}
+					icon="ri:shut-down-line"
+					background="secondary"
+					onClick={powerOffTrackers}
 				/>
 			</div>
 			<div class="flex flex-row items-center justify-evenly gap-2">

@@ -25,6 +25,23 @@ let preferences: LoggingPreferences = { writeLogs: true, loggingMode: "minimal" 
 
 let stream: fs.WriteStream | undefined;
 
+const failedConsoleStreams = new Set<NodeJS.WriteStream>();
+
+for (const output of [process.stdout, process.stderr]) {
+	output.on("error", () => failedConsoleStreams.add(output));
+}
+
+function writeToConsole(level: LogLevel, message: string): void {
+	const output = level === "error" || level === "warn" ? process.stderr : process.stdout;
+	if (failedConsoleStreams.has(output)) return;
+
+	try {
+		output.write(`${message}\n`);
+	} catch {
+		failedConsoleStreams.add(output);
+	}
+}
+
 export function logsDirectory(): string {
 	return path.join(app.getPath("userData"), "logs");
 }
@@ -57,7 +74,7 @@ function openLogFile(): fs.WriteStream {
 
 	const name = `${LOG_FILE_PREFIX}${new Date().toISOString().replace(/[:.]/g, "-")}.log`;
 	stream = fs.createWriteStream(path.join(dir, name), { flags: "a" });
-	stream.on("error", (err) => console.error(`[log] Failed to write log file: ${err}`));
+	stream.on("error", (err) => writeToConsole("error", `[log] Failed to write log file: ${err}`));
 	return stream;
 }
 
@@ -66,14 +83,13 @@ export function writeRecord(record: LogRecord): void {
 	if (LOG_LEVEL_WEIGHT[record.level] < minimumLevel) return;
 
 	const line = formatRecord(record);
-	const echo = record.level === "error" ? console.error : record.level === "warn" ? console.warn : console.log;
-	echo(line);
+	writeToConsole(record.level, line);
 	if (!preferences.writeLogs) return;
 
 	try {
 		openLogFile().write(`${line}\n`);
 	} catch (err) {
-		console.error(`[log] Failed to write log file: ${err}`);
+		writeToConsole("error", `[log] Failed to write log file: ${err}`);
 	}
 }
 

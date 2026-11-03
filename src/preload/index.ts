@@ -3,6 +3,12 @@ import { contextBridge, ipcRenderer } from "electron";
 
 const bridge: PlatformBridge = {
 	getAppInfo: () => ipcRenderer.invoke(Channels.appInfo),
+
+	getLanguages: () => ipcRenderer.invoke(Channels.languagesGet),
+	checkLanguages: () => ipcRenderer.invoke(Channels.languagesCheck),
+	checkAppUpdate: (channel) => ipcRenderer.invoke(Channels.appCheck, channel),
+	openRelease: (url) => ipcRenderer.invoke(Channels.openRelease, url),
+
 	getCapabilities: () => ipcRenderer.invoke(Channels.capabilities),
 	log: (record) => ipcRenderer.send(Channels.log, record),
 	openLogsFolder: () => ipcRenderer.invoke(Channels.openLogsFolder),
@@ -10,6 +16,7 @@ const bridge: PlatformBridge = {
 	getSetting: (key) => ipcRenderer.invoke(Channels.settingGet, key),
 	setSetting: (key, value) => ipcRenderer.invoke(Channels.settingSet, key, value),
 	deleteSetting: (key) => ipcRenderer.invoke(Channels.settingDelete, key),
+
 	backend: {
 		invoke: (command, args) => ipcRenderer.invoke(Channels.backendInvoke, command, args),
 		subscribe: (handler) => {

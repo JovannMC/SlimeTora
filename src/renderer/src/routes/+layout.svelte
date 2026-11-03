@@ -12,6 +12,7 @@
 	import Tooltip from "#lib/components/settings/Tooltip.svelte";
 	import { ToastManager } from "#lib/util/toast.svelte";
 	import { currentPath, isOn, trackersLoaded } from "#lib/store/index";
+	import { checkUpdates, appUpdate } from "#lib/updates/index";
 	import { initialized, initTranslations, t } from "#lib/lang/index";
 	import { captureUncaughtErrors, error, info, setLoggingMode } from "#lib/log/index";
 	import "#lib/api/icons";
@@ -43,6 +44,7 @@
 		try {
 			await stopInterpreting();
 			await startInterpreting();
+
 			restartRequired.set(false);
 			info(["settings"], "Restarted tracking connection to apply settings");
 		} catch (err) {
@@ -63,6 +65,7 @@
 
 		let disposed = false;
 		let shownFileErrors = 0;
+
 		const showFileErrors = () => {
 			if (!get(initialized)) return;
 			const errors = get(settingsFileErrors);
@@ -80,8 +83,20 @@
 
 		void settingsLoaded.then(async () => {
 			if (disposed) return;
+
 			if (!$initialized) await initTranslations($program.locale);
 			showFileErrors();
+
+			const settings = get(program);
+			void checkUpdates(settings.checkUpdatesApp, settings.checkUpdatesLanguage).then(() => {
+				if (!disposed && get(appUpdate))
+					ToastManager.add({
+						type: "info",
+						message: get(t)("settings.program.update_settings.app_available_toast", {
+							version: get(appUpdate)?.version ?? "",
+						}),
+					});
+			});
 		});
 
 		void Promise.all([backendStateLoaded(), settingsLoaded, trackersLoaded]).then(async () => {
@@ -92,6 +107,7 @@
 			}
 			if ($program.autoStart && $isOn === false) isOn.set(true);
 		});
+
 		const scrollbars = OverlayScrollbars(document.body, {
 			update: {
 				ignoreMutation: ({ target, type }) => type === "characterData" && target.parentElement?.id === "imu",
@@ -101,6 +117,7 @@
 
 		return () => {
 			disposed = true;
+
 			detachBackendState();
 			detachBleTargets();
 			detachNotifications();

@@ -50,7 +50,7 @@
 	onclick={onClick}
 >
 	{#if icon && iconPosition === "left"}
-		<Icon {icon} width={rounded ? 24 : 18} />
+		<Icon {icon} width={rounded ? 24 : 18} class="shrink-0" />
 	{/if}
 
 	{#if label}
@@ -58,6 +58,6 @@
 	{/if}
 
 	{#if icon && iconPosition === "right"}
-		<Icon {icon} width={rounded ? 24 : 18} />
+		<Icon {icon} width={rounded ? 24 : 18} class="shrink-0" />
 	{/if}
 </button>

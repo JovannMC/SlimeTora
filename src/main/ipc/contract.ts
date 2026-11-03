@@ -4,6 +4,7 @@ import { app, ipcMain, shell } from "electron";
 import { getTransportCapabilities, registerBackendIpc } from "../backend";
 import { configureLogging, logsDirectory, warn, writeRecord } from "../log";
 import { deleteSetting, getSetting, setSetting } from "../store";
+import { checkApp, checkLanguages, getLanguages, openRelease } from "../updates";
 
 function getAppInfo(): AppInfo {
 	return {
@@ -26,6 +27,17 @@ export function registerIpcHandlers(): void {
 	}
 
 	ipcMain.handle(Channels.appInfo, () => getAppInfo());
+	ipcMain.handle(Channels.languagesGet, () => getLanguages());
+	ipcMain.handle(Channels.languagesCheck, () => checkLanguages());
+	ipcMain.handle(Channels.appCheck, (_event, channel: unknown) => {
+		if (channel !== "stable" && channel !== "beta") throw new Error("Invalid update channel");
+		return checkApp(channel);
+	});
+	ipcMain.handle(Channels.openRelease, (_event, url: unknown) => {
+		if (typeof url !== "string") throw new Error("Invalid URL");
+		return openRelease(url);
+	});
+
 	ipcMain.handle(Channels.capabilities, getTransportCapabilities);
 	ipcMain.handle(Channels.openLogsFolder, () => shell.openPath(logsDirectory()));
 	ipcMain.handle(Channels.openDataFolder, () => shell.openPath(app.getPath("userData")));
@@ -36,6 +48,7 @@ export function registerIpcHandlers(): void {
 		if (isLogRecord(record)) writeRecord(record);
 		else warn("ipc", "Dropped malformed log record from renderer");
 	});
+
 	ipcMain.handle(Channels.settingGet, (_event, key: string) => getSetting(key, { backupCorrupt: true }));
 	ipcMain.handle(Channels.settingSet, (_event, key: string, value: unknown) => {
 		setSetting(key, value);

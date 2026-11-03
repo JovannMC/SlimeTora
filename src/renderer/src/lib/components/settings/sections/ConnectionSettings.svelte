@@ -186,7 +186,7 @@
 							<p
 								class={clsx(
 									"text-sm leading-5",
-									capInfo?.available ? "text-green-400" : "text-amber-400",
+									capInfo?.available ? "text-green-400" : "text-yellow-400",
 								)}
 							>
 								{capInfo?.available

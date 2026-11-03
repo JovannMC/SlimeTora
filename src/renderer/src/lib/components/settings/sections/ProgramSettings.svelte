@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Button from "#lib/components/settings/Button.svelte";
+	import { getBridge } from "#lib/api/bridge";
+	import { appUpdate, checkUpdates, updateStatus } from "#lib/updates/index";
 	import Icon from "@iconify/svelte";
 	import { program } from "#lib/store/settings";
 	import Checkbox from "#lib/components/settings/Checkbox.svelte";
@@ -6,6 +9,18 @@
 	import Select from "#lib/components/settings/Select.svelte";
 	import Tooltip from "#lib/components/settings/Tooltip.svelte";
 	import { changeLocale, locale, locales, t } from "#lib/lang/index";
+
+	function statusIcon(status: string): string {
+		if (status === "failed") return "ri:error-warning-line";
+		if (status === "available" || status === "updated") return "ri:download-cloud-2-line";
+		return "ri:checkbox-circle-line";
+	}
+
+	function statusClass(status: string): string {
+		if (status === "failed") return "text-yellow-400";
+		if (status === "available" || status === "updated") return "text-secondary-alt";
+		return "text-green-400";
+	}
 </script>
 
 <div class="rounded-lg bg-panel p-6 shadow">
@@ -56,15 +71,10 @@
 				/>
 			</h3>
 			<div class="flex flex-col gap-3 pl-1">
-				<Checkbox
-					label={$t("settings.program.update_settings.app")}
-					bind:checked={$program.checkUpdatesApp}
-					disabled
-				/>
+				<Checkbox label={$t("settings.program.update_settings.app")} bind:checked={$program.checkUpdatesApp} />
 				<Checkbox
 					label={$t("settings.program.update_settings.language")}
 					bind:checked={$program.checkUpdatesLanguage}
-					disabled
 				/>
 			</div>
 			<Select
@@ -77,8 +87,59 @@
 				tooltip={$t("settings.program.update_settings.channel.tooltip")}
 				tooltipPosition="up"
 				tooltipWidth="250px"
-				disabled
 			/>
+			<Button
+				label={$t("settings.program.update_settings.check")}
+				icon={$updateStatus.checking ? "ri:loader-4-line" : "ri:refresh-line"}
+				onClick={() => void checkUpdates($program.checkUpdatesApp, $program.checkUpdatesLanguage)}
+				disabled={$updateStatus.checking || (!$program.checkUpdatesApp && !$program.checkUpdatesLanguage)}
+				background="primary"
+			/>
+
+			{#if $updateStatus.checking}
+				<p class="flex items-center gap-2 text-sm text-text-alt" aria-live="polite">
+					<Icon icon="ri:loader-4-line" class="shrink-0 animate-spin" width={18} />
+					{$t("settings.program.update_settings.checking")}
+				</p>
+			{:else if $updateStatus.app || $updateStatus.language}
+				<div class="space-y-2 rounded-md bg-quaternary/60 p-3" aria-live="polite">
+					{#if $updateStatus.app}
+						<div class="flex items-start gap-2">
+							<Icon
+								icon={statusIcon($updateStatus.app)}
+								class="mt-0.5 shrink-0 {statusClass($updateStatus.app)}"
+								width={18}
+							/>
+							<span class="flex-1 text-sm">
+								{$t(`settings.program.update_settings.app_${$updateStatus.app}`, {
+									version: $appUpdate?.version ?? "",
+								})}
+							</span>
+						</div>
+					{/if}
+
+					{#if $updateStatus.language}
+						<div class="flex items-start gap-2">
+							<Icon
+								icon={statusIcon($updateStatus.language)}
+								class="mt-0.5 shrink-0 {statusClass($updateStatus.language)}"
+								width={18}
+							/>
+							<span class="text-sm">
+								{$t(`settings.program.update_settings.language_${$updateStatus.language}`)}
+							</span>
+						</div>
+					{/if}
+				</div>
+
+				{#if $appUpdate}
+					<Button
+						label={$t("settings.program.update_settings.open_download")}
+						onClick={() => void getBridge().openRelease($appUpdate!.url)}
+						icon="ri:external-link-line"
+					/>
+				{/if}
+			{/if}
 		</div>
 	</div>
 </div>

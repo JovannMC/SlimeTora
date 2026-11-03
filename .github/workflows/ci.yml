@@ -7,6 +7,7 @@ on:
             - "v*"
         paths:
             - "src/**"
+            - "updates/**"
             - "scripts/**"
             - "package.json"
             - "pnpm-lock.yaml"
@@ -16,6 +17,7 @@ on:
     pull_request:
         paths:
             - "src/**"
+            - "updates/**"
             - "scripts/**"
             - "package.json"
             - "pnpm-lock.yaml"

@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
+import { GITHUB_API_ORIGIN } from "../shared/consts.ts";
 import { offlineIcons } from "./offline-icons.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -28,7 +29,7 @@ export default defineConfig({
 					"style-src": ["self", "unsafe-inline"],
 					"img-src": ["self", "data:", "blob:", "https://avatars.githubusercontent.com"],
 					"font-src": ["self", "data:"],
-					"connect-src": ["self", "https://api.github.com"],
+					"connect-src": ["self", GITHUB_API_ORIGIN],
 					"object-src": ["none"],
 					"base-uri": ["none"],
 					"frame-ancestors": ["none"],

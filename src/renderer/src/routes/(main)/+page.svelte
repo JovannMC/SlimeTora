@@ -113,7 +113,7 @@
 			<div class="flex flex-row gap-2">
 				<Button
 					label={$t("home.settings.collapse_expand")}
-					icon={!isExpanded ?  "ri:expand-diagonal-2-line" :"ri:collapse-diagonal-2-line"}
+					icon={!isExpanded ? "ri:expand-diagonal-2-line" : "ri:collapse-diagonal-2-line"}
 					onClick={toggleAll}
 				/>
 				<Button

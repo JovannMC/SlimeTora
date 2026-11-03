@@ -190,7 +190,17 @@
 					"tooltip": "Select the update channel for the app. Beta gives you the very latest features, but may be more buggy.",
 					"stable": "Stable",
 					"beta": "Beta"
-				}
+				},
+				"check": "Check for updates",
+				"checking": "Checking for updates…",
+				"app_available": "SlimeTora v{{version}} is available",
+				"app_available_toast": "SlimeTora v{{version}} is available, check settings to update",
+				"app_current": "SlimeTora is up to date",
+				"app_failed": "Could not check for SlimeTora updates",
+				"language_updated": "Language updates installed",
+				"language_current": "Languages are up to date",
+				"language_failed": "Could not check or install all language updates",
+				"open_download": "Download update"
 			}
 		},
 		"connection": {

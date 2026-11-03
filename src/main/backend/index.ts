@@ -736,10 +736,11 @@ export const backendCalls: BackendCalls = {
 	},
 	setSettings: (deviceId, settings) => withBackend((instance) => instance.setSettings(deviceId, settings)),
 	setBodyPart: (deviceId, bodyPart) => withBackend((instance) => instance.setBodyPart(deviceId, bodyPart)),
-	powerOff: (deviceIds) => withBackend((instance) => {
-		if (!Array.isArray(deviceIds)) deviceIds = [deviceIds];
-		return Promise.all(deviceIds.map((id) => instance.powerOff(id)));
-	}),
+	powerOff: (deviceIds) =>
+		withBackend((instance) => {
+			if (!Array.isArray(deviceIds)) deviceIds = [deviceIds];
+			return Promise.all(deviceIds.map((id) => instance.powerOff(id)));
+		}),
 	switchCommunication: (deviceId, mode) => withBackend((instance) => instance.switchCommunication(deviceId, mode)),
 	setChannel: (endpointId, channel) => withBackend((instance) => instance.setChannel(endpointId, channel)),
 	pair: (endpointId, slot) => withBackend((instance) => instance.pair(endpointId, slot)),

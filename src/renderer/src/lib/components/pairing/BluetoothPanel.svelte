@@ -3,6 +3,7 @@
 	import { t } from "#lib/lang/index";
 	import Button from "#lib/components/settings/Button.svelte";
 	import type { PairedDevice, TrackerDevice } from "./types";
+	import clsx from "clsx";
 
 	let {
 		pairedDevices,
@@ -83,9 +84,10 @@
 									<span class="truncate text-xs font-medium">{device.deviceName}</span>
 								</div>
 								<span
-									class="shrink-0 rounded px-1 py-0.5 text-xs text-white {connected
-										? 'bg-green-500'
-										: 'bg-gray-500'}"
+									class={clsx(
+										"shrink-0 rounded px-1 py-0.5 text-xs text-white ",
+										connected ? "bg-green-500" : "bg-gray-500",
+									)}
 								>
 									{connected
 										? $t("home.pairing.bluetooth.connected")
@@ -97,7 +99,7 @@
 									{device.bodyPart || $t("home.pairing.bluetooth.body_part_unknown")}
 								</div>
 								{#if device.trackerType}
-									<span class="shrink-0 rounded bg-blue-500 px-1 py-0.5 text-xs text-white">
+									<span class="shrink-0 rounded bg-blue-400 px-1 py-0.5 text-xs text-white">
 										{modelLabel(device.trackerType)}
 									</span>
 								{/if}

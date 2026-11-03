@@ -1,8 +1,13 @@
 import type { BackendBridge } from "$shared/backend/contract";
 import type { LogRecord } from "$shared/log/index";
+import type { AppUpdate, LanguageData } from "$shared/updates";
 
 export const Channels = {
 	appInfo: "app:info",
+	languagesGet: "updates:languages-get",
+	languagesCheck: "updates:languages-check",
+	appCheck: "updates:app-check",
+	openRelease: "updates:open-release",
 	capabilities: "app:capabilities",
 	log: "log:write",
 	backendInvoke: "backend:invoke",
@@ -49,6 +54,10 @@ export interface Capabilities {
 // api exposed to renderer on `window.slimetora`
 export interface PlatformBridge {
 	getAppInfo(): Promise<AppInfo>;
+	getLanguages(): Promise<LanguageData>;
+	checkLanguages(): Promise<number>;
+	checkAppUpdate(channel: "stable" | "beta"): Promise<AppUpdate>;
+	openRelease(url: string): Promise<void>;
 	getCapabilities(): Promise<Capabilities>;
 	log(record: LogRecord): void;
 	backend: BackendBridge;

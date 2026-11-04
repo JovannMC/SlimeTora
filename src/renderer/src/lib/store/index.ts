@@ -35,6 +35,7 @@ export interface TrackerData {
 	magnetometer?: MagStatus;
 	battery?: BatteryData;
 	rssi?: number;
+	sensorRssi?: number;
 }
 
 export type TrackerSave = Omit<Tracker, "data">;

@@ -29,8 +29,13 @@
 	const batteryVoltage = $derived(tracker?.data.battery?.voltage);
 	const batteryStatus = $derived(tracker?.data.battery?.status ?? ChargeStatus.Discharging);
 	const magStatus = $derived(tracker?.data.magnetometer ?? "N/A");
-	const rssi = $derived(tracker?.data.rssi);
 	const magClass = $derived(`mag-status-${magStatus.toLowerCase().replace(/\s/g, "_")}`);
+	const magStatusDisplay = $derived(
+		magStatus === "N/A" || magStatus === "unknown"
+			? $t("home.card.status.unknown")
+			: $t(`home.card.status.${magStatus.toLowerCase()}`),
+	);
+	const rssi = $derived(tracker?.data.rssi);
 
 	const visualization = $derived($program.visualization ?? true);
 	const visualizationFPS = $derived($program.visualizationFPS ?? 60);
@@ -83,7 +88,7 @@
 					</span>
 					<span class="flex items-center gap-1 text-sm text-text-alt" id="mag-small">
 						<Icon icon="ri:compass-3-fill" width={14} class="bg-transparent! {magClass}" id="mag-icon" />
-						<span class="bg-transparent! uppercase {magClass}" id="mag-text">{magStatus}</span>
+						<span class="bg-transparent! uppercase {magClass}" id="mag-text">{magStatusDisplay}</span>
 					</span>
 					<span class="flex items-center gap-1" id="rssi-status">
 						<Icon icon="ri:signal-wifi-fill" width={14} class="text-text-alt" />
@@ -164,9 +169,7 @@
 							/>
 						</Tooltip>
 						<span class="bg-transparent! uppercase {magClass}" id="mag-text">
-							{magStatus === "N/A" || magStatus === "unknown"
-								? $t("home.card.status.unknown")
-								: $t(`home.card.status.${magStatus.toLowerCase()}`)}
+							{magStatusDisplay}
 						</span>
 					</div>
 					<!-- rssi status -->

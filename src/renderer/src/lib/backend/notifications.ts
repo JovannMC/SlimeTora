@@ -92,6 +92,7 @@ function onTrackerConnected(device: DeviceSnapshot, snapshot: TrackerSnapshot) {
 			...(current?.data ?? { rotation: [0, 0, 0], acceleration: [0, 0, 0] }),
 			...(snapshot.mag === undefined ? {} : { magnetometer: MAG_FROM_LIBRARY[snapshot.mag] }),
 			...(rssi === undefined ? {} : { rssi }),
+			...(snapshot.sensorRssi === undefined ? {} : { sensorRssi: snapshot.sensorRssi }),
 		},
 	};
 

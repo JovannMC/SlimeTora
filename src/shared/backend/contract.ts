@@ -81,6 +81,8 @@ export interface BackendCalls {
 	stopSession(): Promise<void>;
 	getSessionState(): SessionState;
 	getSnapshot(): BackendSnapshot;
+	getLatency(endpointId: string, options?: { force: true }): Promise<number | undefined>;
+	refreshTracker(trackerId: string): Promise<DeviceSnapshot>;
 	setFastData(enabled: boolean): void;
 	setVisibleTrackers(trackerIds: string[]): void;
 	updateBleTargets(serials: string[]): void;

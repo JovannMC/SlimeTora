@@ -659,6 +659,11 @@ export const backendCalls: BackendCalls = {
 	stopSession: () => stopSession(),
 	getSessionState: () => sessionState,
 	getSnapshot,
+	getLatency: (endpointId, options) =>
+		withBackend(async (instance) =>
+			options ? instance.getLatency(endpointId, options) : instance.getLatency(endpointId),
+		),
+	refreshTracker: (trackerId) => withBackend((instance) => instance.refreshTracker(trackerId)),
 	setFastData: (enabled) => uiImuForwarding.setFastData(enabled),
 	setVisibleTrackers: (trackerIds) => uiImuForwarding.setVisibleTrackers(trackerIds),
 	updateBleTargets: (serials) => {

@@ -2,13 +2,16 @@
 	import { page } from "$app/state";
 	import { goto } from "$app/navigation";
 	import { untrack } from "svelte";
+	import { onMount } from "svelte";
 	import Icon from "@iconify/svelte";
 	import { invoke } from "#lib/api/backend";
 	import { backendSnapshot } from "#lib/backend/state";
+	import type { BackendSnapshot } from "$shared/backend/contract";
 	import { error, info } from "#lib/log/index";
 	import { ToastManager } from "#lib/util/toast.svelte";
 	import { t } from "#lib/lang/index";
 	import { connectedTrackers, saveTrackerConfig, type Tracker } from "#lib/store/index";
+	import { ConnectionMode } from "#lib/types/connection";
 	import { SensorAutoCorrection as LocalAutoCorrection } from "#lib/types/tracker";
 	import type { TrackerSettings as DeviceSettings } from "haritorax-interpreter";
 	import Button from "#lib/components/settings/Button.svelte";
@@ -52,6 +55,72 @@
 	let magnetometer = $state(false);
 	let emulatedFeet = $state(false);
 	let saving = $state(false);
+
+	let latency: number | undefined = $state();
+	let liveSnapshot: BackendSnapshot | undefined = $state();
+	let refreshingStats = false;
+	let autoLoadedId: string | undefined;
+	const deviceSnapshot = $derived(
+		$backendSnapshot.devices.find(
+			(device) => device.deviceId === (trackerData ? trackerDeviceId(trackerData.id) : ""),
+		),
+	);
+	const trackerSnapshot = $derived(deviceSnapshot?.trackers.find((item) => item.trackerId === trackerData?.id));
+	const liveTracker = $derived(
+		liveSnapshot?.devices
+			.find((device) => device.deviceId === (trackerData ? trackerDeviceId(trackerData.id) : ""))
+			?.trackers.find((item) => item.trackerId === trackerData?.id),
+	);
+	const rssi = $derived(liveTracker?.rssi ?? trackerData?.data.rssi ?? trackerSnapshot?.rssi);
+	const sensorRssi = $derived(liveTracker?.sensorRssi ?? trackerData?.data.sensorRssi ?? trackerSnapshot?.sensorRssi);
+	const magStatus = $derived(trackerData?.data.magnetometer ?? liveTracker?.mag ?? "unknown");
+	const magStatusKey = $derived(magStatus.toLowerCase().replace("verybad", "very_bad"));
+	const nextConnection = $derived(
+		trackerData?.connection_mode === ConnectionMode.BLE ? ConnectionMode.Serial : ConnectionMode.BLE,
+	);
+
+	$effect(() => {
+		const id = trackerData?.id;
+		if (id && autoLoadedId !== id) {
+			autoLoadedId = id;
+			void refreshTrackerSettings();
+		}
+	});
+
+	async function refreshStats(forceLatency = false) {
+		if (refreshingStats) return;
+		refreshingStats = true;
+		try {
+			const snapshot = await invoke("getSnapshot");
+			liveSnapshot = snapshot;
+			const currentDevice = snapshot.devices.find(
+				(device) => device.deviceId === (trackerData ? trackerDeviceId(trackerData.id) : ""),
+			);
+			latency = currentDevice
+				? await invoke(
+						"getLatency",
+						currentDevice.endpointId,
+						forceLatency && currentDevice.connection === "ble" ? { force: true } : undefined,
+					)
+				: undefined;
+		} catch {
+			latency = undefined;
+		} finally {
+			refreshingStats = false;
+		}
+	}
+
+	onMount(() => {
+		let active = true;
+		void refreshStats();
+		const timer = setInterval(() => {
+			if (active) void refreshStats();
+		}, 1000);
+		return () => {
+			active = false;
+			clearInterval(timer);
+		};
+	});
 
 	function trackerDeviceId(id: string): string {
 		return id.slice(0, id.lastIndexOf(":"));
@@ -138,15 +207,13 @@
 		}
 	}
 
-	async function getTrackerSettings() {
+	async function refreshTrackerSettings() {
 		const current = trackerData;
 		if (!current || saving) return;
 		saving = true;
 		try {
-			const snapshot = await invoke("getSnapshot");
-			const settings = snapshot.devices.find(
-				(device) => device.deviceId === trackerDeviceId(current.id),
-			)?.settings;
+			const device = await invoke("refreshTracker", current.id);
+			const settings = device.settings;
 			if (!settings) throw new Error($t("home.per_tracker.error.settings_unavailable"));
 			updateTrackerSettings(current, settings);
 			info(["trackers", "settings"], `Read settings for tracker ${current.id}`);
@@ -161,12 +228,59 @@
 		}
 	}
 
+	async function refreshAll() {
+		await refreshTrackerSettings();
+		await refreshStats(true);
+	}
+
 	async function resetSettings() {
 		await applyTrackerSettings({
 			fpsMode: 50,
 			sensorMode: 2,
 			sensorAutoCorrection: [],
 		});
+	}
+
+	async function switchConnection(mode: ConnectionMode) {
+		const current = trackerData;
+		if (!current || current.connection_mode === mode || saving) return;
+		saving = true;
+		try {
+			await invoke(
+				"switchCommunication",
+				trackerDeviceId(current.id),
+				mode === ConnectionMode.BLE ? "ble" : "serial",
+			);
+			const updated = { ...current, connection_mode: mode };
+			connectedTrackers.update((trackers) => trackers.map((item) => (item.id === current.id ? updated : item)));
+			trackerData = updated;
+			void saveTrackerConfig({
+				id: updated.id,
+				name: updated.name,
+				connection_mode: updated.connection_mode,
+				tracker_type: updated.tracker_type,
+				bodyPart: updated.bodyPart,
+				settings: updated.settings,
+			});
+			info(["trackers", "settings"], `Switched ${current.id} to ${mode}`);
+		} catch (err) {
+			error(["trackers", "settings"], `Failed to switch connection for ${current.id}: ${String(err)}`);
+			ToastManager.add({ type: "error", message: String(err) });
+		} finally {
+			saving = false;
+		}
+	}
+
+	async function powerOff() {
+		if (!trackerData) return;
+		try {
+			await invoke("powerOff", trackerDeviceId(trackerData.id));
+			info(["trackers", "settings"], `Powered off ${trackerData.id}`);
+		} catch (err) {
+			error(["trackers", "settings"], `Failed to power off ${trackerData.id}: ${String(err)}`);
+			ToastManager.add({ type: "error", message: String(err) });
+		} finally {
+		}
 	}
 
 	function setCorrection(kind: DeviceSettings["sensorAutoCorrection"][number], enabled: boolean) {
@@ -186,6 +300,90 @@
 		<p class="mb-6 text-text-alt">
 			{$t("home.per_tracker.description")}
 		</p>
+
+		<section class="mb-8 rounded-lg bg-card p-4">
+			<h2 class="mb-3 font-heading text-lg">{$t("home.per_tracker.info.title")}</h2>
+			<div class="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+				<p><b>{$t("home.per_tracker.info.device")}</b> {trackerData?.id ?? "-"}</p>
+				<p>
+					<b>{$t("home.per_tracker.info.model")}</b>
+					{trackerData?.tracker_type ?? "-"}
+					{deviceSnapshot?.version ? `- ${deviceSnapshot.version}` : ""}
+				</p>
+				<p>
+					<b>{$t("home.per_tracker.info.connection")}</b>
+					{$t(
+						trackerData?.connection_mode === ConnectionMode.BLE
+							? "home.per_tracker.info.bluetooth"
+							: "home.per_tracker.info.serial",
+					)}
+				</p>
+				<p>
+					<b>{$t("home.per_tracker.info.battery")}</b>
+					{trackerData?.data.battery?.remaining === undefined
+						? $t("home.per_tracker.stats.unknown")
+						: `${trackerData.data.battery.remaining}%`}{trackerData?.data.battery?.voltage === undefined
+						? ""
+						: ` - ${trackerData.data.battery.voltage / 1000} V`}{trackerData?.data.battery?.status
+						? ` - ${trackerData.data.battery.status}`
+						: ""}
+				</p>
+				{#if deviceSnapshot?.comm}
+					<p>
+						<b>{$t("home.per_tracker.info.communication")}</b>
+						{deviceSnapshot.comm}{deviceSnapshot.commNext ? ` - next: ${deviceSnapshot.commNext}` : ""}
+					</p>
+				{/if}
+			</div>
+			<div class="mt-5 border-t border-secondary/50 pt-4">
+				<h3 class="mb-3 flex items-center gap-2 font-heading text-lg">
+					{$t("home.per_tracker.stats.title")}
+				</h3>
+				<div class="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+					<p>
+						<b>{$t("home.card.status.text")}</b>
+						<span class="inline-flex items-center gap-1 uppercase">
+							{$t(`home.card.status.${magStatusKey}`)}
+						</span>
+					</p>
+					<p>
+						<b>{$t("home.per_tracker.stats.rssi")}</b>
+						{rssi === undefined ? "N/A" : `${rssi} dBm`}
+					</p>
+					{#if sensorRssi !== undefined}
+						<p>
+							<b>{$t("home.per_tracker.stats.tracker_rssi")}</b>
+							{sensorRssi} dBm
+						</p>
+					{/if}
+					{#if deviceSnapshot?.endpointId}
+						<p>
+							<b>{$t("home.per_tracker.stats.latency")}</b>
+							{latency === undefined ? $t("home.per_tracker.stats.unknown") : `${latency.toFixed(2)} ms`}
+						</p>
+					{/if}
+				</div>
+			</div>
+			<div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+				<Button
+					label={$t(
+						nextConnection === ConnectionMode.BLE
+							? "home.per_tracker.info.switch_ble"
+							: "home.per_tracker.info.switch_serial",
+					)}
+					background="primary"
+					icon={nextConnection === ConnectionMode.BLE ? "mdi:bluetooth" : "mdi:usb"}
+					onClick={() => switchConnection(nextConnection)}
+					disabled={saving}
+				/>
+				<Button
+					label={$t("home.per_tracker.info.power_off")}
+					background="primary"
+					icon="ri:shut-down-line"
+					onClick={powerOff}
+				/>
+			</div>
+		</section>
 
 		<div class="grid grid-cols-1 gap-8 md:grid-cols-2">
 			<div class="flex flex-col gap-4">
@@ -277,15 +475,17 @@
 						class="text-text-alt transition-colors hover:text-white"
 					/>
 				</h3>
-				<div class="flex flex-col gap-4">
+				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 					<Button
-						label={$t("home.per_tracker.get_settings")}
+						label={$t("home.per_tracker.refresh")}
+						icon="ri:refresh-line"
 						background="primary"
-						onClick={getTrackerSettings}
+						onClick={refreshAll}
 						disabled={saving}
 					/>
 					<Button
 						label={$t("home.per_tracker.reset_settings")}
+						icon="ri:restart-line"
 						background="primary"
 						onClick={resetSettings}
 						disabled={saving}

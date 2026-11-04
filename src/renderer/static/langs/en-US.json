@@ -122,6 +122,27 @@
 		"per_tracker": {
 			"title": "{{name}} Settings",
 			"description": "Override the hardware settings for this tracker. Can be useful if only certain trackers have bad magnetometer statuses.",
+			"info": {
+				"title": "Tracker information",
+				"device": "Device:",
+				"model": "Model:",
+				"connection": "Connection:",
+				"bluetooth": "Bluetooth LE",
+				"serial": "Serial / GX dongle",
+				"battery": "Battery:",
+				"communication": "Communication:",
+				"switch_ble": "Switch to Bluetooth LE",
+				"switch_serial": "Switch to serial / GX dongle",
+				"power_off": "Power off tracker"
+			},
+			"stats": {
+				"title": "Tracker stats",
+				"magnetometer": "Magnetometer:",
+				"rssi": "RSSI:",
+				"tracker_rssi": "Tracker RSSI:",
+				"latency": "Latency:",
+				"unknown": "Unavailable"
+			},
 			"error": {
 				"apply_failed": "Failed to apply tracker settings: {{error}}",
 				"get_failed": "Failed to get tracker settings: {{error}}",
@@ -147,7 +168,7 @@
 				"tooltip": "Enables the use of the ankle/leg sensor to track the motion of your feet."
 			},
 			"debugging": "Debugging",
-			"get_settings": "Get tracker settings",
+			"refresh": "Refresh",
 			"reset_settings": "Reset settings"
 		}
 	},

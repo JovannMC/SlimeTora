@@ -1,4 +1,4 @@
-appId: me.jovann.slimetora
+appId: me.jovannmc.slimetora
 productName: SlimeTora
 copyright: Copyright © JovannMC
 artifactName: "${productName}-${version}-${os}-${arch}.${ext}"

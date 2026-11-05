@@ -4,9 +4,9 @@ import type {
 	DeviceSnapshot,
 	EndpointDescriptor,
 	Events,
+	SettingsApplyResult,
 	TrackerModel,
 	TrackerSettings,
-	SettingsApplyResult,
 } from "haritorax-interpreter";
 
 type InterpreterEventName = Exclude<keyof Events, "log">;

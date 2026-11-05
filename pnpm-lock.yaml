@@ -200,8 +200,8 @@ importers:
         specifier: ^0.10.2
         version: 0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1)
       haritorax-interpreter:
-        specifier: ^4.0.0
-        version: 4.0.0(@serialport/bindings-cpp@13.0.1(supports-color@10.2.2))(@serialport/stream@13.0.0(supports-color@10.2.2))(@stoprocent/noble@2.8.0(dbus-next@0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1))(supports-color@10.2.2))(dbus-next@0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1))
+        specifier: 4.1.0
+        version: 4.1.0(@serialport/bindings-cpp@13.0.1(supports-color@10.2.2))(@serialport/stream@13.0.0(supports-color@10.2.2))(@stoprocent/noble@2.8.0(dbus-next@0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1))(supports-color@10.2.2))(dbus-next@0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1))
       overlayscrollbars:
         specifier: ^2.17.0
         version: 2.17.0
@@ -1782,8 +1782,8 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  haritorax-interpreter@4.0.0:
-    resolution: {integrity: sha512-UhzLii6hCIO77633LakCPu5vgcRAiQXTrUUhoDehVmJi+PSOTPvV9E2Zc6cCxgQQMixulFVvNT0835ORGHqTgQ==}
+  haritorax-interpreter@4.1.0:
+    resolution: {integrity: sha512-q/lsEhqzz/MbXsDxnmMlUJth0dmbqw/9QSYvifgybQNFRyqr9+BJPaWjrzMgUDW/NGQwyzVHnPCrqCB9/9wF4A==}
     engines: {node: '>=24.0.0'}
     hasBin: true
     peerDependencies:
@@ -4588,7 +4588,7 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  haritorax-interpreter@4.0.0(@serialport/bindings-cpp@13.0.1(supports-color@10.2.2))(@serialport/stream@13.0.0(supports-color@10.2.2))(@stoprocent/noble@2.8.0(dbus-next@0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1))(supports-color@10.2.2))(dbus-next@0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1)):
+  haritorax-interpreter@4.1.0(@serialport/bindings-cpp@13.0.1(supports-color@10.2.2))(@serialport/stream@13.0.0(supports-color@10.2.2))(@stoprocent/noble@2.8.0(dbus-next@0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1))(supports-color@10.2.2))(dbus-next@0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1)):
     dependencies:
       base64-js: 1.5.1
     optionalDependencies:

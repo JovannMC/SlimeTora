@@ -10,8 +10,8 @@ import {
 	type TranslationFile,
 } from "../shared/updates";
 
-const LANGUAGE_DIRECTORY = `${GITHUB_API_URL}/contents/updates/languages?ref=${GITHUB_DEFAULT_BRANCH}`;
-const LANGUAGE_FILES = `${GITHUB_RAW_URL}/${GITHUB_DEFAULT_BRANCH}/updates/languages/`;
+const LANGUAGE_DIRECTORY = `${GITHUB_API_URL}/contents/src/renderer/static/langs?ref=${GITHUB_DEFAULT_BRANCH}`;
+const LANGUAGE_FILES = `${GITHUB_RAW_URL}/${GITHUB_DEFAULT_BRANCH}/src/renderer/static/langs/`;
 const RELEASES = `${GITHUB_API_URL}/releases?per_page=100`;
 const cacheDir = () => path.join(app.getPath("userData"), "languages");
 const bundledDir = () =>

@@ -75,6 +75,7 @@ export function validateTranslation(value: unknown, english: TranslationFile): T
 }
 
 export function findTranslation(data: LanguageData, locale: string, key: string): string | undefined {
+	// the downloaded english file can be used to correct the bundled english file if needed, but the bundled english file is always the fallback for keys missing from the downloaded english file
 	const layers =
 		locale === "en-US"
 			? [data.downloaded["en-US"], data.bundled["en-US"]]

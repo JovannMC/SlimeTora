@@ -6,6 +6,7 @@ import type {
 	Events,
 	TrackerModel,
 	TrackerSettings,
+	SettingsApplyResult,
 } from "haritorax-interpreter";
 
 type InterpreterEventName = Exclude<keyof Events, "log">;
@@ -95,7 +96,7 @@ export interface BackendCalls {
 	stopDiscovery(): Promise<void>;
 	connect(endpointId: string): Promise<void>;
 	disconnect(endpointId: string): Promise<void>;
-	setSettings(deviceId: string, settings: TrackerSettings): Promise<void>;
+	setSettings(deviceId: string, settings: TrackerSettings): Promise<SettingsApplyResult>;
 	setBodyPart(deviceId: string, bodyPart: BodyPart): Promise<void>;
 	powerOff(deviceId: string | string[]): Promise<void[]>;
 	switchCommunication(deviceId: string, mode: "ble" | "serial"): Promise<void>;

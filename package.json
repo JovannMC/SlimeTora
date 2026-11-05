@@ -42,6 +42,7 @@
 		"lint": "eslint .",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
+		"check": "pnpm run typecheck && pnpm run lint && pnpm run format:check",
 		"package": "pnpm run build && electron-builder --dir",
 		"dist": "pnpm run build && electron-builder --publish never"
 	},

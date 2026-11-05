@@ -192,9 +192,19 @@
 		saving = true;
 
 		try {
-			await invoke("setSettings", trackerDeviceId(current.id), settings);
+			const result = await invoke("setSettings", trackerDeviceId(current.id), settings);
 			updateTrackerSettings(current, settings);
-			info(["trackers", "settings"], `Applied settings to tracker ${current.id}`);
+
+			info(
+				["trackers", "settings"],
+				`Tracker ${current.id}: applied [${result.applied.join(", ")}], unsupported [${result.unsupported.join(", ")}]`,
+			);
+			if (result.unsupported.length > 0) {
+				ToastManager.add({
+					type: "warning",
+					message: `Unsupported settings: ${result.unsupported.join(", ")}`,
+				});
+			}
 		} catch (err) {
 			setFormSettings(settingsFor(current));
 			error(["trackers", "settings"], `Failed to apply settings to tracker ${current.id}: ${String(err)}`);

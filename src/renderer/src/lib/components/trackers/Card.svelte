@@ -13,9 +13,12 @@
 	import { t } from "#lib/lang/index";
 	import { ChargeStatus } from "#lib/types/tracker";
 	import Tooltip from "../settings/Tooltip.svelte";
-	import { untrack } from "svelte";
+	import { onMount, untrack } from "svelte";
 
-	let { id, type }: { id: string; type: string } = $props();
+	let { id, type, onCardMount }: { id: string; type: string; onCardMount?: () => () => void } = $props();
+
+	onMount(() => onCardMount?.());
+
 	const motion = trackerMotion(untrack(() => id));
 
 	const tracker = $derived($connectedTrackers.find((t) => t.id === id));

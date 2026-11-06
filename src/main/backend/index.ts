@@ -256,7 +256,11 @@ function send<E extends BackendEventName>(event: E, payload: BackendEvents[E]): 
 	}
 }
 
-function publishSession(status: SessionState["status"], failure?: unknown, phase?: SessionState["phase"]): void {
+function publishSession(
+	status: SessionState["status"],
+	failure?: unknown,
+	phase = status === sessionState.status ? sessionState.phase : undefined,
+): void {
 	sessionState = {
 		status,
 		...(phase === undefined ? {} : { phase }),
@@ -506,7 +510,7 @@ async function createBackend(): Promise<HaritoraX> {
 		if (enabled && generation === instanceGeneration) slimevr.battery(battery);
 	});
 
-	info(["backend"], "Backend started");
+	info(["backend"], "haritorax-interpreter initialized");
 	return backend;
 }
 
@@ -566,10 +570,9 @@ function startSession(options: SessionOptions): Promise<void> {
 			await stopBlePreview();
 
 			if (!isCurrent()) return;
-			publishSession("starting", undefined, "searching");
-
 			const endpoints = await discovery.discover();
 			if (!isCurrent()) return;
+			publishSession("starting", undefined, "searching");
 
 			previewEndpoints = [];
 			publishSnapshot();

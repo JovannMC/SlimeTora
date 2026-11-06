@@ -52,7 +52,10 @@ export function expectTrackerPowerOff(deviceIds: string[]): () => void {
 	for (const trackerId of trackerIds) {
 		const previous = expectedPowerOffs.get(trackerId);
 		if (previous) clearTimeout(previous);
-		expectedPowerOffs.set(trackerId, setTimeout(() => expectedPowerOffs.delete(trackerId), 30_000));
+		expectedPowerOffs.set(
+			trackerId,
+			setTimeout(() => expectedPowerOffs.delete(trackerId), 30_000),
+		);
 	}
 	return () => {
 		for (const trackerId of trackerIds) {

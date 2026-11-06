@@ -17,7 +17,22 @@
 
 	let isExpanded = $state(false);
 	let poweringOff = $state(false);
+	let trackersRendered = $state(false);
 	let isSmall = $state(window.matchMedia("(max-width: 768px)").matches);
+
+	$effect(() => {
+		if (!$isOn || $connectedTrackers.length === 0) trackersRendered = false;
+	});
+
+	function onCardMount() {
+		// keep the searching label through the first frame that displays a tracker card
+		let frame = requestAnimationFrame(() => {
+			frame = requestAnimationFrame(() => {
+				trackersRendered = true;
+			});
+		});
+		return () => cancelAnimationFrame(frame);
+	}
 
 	// spread trackers over two columns, alternating
 	const leftColumn = $derived($connectedTrackers.filter((_, i) => i % 2 === 0));
@@ -25,8 +40,10 @@
 	const statusLabel = $derived.by(() => {
 		if ($sessionState.status === "starting")
 			return $t($sessionState.phase === "searching" ? "home.searching" : "home.starting");
-		if ($sessionState.status === "on")
+		if ($sessionState.status === "on") {
+			if ($connectedTrackers.length === 0 || !trackersRendered) return $t("home.searching");
 			return $t($sessionState.slimevrConnected ? "home.connected" : "home.slimevr_not_found");
+		}
 
 		const labels = {
 			off: "home.disconnected",
@@ -144,23 +161,22 @@
 		{#if $connectedTrackers.length === 0}
 			<div class="rounded-lg bg-panel py-8 text-center">{$t("home.none")}</div>
 		{:else}
-			<!-- on mobile/small it needs to be one column -->
 			{#if isSmall}
 				<div class="flex flex-col gap-4">
 					{#each $connectedTrackers as tracker (tracker.id)}
-						<Card id={tracker.id} type={tracker.tracker_type} />
+						<Card id={tracker.id} type={tracker.tracker_type} {onCardMount} />
 					{/each}
 				</div>
 			{:else}
 				<div class="flex flex-row gap-4">
 					<div class="flex flex-1 flex-col gap-4">
 						{#each leftColumn as tracker (tracker.id)}
-							<Card id={tracker.id} type={tracker.tracker_type} />
+							<Card id={tracker.id} type={tracker.tracker_type} {onCardMount} />
 						{/each}
 					</div>
 					<div class="flex flex-1 flex-col gap-4">
 						{#each rightColumn as tracker (tracker.id)}
-							<Card id={tracker.id} type={tracker.tracker_type} />
+							<Card id={tracker.id} type={tracker.tracker_type} {onCardMount} />
 						{/each}
 					</div>
 				</div>

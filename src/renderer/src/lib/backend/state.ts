@@ -1,6 +1,8 @@
 import { invoke, listen } from "#lib/api/backend";
+import { t } from "#lib/lang/index";
 import { error } from "#lib/log/index";
 import { isOn, restoreRequestedState } from "#lib/store/index";
+import { ToastManager } from "#lib/util/toast.svelte";
 import type { BackendSnapshot, SessionState } from "$shared/backend/contract";
 import { get, writable } from "svelte/store";
 
@@ -23,11 +25,25 @@ export function backendStateLoaded(): Promise<void> {
 
 export function attachBackendState(): () => void {
 	let disposed = false;
+	let lastSessionError: string | undefined;
 
 	function applySession(state: SessionState) {
 		if (disposed || state.revision < get(sessionState).revision) return;
 		sessionState.set(state);
 		if (get(isOn) === null) restoreRequestedState(state.requestedEnabled);
+		if (state.status === "error" && state.error && state.error !== lastSessionError) {
+			lastSessionError = state.error;
+			ToastManager.add({
+				type: "error",
+				message: get(t)("toast.backend.failed", {
+					operation: "",
+					endpoint: "",
+					error: state.error,
+				}),
+				disappearing: false,
+			});
+		}
+		if (state.status !== "error") lastSessionError = undefined;
 	}
 
 	function applySnapshot(snapshot: BackendSnapshot) {

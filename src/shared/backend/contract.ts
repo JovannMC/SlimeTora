@@ -10,10 +10,18 @@ import type {
 } from "haritorax-interpreter";
 
 type InterpreterEventName = Exclude<keyof Events, "log">;
+export interface SerializedBackendError {
+	message: string;
+	name?: string;
+	code?: string;
+	context?: Record<string, string>;
+	cause?: SerializedBackendError;
+	causes?: SerializedBackendError[];
+}
 export type BackendEventName = InterpreterEventName | "session" | "snapshot";
 
 export type BackendEvents = {
-	[E in InterpreterEventName]: E extends "error" ? { error: { message: string } } : Events[E];
+	[E in InterpreterEventName]: E extends "error" ? { error: SerializedBackendError } : Events[E];
 } & { session: SessionState; snapshot: BackendSnapshot };
 
 export interface BackendEventMessage<E extends BackendEventName = BackendEventName> {

@@ -357,9 +357,14 @@
 		"about": "About"
 	},
 	"toast": {
-		"success": "Success!",
-		"error": "An error occurred.",
-		"info": "Information",
-		"warning": "Warning"
+		"no_connection_mode": "No connection mode selected, please select a connection mode in settings.",
+		"no_tracker_model": "No tracker model selected, please choose your tracker model in settings.",
+		"no_serial_ports": "No serial ports selected, please select the port(s) your dongle or trackers are using in settings.",
+		"backend": {
+			"serial_port": "Serial communication failed{{port}} ({{error}}). Check that you selected the correct serial port and that the device is connected and accessible.",
+			"bluetooth": "Bluetooth communication failed{{device}} ({{error}}{{state}}). Check that Bluetooth is enabled, SlimeTora has permission to use it, and the tracker is powered on and nearby.",
+			"failed": "Backend error{{operation}}{{endpoint}}: {{error}}",
+			"decode_failed": "Could not interpret data from the connected device: {{error}}"
+		}
 	}
 }

@@ -10,6 +10,7 @@ import { BACKEND_EVENTS } from "$shared/backend/contract";
 import { Channels, type CapabilityStatus } from "$shared/ipc/channels";
 import { BrowserWindow, ipcMain } from "electron";
 import type { Connection, DeviceSnapshot, EndpointDescriptor, HaritoraX, LogEntry } from "haritorax-interpreter";
+import { serializeBackendError } from "../../renderer/src/lib/backend/error-reporting";
 import { debug, error, info, trace, warn } from "../log";
 import { getSetting } from "../store";
 import { createDiscoveryController } from "./discovery";
@@ -322,8 +323,25 @@ async function createBackend(): Promise<HaritoraX> {
 			if (enabled && generation === instanceGeneration) send(event, payload);
 		});
 	}
-	backend.on("error", ({ error: err }) => {
-		if (enabled && generation === instanceGeneration) send("error", { error: { message: err.message } });
+	backend.on("error", (event) => {
+		if (enabled && generation === instanceGeneration) {
+			const serialized = serializeBackendError(event.error);
+			send("error", {
+				error: {
+					...serialized,
+					context: {
+						...(serialized.context ?? {}),
+						...(event.connection ? { connection: event.connection } : {}),
+						...(event.endpointId ? { endpointId: event.endpointId } : {}),
+						...(event.operation ? { operation: event.operation } : {}),
+						...(event.characteristic ? { characteristic: event.characteristic } : {}),
+						...(event.command ? { command: event.command } : {}),
+						...(event.identifier ? { identifier: event.identifier } : {}),
+						...(event.adapterState ? { adapterState: event.adapterState } : {}),
+					},
+				},
+			});
+		}
 	});
 	backend.on("button", (event) => {
 		if (!enabled || generation !== instanceGeneration) return;
@@ -560,6 +578,13 @@ function startSession(options: SessionOptions): Promise<void> {
 					await connectEndpoint(instance, endpoint.id);
 				} catch (err) {
 					error(["backend"], `Failed to connect to ${endpoint.displayName}:`, err);
+					if (isCurrent())
+						send("error", {
+							error: {
+								...serializeBackendError(err),
+								context: { connection: "serial", endpointId: endpoint.id, operation: "connect" },
+							},
+						});
 				}
 			}
 

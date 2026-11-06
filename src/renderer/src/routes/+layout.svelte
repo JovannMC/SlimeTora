@@ -43,7 +43,7 @@
 
 		try {
 			await stopInterpreting();
-			await startInterpreting();
+			if (!(await startInterpreting())) return;
 
 			restartRequired.set(false);
 			info(["settings"], "Restarted tracking connection to apply settings");

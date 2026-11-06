@@ -1,5 +1,6 @@
 import { invoke, listen } from "#lib/api/backend";
 import { isBridgeAvailable } from "#lib/api/bridge";
+import { t } from "#lib/lang/index";
 import { error, info } from "#lib/log/index";
 import { confirmBleDevice } from "#lib/store/ble-devices";
 import { connectedTrackers, knownTrackers, saveTrackerConfig, type BatteryData, type Tracker } from "#lib/store/index";
@@ -7,11 +8,13 @@ import { program } from "#lib/store/settings";
 import { setTrackerMotion } from "#lib/store/tracker-motion";
 import { ChargeStatus, SensorAutoCorrection } from "#lib/types/tracker";
 import { serialFromBleName } from "#lib/util/index";
+import { ToastManager } from "#lib/util/toast.svelte";
 import { browser } from "$app/env";
 import type { UserActionName } from "$shared/backend/contract";
 import type { BatteryInfo, DeviceSnapshot, TrackerSnapshot } from "haritorax-interpreter";
 import { Quaternion as BetterQuaternion } from "quaternion";
 import { get } from "svelte/store";
+import { classifyBackendError } from "./error-reporting";
 import { MAG_FROM_LIBRARY, MODE_FROM_LIBRARY, MODEL_FROM_LIBRARY } from "./mapping";
 import { backendSnapshot } from "./state";
 
@@ -31,6 +34,13 @@ function trackersOfDevice(deviceId: string) {
 const BUTTON_PRESS_WINDOW_MS = 750;
 const buttonPressTimestamps: Record<string, number[]> = {};
 const buttonActionTimeout: Record<string, ReturnType<typeof setTimeout> | null> = {};
+
+function backendErrorToast(value: Parameters<typeof classifyBackendError>[0]) {
+	const { key, params, persistent } = classifyBackendError(value);
+	const message = get(t)(`toast.backend.${key}`, params);
+	error(["backend", "notifications"], value);
+	ToastManager.add({ type: "error", message, disappearing: !persistent });
+}
 
 function onButton(deviceId: string, trackerId: string | undefined, button: "main" | "sub" | "sub2") {
 	const tracker = trackerId ?? deviceId;
@@ -201,7 +211,7 @@ export function attachNotifications(): () => void {
 			info(["backend", "notifications"], `Button ${button} pressed on ${trackerId ?? deviceId}`);
 			onButton(deviceId, trackerId, button);
 		}),
-		listen("error", ({ error: err }) => error(["backend", "notifications"], err.message)),
+		listen("error", ({ error: err }) => backendErrorToast(err)),
 	];
 
 	const unsubscribeSnapshot = backendSnapshot.subscribe((snapshot) => {

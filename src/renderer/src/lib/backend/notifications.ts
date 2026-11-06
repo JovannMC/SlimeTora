@@ -37,9 +37,38 @@ const buttonActionTimeout: Record<string, ReturnType<typeof setTimeout> | null> 
 
 function backendErrorToast(value: Parameters<typeof classifyBackendError>[0]) {
 	const { key, params, persistent } = classifyBackendError(value);
-	const message = get(t)(`toast.backend.${key}`, params);
 	error(["backend", "notifications"], value);
+	if (value.context?.connection === "ble" && value.context.operation === "close") return;
+	const message = get(t)(`toast.backend.${key}`, params);
 	ToastManager.add({ type: "error", message, disappearing: !persistent });
+}
+
+const expectedPowerOffs = new Map<string, ReturnType<typeof setTimeout>>();
+
+export function expectTrackerPowerOff(deviceIds: string[]): () => void {
+	const trackerIds = get(connectedTrackers)
+		.filter((tracker) => deviceIds.includes(tracker.id.slice(0, tracker.id.lastIndexOf(":"))))
+		.map((tracker) => tracker.id);
+	for (const trackerId of trackerIds) {
+		const previous = expectedPowerOffs.get(trackerId);
+		if (previous) clearTimeout(previous);
+		expectedPowerOffs.set(trackerId, setTimeout(() => expectedPowerOffs.delete(trackerId), 30_000));
+	}
+	return () => {
+		for (const trackerId of trackerIds) {
+			const timer = expectedPowerOffs.get(trackerId);
+			if (timer) clearTimeout(timer);
+			expectedPowerOffs.delete(trackerId);
+		}
+	};
+}
+
+function consumeExpectedPowerOff(trackerId: string): boolean {
+	const timer = expectedPowerOffs.get(trackerId);
+	if (!timer) return false;
+	clearTimeout(timer);
+	expectedPowerOffs.delete(trackerId);
+	return true;
 }
 
 function onButton(deviceId: string, trackerId: string | undefined, button: "main" | "sub" | "sub2") {
@@ -168,6 +197,11 @@ export function attachNotifications(): () => void {
 	let disposed = false;
 	let fastData: boolean | undefined;
 	const confirmedBleDevices = new Set<string>();
+	const disconnectedTrackers = new Set<string>();
+	const trackerName = (trackerId: string) =>
+		get(connectedTrackers).find((tracker) => tracker.id === trackerId)?.name ??
+		get(knownTrackers).find((tracker) => tracker.id === trackerId)?.name ??
+		trackerId;
 	const unsubscribeProgram = program.subscribe((value) => {
 		if (fastData === value.fastData) return;
 		fastData = value.fastData;
@@ -183,9 +217,32 @@ export function attachNotifications(): () => void {
 				if (identity.startsWith(`${deviceId}:`)) confirmedBleDevices.delete(identity);
 			connectedTrackers.update((prev) => prev.filter((t) => !t.id.startsWith(`${deviceId}:`)));
 		}),
+		listen("tracker:connected", ({ trackerId }) => {
+			if (!disconnectedTrackers.delete(trackerId)) return;
+			ToastManager.add({
+				type: "success",
+				message: get(t)("toast.tracker_reconnected", { name: trackerName(trackerId) }),
+			});
+		}),
 		listen("tracker:disconnected", ({ trackerId, reason }) => {
 			info(["backend", "notifications"], `Tracker disconnected: ${trackerId} (${reason})`);
+			const wasConnected = get(connectedTrackers).some((tracker) => tracker.id === trackerId);
+			const expectedPowerOff = consumeExpectedPowerOff(trackerId);
+			if (reason !== "requested" && wasConnected && !expectedPowerOff) {
+				disconnectedTrackers.add(trackerId);
+				ToastManager.add({
+					type: "warning",
+					message: get(t)("toast.tracker_connection_lost", { name: trackerName(trackerId) }),
+				});
+			}
 			connectedTrackers.update((prev) => prev.filter((t) => t.id !== trackerId));
+		}),
+		listen("session", ({ status }) => {
+			if (status === "off") {
+				disconnectedTrackers.clear();
+				for (const timer of expectedPowerOffs.values()) clearTimeout(timer);
+				expectedPowerOffs.clear();
+			}
 		}),
 		listen("imu", ({ trackerId, rotation, acceleration }) => {
 			const euler = new BetterQuaternion(rotation.w, rotation.x, rotation.y, rotation.z).toEuler();
@@ -241,6 +298,7 @@ export function attachNotifications(): () => void {
 		}
 		for (const key of Object.keys(buttonActionTimeout)) delete buttonActionTimeout[key];
 		for (const key of Object.keys(buttonPressTimestamps)) delete buttonPressTimestamps[key];
+		disconnectedTrackers.clear();
 		info(["backend", "notifications"], "Stopped listening to backend events");
 	};
 }

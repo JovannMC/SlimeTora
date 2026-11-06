@@ -6,6 +6,7 @@
 	import Icon from "@iconify/svelte";
 	import { invoke } from "#lib/api/backend";
 	import { backendSnapshot } from "#lib/backend/state";
+	import { expectTrackerPowerOff } from "#lib/backend/notifications";
 	import type { BackendSnapshot } from "$shared/backend/contract";
 	import { error, info } from "#lib/log/index";
 	import { ToastManager } from "#lib/util/toast.svelte";
@@ -193,16 +194,31 @@
 
 		try {
 			const result = await invoke("setSettings", trackerDeviceId(current.id), settings);
-			updateTrackerSettings(current, settings);
+			const appliedFields = new Set(result.applied);
+			const appliedSettings: DeviceSettings = {
+				sensorMode: appliedFields.has("sensorMode") ? settings.sensorMode : base.sensorMode,
+				fpsMode: appliedFields.has("fpsMode") ? settings.fpsMode : base.fpsMode,
+				sensorAutoCorrection: appliedFields.has("sensorAutoCorrection")
+					? settings.sensorAutoCorrection
+					: base.sensorAutoCorrection,
+				ankleMotionDetection: appliedFields.has("ankleMotionDetection")
+					? settings.ankleMotionDetection
+					: base.ankleMotionDetection,
+			};
+			updateTrackerSettings(current, appliedSettings);
+			setFormSettings(appliedSettings);
 
 			info(
 				["trackers", "settings"],
 				`Tracker ${current.id}: applied [${result.applied.join(", ")}], unsupported [${result.unsupported.join(", ")}]`,
 			);
-			if (result.unsupported.length > 0) {
+			if (result.unsupported.length > 0 || (result.failed?.length ?? 0) > 0) {
+				const allUnsupported = [...result.unsupported, ...(result.failed ?? [])];
 				ToastManager.add({
 					type: "warning",
-					message: `Unsupported settings: ${result.unsupported.join(", ")}`,
+					message: $t("home.per_tracker.error.settings_partial", {
+						settings: allUnsupported.join(", "),
+					}),
 				});
 			}
 		} catch (err) {
@@ -283,10 +299,13 @@
 
 	async function powerOff() {
 		if (!trackerData) return;
+		const deviceId = trackerDeviceId(trackerData.id);
+		const clearExpectedPowerOff = expectTrackerPowerOff([deviceId]);
 		try {
-			await invoke("powerOff", trackerDeviceId(trackerData.id));
+			await invoke("powerOff", deviceId);
 			info(["trackers", "settings"], `Powered off ${trackerData.id}`);
 		} catch (err) {
+			clearExpectedPowerOff();
 			error(["trackers", "settings"], `Failed to power off ${trackerData.id}: ${String(err)}`);
 			ToastManager.add({ type: "error", message: String(err) });
 		} finally {

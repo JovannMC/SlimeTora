@@ -9,7 +9,14 @@ import type {
 import { BACKEND_EVENTS } from "$shared/backend/contract";
 import { Channels, type CapabilityStatus } from "$shared/ipc/channels";
 import { BrowserWindow, ipcMain } from "electron";
-import type { Connection, DeviceSnapshot, EndpointDescriptor, HaritoraX, LogEntry } from "haritorax-interpreter";
+import type {
+	Connection,
+	DeviceSnapshot,
+	EndpointDescriptor,
+	HaritoraX,
+	LogEntry,
+	TrackerSettings,
+} from "haritorax-interpreter";
 import { serializeBackendError } from "../../renderer/src/lib/backend/error-reporting";
 import { debug, error, info, trace, warn } from "../log";
 import { getSetting } from "../store";
@@ -249,9 +256,10 @@ function send<E extends BackendEventName>(event: E, payload: BackendEvents[E]): 
 	}
 }
 
-function publishSession(status: SessionState["status"], failure?: unknown): void {
+function publishSession(status: SessionState["status"], failure?: unknown, phase?: SessionState["phase"]): void {
 	sessionState = {
 		status,
+		...(phase === undefined ? {} : { phase }),
 		requestedEnabled: enabled,
 		revision: sessionState.revision + 1,
 		connectedTrackers: liveTrackers.size,
@@ -547,7 +555,7 @@ function startSession(options: SessionOptions): Promise<void> {
 	const current = ++generation;
 	const isCurrent = () => enabled && generation === current;
 
-	publishSession("starting");
+	publishSession("starting", undefined, "connecting");
 
 	const next = transition
 		.then(async () => {
@@ -558,6 +566,7 @@ function startSession(options: SessionOptions): Promise<void> {
 			await stopBlePreview();
 
 			if (!isCurrent()) return;
+			publishSession("starting", undefined, "searching");
 
 			const endpoints = await discovery.discover();
 			if (!isCurrent()) return;
@@ -764,7 +773,25 @@ export const backendCalls: BackendCalls = {
 			await disconnectEndpoint(instance, endpointId, check);
 		});
 	},
-	setSettings: (deviceId, settings) => withBackend((instance) => instance.setSettings(deviceId, settings)),
+	setSettings: async (deviceId, settings) => {
+		try {
+			return await withBackend((instance) => instance.setSettings(deviceId, settings));
+		} catch (err) {
+			const failure = err as {
+				code?: string;
+				result?: { applied?: readonly string[]; unsupported?: readonly string[] };
+				failures?: readonly { setting?: string }[];
+			};
+			if (failure.code !== "WRITE_FAILED" || !failure.result?.applied?.length) throw err;
+			return {
+				applied: [...failure.result.applied] as (keyof TrackerSettings)[],
+				unsupported: [...(failure.result.unsupported ?? [])] as (keyof TrackerSettings)[],
+				failed: [
+					...new Set((failure.failures ?? []).flatMap(({ setting }) => (setting ? [setting] : []))),
+				] as (keyof TrackerSettings)[],
+			};
+		}
+	},
 	setBodyPart: (deviceId, bodyPart) => withBackend((instance) => instance.setBodyPart(deviceId, bodyPart)),
 	powerOff: (deviceIds) =>
 		withBackend((instance) => {

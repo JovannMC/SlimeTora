@@ -5,6 +5,7 @@
 	import { connectedTrackers, trackerOpenStates } from "#lib/store/index";
 	import { trackerMotion } from "#lib/store/tracker-motion";
 	import { observeTrackerMotion } from "#lib/backend/motion-visibility";
+	import { expectTrackerPowerOff } from "#lib/backend/notifications";
 	import { ConnectionMode } from "#lib/types/connection";
 	import { program } from "#lib/store/settings";
 	import { error, info } from "#lib/log/index";
@@ -45,10 +46,12 @@
 		if (poweringOff) return;
 		const deviceId = id.slice(0, id.lastIndexOf(":"));
 		poweringOff = true;
+		const clearExpectedPowerOff = expectTrackerPowerOff([deviceId]);
 		try {
 			await invoke("powerOff", deviceId);
 			info(["trackers", "card"], `Powered off tracker device: ${displayName} (${deviceId})`);
 		} catch (err) {
+			clearExpectedPowerOff();
 			error(["trackers", "card"], `Failed to power off tracker ${deviceId}: ${String(err)}`);
 			ToastManager.add({
 				type: "error",

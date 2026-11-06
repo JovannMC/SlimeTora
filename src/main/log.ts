@@ -13,6 +13,7 @@ import path from "node:path";
 const MAX_LOG_FILES = 10;
 const LOG_FILE_PREFIX = "slimetora-";
 const LOG_LEVEL_WEIGHT: Record<LogLevel, number> = { trace: 0, debug: 1, info: 2, warn: 3, error: 4 };
+const MIN_LOG_WEIGHT: Record<LoggingMode, number> = { all: 0, debug: 1, minimal: 2 };
 
 export type LoggingMode = "minimal" | "debug" | "all";
 
@@ -79,7 +80,7 @@ function openLogFile(): fs.WriteStream {
 }
 
 export function writeRecord(record: LogRecord): void {
-	const minimumLevel = preferences.loggingMode === "all" ? 0 : preferences.loggingMode === "debug" ? 1 : 2;
+	const minimumLevel = MIN_LOG_WEIGHT[preferences.loggingMode];
 	if (LOG_LEVEL_WEIGHT[record.level] < minimumLevel) return;
 
 	const line = formatRecord(record);

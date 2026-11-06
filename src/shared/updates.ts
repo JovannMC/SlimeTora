@@ -61,11 +61,8 @@ export function validateTranslation(value: unknown, english: TranslationFile): T
 			const target = base[key];
 			if (target === undefined) continue;
 
-			if (typeof target === "string") {
-				if (typeof v === "string") result[key] = v;
-			} else if (object(target)) {
-				if (object(v)) result[key] = filter(v, target);
-			}
+			if (typeof target === "string" && typeof v === "string") result[key] = v;
+			else if (object(target) && object(v)) result[key] = filter(v, target);
 		}
 
 		return result;

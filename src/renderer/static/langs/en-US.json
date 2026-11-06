@@ -27,7 +27,8 @@
 	"home": {
 		"connected": "Trackers are enabled",
 		"disconnected": "Trackers are disabled",
-		"starting": "Starting trackers…",
+		"starting": "Starting connection…",
+		"searching": "Searching for trackers…",
 		"stopping": "Stopping trackers…",
 		"session_error": "Tracker error",
 		"retry_stop": "Retrying to stop trackers…",
@@ -146,6 +147,7 @@
 			"error": {
 				"apply_failed": "Failed to apply tracker settings: {{error}}",
 				"get_failed": "Failed to get tracker settings: {{error}}",
+				"settings_partial": "Some tracker settings could not be applied: {{settings}}",
 				"settings_unavailable": "Settings are not available from the connected device."
 			},
 			"fps": {
@@ -357,6 +359,8 @@
 		"about": "About"
 	},
 	"toast": {
+		"tracker_connection_lost": "Connection lost to tracker: {{name}}",
+		"tracker_reconnected": "Reconnected to tracker: {{name}}",
 		"no_connection_mode": "No connection mode selected, please select a connection mode in settings.",
 		"no_tracker_model": "No tracker model selected, please choose your tracker model in settings.",
 		"no_serial_ports": "No serial ports selected, please select the port(s) your dongle or trackers are using in settings.",

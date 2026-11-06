@@ -4,6 +4,7 @@ import { formatCategories, formatMessage, toCategories, type LogCategory, type L
 type LoggingMode = "minimal" | "debug" | "all";
 
 const logWeight: Record<LogLevel, number> = { trace: 0, debug: 1, info: 2, warn: 3, error: 4 };
+const minimumLogWeight: Record<LoggingMode, number> = { all: 0, debug: 1, minimal: 2 };
 let loggingMode: LoggingMode = "minimal";
 
 export function setLoggingMode(mode: LoggingMode): void {
@@ -20,7 +21,7 @@ const consoleMethod = {
 
 function emit(level: LogLevel, category: LogCategory, args: unknown[]) {
 	const categories = toCategories(category);
-	const minimumLevel = loggingMode === "all" ? 0 : loggingMode === "debug" ? 1 : 2;
+	const minimumLevel = minimumLogWeight[loggingMode];
 	if (logWeight[level] >= minimumLevel) console[consoleMethod[level]](formatCategories(categories), ...args);
 
 	if (isBridgeAvailable()) {

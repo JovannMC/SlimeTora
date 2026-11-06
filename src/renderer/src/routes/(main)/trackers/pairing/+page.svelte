@@ -32,11 +32,8 @@
 					);
 					const reported = $backendSnapshot.dongleSlots[port]?.[portId];
 					const busyAction = busySlots[`${port}:${portId}`];
-					const status = busyAction
-						? busyAction === "pair"
-							? "pairing"
-							: "unpairing"
-						: (reported ?? (device ? "detected" : "unknown"));
+					const busyStatus = busyAction === "pair" ? "pairing" : "unpairing";
+					const status = busyAction ? busyStatus : (reported ?? (device ? "detected" : "unknown"));
 					return {
 						portId,
 						status,

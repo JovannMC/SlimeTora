@@ -57,6 +57,7 @@ export type UserActionName = "ResetYaw" | "Reset" | "ResetMounting" | "PauseTrac
 
 export interface SessionState {
 	status: "off" | "starting" | "on" | "stopping" | "error";
+	phase?: "connecting" | "searching";
 	requestedEnabled: boolean;
 	revision: number;
 	connectedTrackers?: number;
@@ -104,7 +105,10 @@ export interface BackendCalls {
 	stopDiscovery(): Promise<void>;
 	connect(endpointId: string): Promise<void>;
 	disconnect(endpointId: string): Promise<void>;
-	setSettings(deviceId: string, settings: TrackerSettings): Promise<SettingsApplyResult>;
+	setSettings(
+		deviceId: string,
+		settings: TrackerSettings,
+	): Promise<SettingsApplyResult & { failed?: (keyof TrackerSettings)[] }>;
 	setBodyPart(deviceId: string, bodyPart: BodyPart): Promise<void>;
 	powerOff(deviceId: string | string[]): Promise<void[]>;
 	switchCommunication(deviceId: string, mode: "ble" | "serial"): Promise<void>;

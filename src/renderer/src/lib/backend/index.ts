@@ -18,15 +18,11 @@ export async function startInterpreting(): Promise<boolean | void> {
 	if (!get(isOn)) return;
 
 	const { modes, models: selectedModels, ports, slimevr } = get(settings.connection);
-	const translate = get(t);
-	const missingConfiguration =
-		modes.length === 0
-			? translate("toast.no_connection_mode")
-			: selectedModels.length === 0
-				? translate("toast.no_tracker_model")
-				: modes.includes("serial") && ports.length === 0
-					? translate("toast.no_serial_ports")
-					: undefined;
+	const tr = get(t);
+	let missingConfiguration: string | undefined;
+	if (modes.length === 0) missingConfiguration = tr("toast.no_connection_mode");
+	else if (selectedModels.length === 0) missingConfiguration = tr("toast.no_tracker_model");
+	else if (modes.includes("serial") && ports.length === 0) missingConfiguration = tr("toast.no_serial_ports");
 	if (missingConfiguration) {
 		ToastManager.add({ type: "warning", message: missingConfiguration, disappearing: false });
 		isOn.set(false);

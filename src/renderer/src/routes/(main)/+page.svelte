@@ -13,6 +13,7 @@
 	import { onMount } from "svelte";
 	import { invoke } from "#lib/api/backend.ts";
 	import { ToastManager } from "#lib/util/toast.svelte.ts";
+	import { expectTrackerPowerOff } from "#lib/backend/notifications";
 
 	let isExpanded = $state(false);
 	let poweringOff = $state(false);
@@ -21,19 +22,19 @@
 	// spread trackers over two columns, alternating
 	const leftColumn = $derived($connectedTrackers.filter((_, i) => i % 2 === 0));
 	const rightColumn = $derived($connectedTrackers.filter((_, i) => i % 2 === 1));
-	const statusLabel = $derived(
-		$sessionState.status === "starting"
-			? $t("home.starting")
-			: $sessionState.status === "stopping"
-				? $t("home.stopping")
-				: $sessionState.status === "error"
-					? $t("home.session_error")
-					: $sessionState.status === "on"
-						? !$sessionState.slimevrConnected
-							? $t("home.slimevr_not_found")
-							: $t("home.connected")
-						: $t("home.disconnected"),
-	);
+	const statusLabel = $derived.by(() => {
+		if ($sessionState.status === "starting")
+			return $t($sessionState.phase === "searching" ? "home.searching" : "home.starting");
+		if ($sessionState.status === "on")
+			return $t($sessionState.slimevrConnected ? "home.connected" : "home.slimevr_not_found");
+
+		const labels = {
+			off: "home.disconnected",
+			stopping: "home.stopping",
+			error: "home.session_error",
+		} as const;
+		return $t(labels[$sessionState.status]);
+	});
 
 	onMount(() => {
 		window.addEventListener("resize", updateIsSmall);
@@ -65,10 +66,12 @@
 		const displayNames = $connectedTrackers.map((tracker) => tracker.name).join(", ");
 
 		poweringOff = true;
+		const clearExpectedPowerOff = expectTrackerPowerOff(deviceIds);
 		try {
 			await invoke("powerOff", deviceIds);
 			info(["trackers", "card"], `Powered off tracker devices: ${displayNames} (${deviceIds.join(", ")})`);
 		} catch (err) {
+			clearExpectedPowerOff();
 			error(["trackers", "card"], `Failed to power off tracker ${deviceIds.join(", ")}: ${String(err)}`);
 			ToastManager.add({
 				type: "error",

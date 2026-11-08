@@ -32,19 +32,19 @@
 	<div class="grid grid-cols-1 gap-8 md:grid-cols-2">
 		<div class="flex flex-col gap-4">
 			<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
-				{$t("settings.program.app_behavior.name")}
+				{$t("settings.program.behavior.name")}
 				<Tooltip
-					content={$t("settings.program.app_behavior.tooltip")}
+					content={$t("settings.program.behavior.tooltip")}
 					icon="ri:information-line"
 					width="200px"
 				/>
 			</h3>
 			<div class="flex flex-col gap-3 pl-1">
-				<Checkbox label={$t("settings.program.start_connection.name")} bind:checked={$program.autoStart} />
-				<Checkbox label={$t("settings.program.turn_off_trackers.name")} bind:checked={$program.autoOff} />
+				<Checkbox label={$t("settings.program.behavior.start_connection.name")} bind:checked={$program.autoStart} />
+				<Checkbox label={$t("settings.program.behavior.turn_off_trackers.name")} bind:checked={$program.autoOff} />
 			</div>
 			<Input
-				label={$t("settings.program.visualization_fps.name")}
+				label={$t("settings.program.behavior.visualization_fps.name")}
 				type="number"
 				bind:value={$program.visualizationFPS}
 				icon="ri:timer-line"
@@ -52,8 +52,22 @@
 				tooltipPosition="up"
 				tooltipWidth="250px"
 			/>
+
+			<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
+				{$t("settings.program.appearance.name")}
+				<Tooltip content={$t("settings.program.appearance.tooltip")} icon="ri:information-line" width="200px" />
+			</h3>
 			<Select
-				label={$t("settings.program.language.name")}
+				label={$t("settings.program.appearance.theme.name")}
+				options={[
+					{ value: "default", label: "SlimeTora" },
+					{ value: "v1", label: "SlimeTora v1 (legacy)" },
+				]}
+				bind:selected={$program.theme}
+				icon="ri:palette-line"
+			/>
+			<Select
+				label={$t("settings.program.appearance.language.name")}
 				options={$locales.map((loc) => ({ value: loc, label: loc }))}
 				selected={$locale}
 				onChange={changeLocale}

@@ -37,9 +37,28 @@
 
 	--slimetora-gradient: linear-gradient(180deg, rgba(240, 93, 56, 1) 0%, rgba(154, 72, 238, 1) 100%);
 	--slimetora-gradient-alt: linear-gradient(180deg, rgba(240, 93, 56, 0.24) 0%, rgba(154, 72, 238, 0.24) 100%);
+	--brand-glow: linear-gradient(135deg, #9a48ee 0%, #f05d38 100%);
+	--status-glow:
+		radial-gradient(ellipse 65% 120% at 0% 50%, #f05d38 0%, transparent 100%),
+		radial-gradient(ellipse 75% 130% at 100% 0%, #9a48ee 0%, transparent 100%);
 
 	--font-heading: "Chakra Petch", sans-serif;
 	--font-body: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, sans-serif;
+}
+
+:root[data-theme="v1"] {
+	--body: #00101c;
+	--panel: #081e30;
+	--card: #0b2941;
+	--primary: #1490f5;
+	--secondary: #1490f5;
+	--secondary-alt: #78c3ff;
+	--tertiary: #0c2d45;
+	--quaternary: #0e3351;
+	--slimetora-gradient: var(--primary);
+	--slimetora-gradient-alt: rgba(20, 144, 245, 0.34);
+	--brand-glow: linear-gradient(135deg, #1490f5 0%, #78c3ff 100%);
+	--status-glow: transparent;
 }
 
 body {

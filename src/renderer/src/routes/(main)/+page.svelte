@@ -190,9 +190,7 @@
 
 	.status-bg {
 		@apply absolute inset-0 -z-10;
-		background:
-			radial-gradient(ellipse 65% 120% at 0% 50%, #f05d38 0%, transparent 100%),
-			radial-gradient(ellipse 75% 130% at 100% 0%, #9a48ee 0%, transparent 100%);
+		background: var(--status-glow);
 		opacity: 0.5;
 		mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
 		transition: filter 0.3s;
@@ -219,7 +217,7 @@
 	.power-button::before {
 		@apply absolute inset-0 z-[-1] rounded-full p-1;
 		content: "";
-		background: linear-gradient(180deg, #f05d38 0%, #9a48ee 100%);
+		background: var(--slimetora-gradient);
 		mask:
 			linear-gradient(#fff 0 0) content-box,
 			linear-gradient(#fff 0 0);

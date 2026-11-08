@@ -57,7 +57,7 @@
 
 	.logo-bg {
 		@apply absolute -z-10 h-96 w-96;
-		background: linear-gradient(135deg, #9a48ee 0%, #f05d38 100%);
+		background: var(--brand-glow);
 		filter: blur(175px);
 	}
 </style>

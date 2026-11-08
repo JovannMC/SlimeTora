@@ -68,21 +68,21 @@
 	"settings": {
 		"program": {
 			"title": "アプリケーション設定",
-			"app_behavior": {
+			"behavior": {
 				"name": "アプリの動作",
-				"tooltip": "アプリの一般的な動作を変更します。"
-			},
-			"start_connection": {
-				"name": "起動時に自動接続",
-				"tooltip": "アプリ起動と同時に自動接続を開始します。"
-			},
-			"turn_off_trackers": {
-				"name": "終了時にトラッカーの電源を切る",
-				"tooltip": "アプリ終了時にトラッカーの電源を自動的に切ります。"
-			},
-			"visualization_fps": {
-				"name": "トラッカーモデルのフレームレート",
-				"tooltip": "トラッカーの3Dモデルのフレームレートを設定します。 値が低いほどリソースを節約できます。"
+				"tooltip": "アプリの一般的な動作を変更します。",
+				"start_connection": {
+					"name": "起動時に自動接続",
+					"tooltip": "アプリ起動と同時に自動接続を開始します。"
+				},
+				"turn_off_trackers": {
+					"name": "終了時にトラッカーの電源を切る",
+					"tooltip": "アプリ終了時にトラッカーの電源を自動的に切ります。"
+				},
+				"visualization_fps": {
+					"name": "トラッカーモデルのフレームレート",
+					"tooltip": "トラッカーの3Dモデルのフレームレートを設定します。 値が低いほどリソースを節約できます。"
+				}
 			},
 			"update_settings": {
 				"name": "アップデート設定",

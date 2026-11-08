@@ -7,6 +7,7 @@ export type LoggingMode = "minimal" | "debug" | "all";
 
 export type ProgramSettings = {
 	locale: string;
+	theme: "default" | "v1";
 	autoUpdate: boolean;
 	checkUpdatesApp: boolean;
 	checkUpdatesLanguage: boolean;
@@ -55,6 +56,7 @@ export type SettingsFileError = { kind: "load" | "save"; detail: string; id: num
 
 export const program = writable<ProgramSettings>({
 	locale: "en-US",
+	theme: "default",
 	autoUpdate: false,
 	checkUpdatesApp: true,
 	checkUpdatesLanguage: true,

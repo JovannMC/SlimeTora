@@ -55,6 +55,9 @@
 	onNavigate((event) => currentPath.set(event.to?.url.pathname ?? "/"));
 
 	onMount(() => {
+		const stopTheme = program.subscribe((settings) => {
+			document.documentElement.dataset.theme = settings.theme === "v1" ? "v1" : "default";
+		});
 		const detachBackendState = attachBackendState();
 		const detachBleTargets = attachBleTargets();
 		const detachNotifications = attachNotifications();
@@ -116,6 +119,7 @@
 		});
 
 		return () => {
+			stopTheme();
 			disposed = true;
 
 			detachBackendState();

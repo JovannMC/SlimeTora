@@ -184,24 +184,31 @@
 		},
 		"program": {
 			"title": "Program Settings",
-			"app_behavior": {
+			"behavior": {
 				"name": "App Behavior",
-				"tooltip": "Controls general behavior of the app."
+				"tooltip": "Controls general behavior of the app.",
+				"start_connection": {
+					"name": "Start connection on open",
+					"tooltip": "Automatically start the connection when the app opens."
+				},
+				"turn_off_trackers": {
+					"name": "Turn off trackers on exit",
+					"tooltip": "Automatically turn off trackers when exiting the app."
+				},
+				"visualization_fps": {
+					"name": "Tracker Visualization FPS",
+					"tooltip": "Sets the framerate for the 3D tracker visualization. Lower values save resources."
+				}
 			},
-			"start_connection": {
-				"name": "Start connection on open",
-				"tooltip": "Automatically start the connection when the app opens."
-			},
-			"turn_off_trackers": {
-				"name": "Turn off trackers on exit",
-				"tooltip": "Automatically turn off trackers when exiting the app."
-			},
-			"visualization_fps": {
-				"name": "Tracker Visualization FPS",
-				"tooltip": "Sets the framerate for the 3D tracker visualization. Lower values save resources."
-			},
-			"language": {
-				"name": "Language"
+			"appearance": {
+				"name": "Appearance",
+				"tooltip": "Controls the appearance of the app.",
+				"theme": {
+					"name": "Theme"
+				},
+				"language": {
+					"name": "Language"
+				}
 			},
 			"update_settings": {
 				"name": "Update Settings",

@@ -33,7 +33,7 @@ export const t = derived(
 			const value = findTranslation($data, $locale, key);
 			if (value !== undefined)
 				return value.replace(/\{\{(\w+)\}\}/g, (match, name: string) => params[name]?.toString() ?? match);
-			if (!$loading) warn(["lang"], `Translation not found for key: ${key}`);
+			if (!$loading) warn(["lang"], `Translation not found for key on ${$locale}: ${key}`);
 			return key;
 		},
 );

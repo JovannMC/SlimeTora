@@ -33,15 +33,17 @@
 		<div class="flex flex-col gap-4">
 			<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
 				{$t("settings.program.behavior.name")}
-				<Tooltip
-					content={$t("settings.program.behavior.tooltip")}
-					icon="ri:information-line"
-					width="200px"
-				/>
+				<Tooltip content={$t("settings.program.behavior.tooltip")} icon="ri:information-line" width="200px" />
 			</h3>
 			<div class="flex flex-col gap-3 pl-1">
-				<Checkbox label={$t("settings.program.behavior.start_connection.name")} bind:checked={$program.autoStart} />
-				<Checkbox label={$t("settings.program.behavior.turn_off_trackers.name")} bind:checked={$program.autoOff} />
+				<Checkbox
+					label={$t("settings.program.behavior.start_connection.name")}
+					bind:checked={$program.autoStart}
+				/>
+				<Checkbox
+					label={$t("settings.program.behavior.turn_off_trackers.name")}
+					bind:checked={$program.autoOff}
+				/>
 			</div>
 			<Input
 				label={$t("settings.program.behavior.visualization_fps.name")}

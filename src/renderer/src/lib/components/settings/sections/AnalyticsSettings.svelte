@@ -49,7 +49,7 @@
 			previewLoading = false;
 			return;
 		}
-		
+
 		void getBridge()
 			.getAnalyticsPreview(models, modes, ports)
 			.then((preview) => {

@@ -2,6 +2,7 @@ import { PRIVALYTICS_ORIGIN } from "$shared/consts";
 import type { AnalyticsPreview } from "$shared/ipc/channels";
 import { app } from "electron";
 import { randomUUID } from "node:crypto";
+import si from "systeminformation";
 import { backendCalls } from "./backend";
 import { info } from "./log";
 import { getSetting, setSetting } from "./store";
@@ -14,7 +15,13 @@ type AnalyticsSettings = { enabled?: boolean; entityId?: string };
 type SavedAppSettings = {
 	settings?: { connection?: { models?: string[]; modes?: string[]; ports?: string[] } };
 };
-type ReportValues = { appVersion: string; trackerModel: string[]; connectionMode: string[] };
+type ReportValues = {
+	appVersion: string;
+	operatingSystem: string;
+	trackerCount: number;
+	trackerModel: string[];
+	connectionMode: string[];
+};
 
 let reportRunning = false;
 let trackerGateOpen = false;
@@ -27,7 +34,15 @@ function settings(): AnalyticsSettings {
 	return getSetting<AnalyticsSettings>(SETTINGS_FILE, { backupCorrupt: true }) ?? {};
 }
 
-function currentSetup(models?: string[], modes?: string[], ports?: string[]): AnalyticsPreview {
+async function operatingSystem(): Promise<string> {
+	const info = await si.osInfo();
+	if (info.platform === "win32") return info.distro.match(/Windows\s+\d+(?:\.\d+)?/i)?.[0] ?? info.distro;
+	if (info.platform === "darwin") return `macOS ${info.release}`;
+	if (info.platform === "linux") return `${info.distro} ${info.release}`;
+	return info.distro || info.platform;
+}
+
+async function currentSetup(models?: string[], modes?: string[], ports?: string[]): Promise<AnalyticsPreview> {
 	const saved = getSetting<SavedAppSettings>("settings.json", { backupCorrupt: true });
 	const connection = saved?.settings?.connection;
 	const selectedModels = models ?? connection?.models ?? [];
@@ -45,8 +60,7 @@ function currentSetup(models?: string[], modes?: string[], ports?: string[]): An
 			);
 			if (wirelessDevices.length === 0) unresolvedTrackerModel = true;
 			for (const device of wirelessDevices) trackerModels.add(device.model);
-		}
-		else if (selectedModel === "Wired") {
+		} else if (selectedModel === "Wired") {
 			const wiredDevices = snapshot.devices.filter((device) => device.model === "wired");
 			if (wiredDevices.length === 0) unresolvedTrackerModel = true;
 			for (const device of wiredDevices) {
@@ -84,6 +98,11 @@ function currentSetup(models?: string[], modes?: string[], ports?: string[]): An
 
 	return {
 		appVersion: app.getVersion(),
+		operatingSystem: await operatingSystem(),
+		trackerCount: snapshot.devices.reduce(
+			(count, device) => count + device.trackers.filter((tracker) => tracker.connected).length,
+			0,
+		),
 		...(!unresolvedTrackerModel && trackerModels.size > 0 ? { trackerModel: [...trackerModels].sort() } : {}),
 		...(!unresolvedConnectionMode && connectionModes.size > 0
 			? { connectionMode: [...connectionModes].sort() }
@@ -91,25 +110,28 @@ function currentSetup(models?: string[], modes?: string[], ports?: string[]): An
 	};
 }
 
-function reportValues(): ReportValues | undefined {
-	const setup = currentSetup();
+async function reportValues(): Promise<ReportValues | undefined> {
+	const setup = await currentSetup();
 	if (!setup.trackerModel || !setup.connectionMode) return;
 	return {
 		appVersion: setup.appVersion,
+		operatingSystem: setup.operatingSystem,
+		trackerCount: setup.trackerCount,
 		trackerModel: setup.trackerModel,
 		connectionMode: setup.connectionMode,
 	};
 }
 
-function setupSignature(): string | undefined {
-	const values = reportValues();
+async function setupSignature(): Promise<string | undefined> {
+	const values = await reportValues();
 	return values ? JSON.stringify(values) : undefined;
 }
 
 async function reportAnalytics(): Promise<void> {
 	if (reportRunning || !trackerGateOpen || settings().enabled === false) return;
-	const values = reportValues();
+	const values = await reportValues();
 	if (!values) return;
+
 	const signature = JSON.stringify(values);
 	if (signature === lastReportedSignature) return;
 
@@ -145,16 +167,18 @@ async function reportAnalytics(): Promise<void> {
 		reportRunning = false;
 		if (!succeeded) {
 			changedWhileReporting = false;
-			return;
-		}
-		if (changedWhileReporting) {
+		} else if (changedWhileReporting) {
 			changedWhileReporting = false;
-			if (setupSignature() !== lastReportedSignature) void reportAnalytics();
+			if ((await setupSignature()) !== lastReportedSignature) void reportAnalytics();
 		}
 	}
 }
 
-export function getAnalyticsPreview(models: string[], modes: string[], ports: string[]): AnalyticsPreview {
+export async function getAnalyticsPreview(
+	models: string[],
+	modes: string[],
+	ports: string[],
+): Promise<AnalyticsPreview> {
 	return currentSetup(models, modes, ports);
 }
 
@@ -172,12 +196,12 @@ export function noteTrackerConnected(): void {
 	noteAnalyticsSetupChanged();
 }
 
-export function noteAnalyticsConnectionStarted(): void {
+export async function noteAnalyticsConnectionStarted(): Promise<void> {
 	if (firstTrackerTimer) clearTimeout(firstTrackerTimer);
 	firstTrackerTimer = undefined;
 	trackerGateOpen = false;
 	lastReportedSignature = undefined;
-	lastObservedSignature = setupSignature();
+	lastObservedSignature = await setupSignature();
 	changedWhileReporting = false;
 }
 
@@ -188,8 +212,8 @@ export function noteAnalyticsConnectionStopped(): void {
 	changedWhileReporting = false;
 }
 
-export function noteAnalyticsSetupChanged(): void {
-	const signature = setupSignature();
+export async function noteAnalyticsSetupChanged(): Promise<void> {
+	const signature = await setupSignature();
 	if (signature === lastObservedSignature) return;
 	lastObservedSignature = signature;
 	if (!trackerGateOpen || !signature || signature === lastReportedSignature || settings().enabled === false) return;
@@ -210,6 +234,6 @@ export function setAnalyticsEnabled(enabled: boolean): void {
 	if (enabled && trackerGateOpen) void reportAnalytics();
 }
 
-export function startAnalyticsReporting(): void {
-	lastObservedSignature = setupSignature();
+export async function startAnalyticsReporting(): Promise<void> {
+	lastObservedSignature = await setupSignature();
 }

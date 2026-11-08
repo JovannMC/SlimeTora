@@ -200,8 +200,8 @@ importers:
         specifier: ^0.10.2
         version: 0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1)
       haritorax-interpreter:
-        specifier: 4.1.0
-        version: 4.1.0(@serialport/bindings-cpp@13.0.1(supports-color@10.2.2))(@serialport/stream@13.0.0(supports-color@10.2.2))(@stoprocent/noble@2.8.0(dbus-next@0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1))(supports-color@10.2.2))(dbus-next@0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1))
+        specifier: 4.2.0
+        version: 4.2.0(@serialport/bindings-cpp@13.0.1(supports-color@10.2.2))(@serialport/stream@13.0.0(supports-color@10.2.2))(@stoprocent/noble@2.8.0(dbus-next@0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1))(supports-color@10.2.2))(dbus-next@0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1))
       overlayscrollbars:
         specifier: ^2.17.0
         version: 2.17.0
@@ -211,6 +211,9 @@ importers:
       rand-seed:
         specifier: ^3.0.0
         version: 3.0.0
+      systeminformation:
+        specifier: ^5.33.19
+        version: 5.33.19
       three:
         specifier: ^0.186.1
         version: 0.186.1
@@ -1782,8 +1785,8 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  haritorax-interpreter@4.1.0:
-    resolution: {integrity: sha512-q/lsEhqzz/MbXsDxnmMlUJth0dmbqw/9QSYvifgybQNFRyqr9+BJPaWjrzMgUDW/NGQwyzVHnPCrqCB9/9wF4A==}
+  haritorax-interpreter@4.2.0:
+    resolution: {integrity: sha512-oeviAmYaUZd8YcPXhn6WM47+cSyizkX5FDsRO/dO/HCC3slpno5cFirw0tqupx6B7Tqrhg0pBwtM8+sFCOLWbQ==}
     engines: {node: '>=24.0.0'}
     hasBin: true
     peerDependencies:
@@ -2734,6 +2737,12 @@ packages:
   svelte@5.57.2:
     resolution: {integrity: sha512-1YiPCAXT0Ct6g1vOMmSLa0Nsc3QRMvtDF32ihgglGVrugIuIK38RyDiFNXVDhtQ81TJjSO57NdMw6DyYLqSGDQ==}
     engines: {node: '>=18'}
+
+  systeminformation@5.33.19:
+    resolution: {integrity: sha512-Zm7wGeCG7PqfvzegMJIzrxICopWqYCeLATVmvxOOci1isLcNVKgY4Fr0hhYQzvc7cgtK3377jQVChTFAnznOiA==}
+    engines: {node: '>=10.0.0'}
+    os: [darwin, linux, win32, freebsd, openbsd, netbsd, sunos, android]
+    hasBin: true
 
   tailwindcss@4.3.3:
     resolution: {integrity: sha512-gOhV3P7ufE62QDGg1zVaTgCR+EtPv92k2nIhVcVKcLmxT1sUBsQGhnZj175j+MqRt4zLF7ic+sCYjfhxMxj7YQ==}
@@ -4588,7 +4597,7 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  haritorax-interpreter@4.1.0(@serialport/bindings-cpp@13.0.1(supports-color@10.2.2))(@serialport/stream@13.0.0(supports-color@10.2.2))(@stoprocent/noble@2.8.0(dbus-next@0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1))(supports-color@10.2.2))(dbus-next@0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1)):
+  haritorax-interpreter@4.2.0(@serialport/bindings-cpp@13.0.1(supports-color@10.2.2))(@serialport/stream@13.0.0(supports-color@10.2.2))(@stoprocent/noble@2.8.0(dbus-next@0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1))(supports-color@10.2.2))(dbus-next@0.10.2(patch_hash=032a01e45259483a46a5b8474d8fcdc1dadc92d0c408a6956a798bad205415d1)):
     dependencies:
       base64-js: 1.5.1
     optionalDependencies:
@@ -5437,6 +5446,8 @@ snapshots:
       zimmerframe: 1.1.5
     transitivePeerDependencies:
       - '@typescript-eslint/types'
+
+  systeminformation@5.33.19: {}
 
   tailwindcss@4.3.3: {}
 

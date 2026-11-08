@@ -56,6 +56,8 @@ export interface Capabilities {
 
 export interface AnalyticsPreview {
 	appVersion: string;
+	operatingSystem: string;
+	trackerCount: number;
 	trackerModel?: string[];
 	connectionMode?: string[];
 }

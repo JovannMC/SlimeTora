@@ -102,6 +102,16 @@
 						})}
 					</li>
 					<li>
+						{$t("settings.analytics.payload_os", {
+							value: JSON.stringify(analyticsPreview?.operatingSystem ?? "…"),
+						})}
+					</li>
+					<li>
+						{$t("settings.analytics.payload_count", {
+							value: JSON.stringify(analyticsPreview?.trackerCount ?? "…"),
+						})}
+					</li>
+					<li>
 						{$t("settings.analytics.payload_model", {
 							value: JSON.stringify(
 								analyticsPreview?.trackerModel ?? $t("settings.analytics.unavailable"),

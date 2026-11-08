@@ -424,6 +424,8 @@ async function createBackend(): Promise<HaritoraX> {
 		if (!enabled || generation !== instanceGeneration) return;
 		liveTrackers.delete(trackerId);
 		uiImuForwarding.forget(trackerId);
+		publishSnapshot();
+		noteAnalyticsSetupChanged();
 		publishSession(sessionState.status, sessionState.error);
 		lastButtonAt.delete(trackerId);
 		reconnect.refresh();
@@ -486,6 +488,7 @@ async function createBackend(): Promise<HaritoraX> {
 			liveTrackers.set(sample.trackerId, device.endpointId);
 			reconnect.refresh();
 			publishSnapshot();
+			noteAnalyticsSetupChanged();
 			publishSession(sessionState.status, sessionState.error);
 		}
 

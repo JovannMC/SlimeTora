@@ -17,6 +17,9 @@ export const Channels = {
 	settingGet: "setting:get",
 	settingSet: "setting:set",
 	settingDelete: "setting:delete",
+	analyticsGet: "analytics:get",
+	analyticsSet: "analytics:set",
+	analyticsPreviewGet: "analytics:preview-get",
 } as const;
 
 export type ChannelName = (typeof Channels)[keyof typeof Channels];
@@ -51,6 +54,12 @@ export interface Capabilities {
 	serial: CapabilityStatus;
 }
 
+export interface AnalyticsPreview {
+	appVersion: string;
+	trackerModel?: string[];
+	connectionMode?: string[];
+}
+
 // api exposed to renderer on `window.slimetora`
 export interface PlatformBridge {
 	getAppInfo(): Promise<AppInfo>;
@@ -66,4 +75,7 @@ export interface PlatformBridge {
 	getSetting<T = unknown>(key: string): Promise<T | undefined>;
 	setSetting(key: string, value: unknown): Promise<void>;
 	deleteSetting(key: string): Promise<void>;
+	getAnalyticsEnabled(): Promise<boolean>;
+	setAnalyticsEnabled(enabled: boolean): Promise<void>;
+	getAnalyticsPreview(models: string[], modes: string[], ports: string[]): Promise<AnalyticsPreview>;
 }

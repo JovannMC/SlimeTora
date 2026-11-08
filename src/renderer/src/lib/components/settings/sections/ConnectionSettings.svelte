@@ -5,7 +5,7 @@
 	import { loadPlatform, platform } from "#lib/store/platform";
 	import { advanced, connection, restartRequired } from "#lib/store/settings";
 	import { isOn } from "#lib/store/index";
-	import { sessionState } from "#lib/backend/state";
+	import { backendSnapshot, sessionState } from "#lib/backend/state";
 	import { ConnectionMode } from "#lib/types/connection";
 	import { TrackerModel } from "#lib/types/tracker";
 	import { invoke } from "#lib/api/backend";
@@ -56,6 +56,18 @@
 		}
 
 		return port;
+	}
+
+	function identifiedPortLabel(port: string): string {
+		const identified = identifiedPorts[port];
+		if (!identified) return "";
+		if (identified.kind === "dongle") return identified.model;
+		const device = $backendSnapshot.devices.find(
+			(item) => item.endpointId === port && "wiredModel" in item && typeof item.wiredModel === "string",
+		);
+		return device && "wiredModel" in device && typeof device.wiredModel === "string"
+			? `HaritoraX ${device.wiredModel}`
+			: $t("settings.connection.serial_ports.wired");
 	}
 
 	async function refreshPorts() {
@@ -241,9 +253,7 @@
 							/>
 							{#if identifiedPorts[port]}
 								<span class="shrink-0 rounded bg-primary/70 px-2 py-1 text-xs font-medium text-white">
-									{identifiedPorts[port].kind === "dongle"
-										? identifiedPorts[port].model
-										: $t("settings.connection.serial_ports.wired")}
+									{identifiedPortLabel(port)}
 								</span>
 							{/if}
 						</div>

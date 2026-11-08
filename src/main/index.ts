@@ -1,4 +1,5 @@
 import { app, BrowserWindow } from "electron";
+import { startAnalyticsReporting } from "./analytics";
 import { disposeBackend } from "./backend";
 import { registerIpcHandlers } from "./ipc/contract";
 import { closeLogFile, error } from "./log";
@@ -26,6 +27,7 @@ void app.whenReady().then(() => {
 	if (process.env.VITE_DEV_SERVER_URL === undefined) serveRenderer();
 
 	registerIpcHandlers();
+	startAnalyticsReporting();
 	mainWindow = createMainWindow();
 
 	app.on("activate", () => {

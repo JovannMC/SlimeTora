@@ -18,6 +18,12 @@ import type {
 	TrackerSettings,
 } from "haritorax-interpreter";
 import { serializeBackendError } from "../../renderer/src/lib/backend/error-reporting";
+import {
+	noteAnalyticsConnectionStarted,
+	noteAnalyticsConnectionStopped,
+	noteAnalyticsSetupChanged,
+	noteTrackerConnected,
+} from "../analytics";
 import { debug, error, info, trace, warn } from "../log";
 import { getSetting } from "../store";
 import { createDiscoveryController } from "./discovery";
@@ -332,7 +338,10 @@ async function createBackend(): Promise<HaritoraX> {
 	for (const event of BACKEND_EVENTS) {
 		if (event === "error" || event === "imu" || event === "button") continue;
 		backend.on(event, (payload) => {
-			if (enabled && generation === instanceGeneration) send(event, payload);
+			if (!enabled || generation !== instanceGeneration) return;
+			if (event === "tracker:connected") noteTrackerConnected();
+			if (event === "device:connected") noteAnalyticsSetupChanged();
+			send(event, payload);
 		});
 	}
 	backend.on("error", (event) => {
@@ -554,6 +563,7 @@ export async function getTransportCapabilities(): Promise<import("$shared/ipc/ch
 
 function startSession(options: SessionOptions): Promise<void> {
 	if (enabled) return transition;
+	noteAnalyticsConnectionStarted();
 	enabled = true;
 
 	const current = ++generation;
@@ -625,6 +635,7 @@ function startSession(options: SessionOptions): Promise<void> {
 }
 
 function stopSession(powerOffTrackers = false): Promise<void> {
+	noteAnalyticsConnectionStopped();
 	enabled = false;
 	uiImuForwarding.reset();
 	reconnect.stop();

@@ -16,6 +16,10 @@ const bridge: PlatformBridge = {
 	getSetting: (key) => ipcRenderer.invoke(Channels.settingGet, key),
 	setSetting: (key, value) => ipcRenderer.invoke(Channels.settingSet, key, value),
 	deleteSetting: (key) => ipcRenderer.invoke(Channels.settingDelete, key),
+	getAnalyticsEnabled: () => ipcRenderer.invoke(Channels.analyticsGet),
+	setAnalyticsEnabled: (enabled) => ipcRenderer.invoke(Channels.analyticsSet, enabled),
+	getAnalyticsPreview: (models, modes, ports) =>
+		ipcRenderer.invoke(Channels.analyticsPreviewGet, models, modes, ports),
 
 	backend: {
 		invoke: (command, args) => ipcRenderer.invoke(Channels.backendInvoke, command, args),

@@ -320,6 +320,21 @@
 				"name": "Open Logs Folder",
 				"tooltip": "Opens the folder where SlimeTora stores its log files in your file browser."
 			}
+		},
+		"analytics": {
+			"title": "Anonymous Analytics",
+			"description": "Share anonymous app and tracker configuration data purely to fuel Maya's (or your!) curiousity, and maybe help improve the app. No personal information, hardware identifiers, or any other sensitive data is collected.",
+			"enabled": "Share anonymous analytics",
+			"dashboard": "View public analytics",
+			"show_details": "Show details",
+			"hide_details": "Hide details",
+			"payload_title": "When enabled, reports contain:",
+			"payload_version": "appVersion: {{value}}",
+			"payload_model": "trackerModel: {{value}}",
+			"payload_mode": "connectionMode: {{value}}",
+			"payload_id": "entityId: a random installation ID, not tied to your identity or hardware.",
+			"payload_frequency": "When you start a connection, a report is sent one minute after the first tracker connects. Stopping before the minute will not send a report.",
+			"unavailable": "N/A"
 		}
 	},
 

@@ -347,6 +347,12 @@
 							: "home.per_tracker.info.serial",
 					)}
 				</p>
+				{#if deviceSnapshot?.endpointId}
+					<p>
+						<b>{$t("home.per_tracker.info.endpoint")}</b>
+						{deviceSnapshot.endpointId}
+					</p>
+				{/if}
 				<p>
 					<b>{$t("home.per_tracker.info.battery")}</b>
 					{trackerData?.data.battery?.remaining === undefined

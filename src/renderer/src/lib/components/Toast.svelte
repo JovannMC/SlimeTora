@@ -7,7 +7,6 @@
 
 	let { toast }: { toast: Toast<unknown> } = $props();
 
-	// full class names so tailwind generates them
 	const variants = {
 		success: { classes: "bg-purple-300 border-purple-500", icon: "ri:check-fill" },
 		error: { classes: "bg-red-300 border-red-500", icon: "ri:close-circle-fill" },
@@ -20,7 +19,7 @@
 </script>
 
 <div
-	class="flex max-w-sm items-center justify-between gap-4 rounded-lg border-l-4 p-4 shadow-md {variant.classes}"
+	class="flex max-w-full items-center justify-between gap-4 rounded-lg border-l-4 p-4 shadow-md lg:max-w-md {variant.classes}"
 	in:fly={{ duration: toast.durations.enter, easing: quintOut, x: 0, y: 100 }}
 	out:fade={{ duration: toast.durations.exit, easing: quintOut }}
 >

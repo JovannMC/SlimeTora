@@ -144,7 +144,7 @@
 	</div>
 {/if}
 
-<div class="fixed right-0 bottom-28 z-50 flex flex-col-reverse gap-4 p-4 md:bottom-0">
+<div class="fixed right-0 bottom-0 z-50 flex flex-col-reverse gap-4 p-4">
 	{#each ToastManager.toasts as toast (toast.id)}
 		<div class="flex justify-end">
 			<Toast {toast} />

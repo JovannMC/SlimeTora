@@ -342,7 +342,7 @@
 			"payload_count": "trackerCount: {{value}}",
 			"payload_mode": "connectionMode: {{value}}",
 			"payload_id": "entityId: a random installation ID, not tied to you or visible to anyone",
-			"payload_frequency": "When you start a connection, a report is sent one minute after the first tracker connects. Stopping before the minute will not send a report.",
+			"payload_frequency": "When you start a connection, a report is sent one minute after the first tracker connects - stopping before the minute will not send a report. Some information above may only be shown when you have a tracker connected.",
 			"unavailable": "N/A"
 		}
 	},

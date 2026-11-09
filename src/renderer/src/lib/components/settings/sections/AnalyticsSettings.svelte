@@ -4,7 +4,6 @@
 	import Button from "#lib/components/settings/Button.svelte";
 	import Checkbox from "#lib/components/settings/Checkbox.svelte";
 	import { getBridge, isBridgeAvailable } from "#lib/api/bridge";
-	import { connection } from "#lib/store/settings";
 	import { backendSnapshot } from "#lib/backend/state";
 	import { t } from "#lib/lang/index";
 	import { PRIVALYTICS_ORIGIN } from "$shared/consts";
@@ -36,10 +35,6 @@
 	});
 
 	$effect(() => {
-		const models = $connection.models;
-		const modes = $connection.modes;
-		const ports = $connection.ports;
-
 		$backendSnapshot.revision;
 		const request = ++previewRequest;
 		previewLoading = true;
@@ -51,7 +46,7 @@
 		}
 
 		void getBridge()
-			.getAnalyticsPreview(models, modes, ports)
+			.getAnalyticsPreview()
 			.then((preview) => {
 				if (request === previewRequest) analyticsPreview = preview;
 			})

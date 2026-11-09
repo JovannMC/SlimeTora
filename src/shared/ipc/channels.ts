@@ -79,5 +79,5 @@ export interface PlatformBridge {
 	deleteSetting(key: string): Promise<void>;
 	getAnalyticsEnabled(): Promise<boolean>;
 	setAnalyticsEnabled(enabled: boolean): Promise<void>;
-	getAnalyticsPreview(models: string[], modes: string[], ports: string[]): Promise<AnalyticsPreview>;
+	getAnalyticsPreview(): Promise<AnalyticsPreview>;
 }

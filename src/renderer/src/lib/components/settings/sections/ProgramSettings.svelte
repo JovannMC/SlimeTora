@@ -50,7 +50,7 @@
 				type="number"
 				bind:value={$program.visualizationFPS}
 				icon="ri:timer-line"
-				tooltip={$t("settings.program.visualization_fps.tooltip")}
+				tooltip={$t("settings.program.behavior.visualization_fps.tooltip")}
 				tooltipPosition="up"
 				tooltipWidth="250px"
 			/>

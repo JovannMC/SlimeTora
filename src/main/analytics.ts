@@ -12,9 +12,6 @@ const TRACKER_SETTLE_MS = 60_000;
 const REPORT_URL = `${PRIVALYTICS_ORIGIN.replace(/\/$/, "")}/api/v1/projects/slimetora/report`;
 
 type AnalyticsSettings = { enabled?: boolean; entityId?: string };
-type SavedAppSettings = {
-	settings?: { connection?: { models?: string[]; modes?: string[]; ports?: string[] } };
-};
 type ReportValues = {
 	appVersion: string;
 	operatingSystem: string;
@@ -42,76 +39,38 @@ async function operatingSystem(): Promise<string> {
 	return info.distro || info.platform;
 }
 
-async function currentSetup(models?: string[], modes?: string[], ports?: string[]): Promise<AnalyticsPreview> {
-	const saved = getSetting<SavedAppSettings>("settings.json", { backupCorrupt: true });
-	const connection = saved?.settings?.connection;
-	const selectedModels = models ?? connection?.models ?? [];
-	const selectedModes = modes ?? connection?.modes ?? [];
-	const selectedPorts = ports ?? connection?.ports ?? []; // these aren't sent for analytics, but are used to determine the connectionMode values
+async function connectedSetup(): Promise<AnalyticsPreview> {
 	const snapshot = backendCalls.getSnapshot();
-
+	const connectedDevices = snapshot.devices.filter((device) => device.trackers.some((tracker) => tracker.connected));
 	const trackerModels = new Set<string>();
-	let unresolvedTrackerModel = false;
-	for (const selectedModel of selectedModels) {
-		if (selectedModel === "X2") trackerModels.add("x2");
-		else if (selectedModel === "Wireless") {
-			const wirelessDevices = snapshot.devices.filter(
-				(device) => device.model === "wireless" || device.model === "x2",
-			);
-			if (wirelessDevices.length === 0) unresolvedTrackerModel = true;
-			for (const device of wirelessDevices) trackerModels.add(device.model);
-		} else if (selectedModel === "Wired") {
-			const wiredDevices = snapshot.devices.filter((device) => device.model === "wired");
-			if (wiredDevices.length === 0) unresolvedTrackerModel = true;
-			for (const device of wiredDevices) {
-				if ("wiredModel" in device && typeof device.wiredModel === "string")
-					trackerModels.add(device.wiredModel);
-				else unresolvedTrackerModel = true;
-			}
-		} else unresolvedTrackerModel = true;
-	}
-
 	const connectionModes = new Set<string>();
-	let unresolvedConnectionMode = false;
-	for (const selectedMode of selectedModes) {
-		if (selectedMode === "ble") {
-			connectionModes.add("ble");
-			continue;
-		}
-		if (selectedMode !== "serial") {
-			unresolvedConnectionMode = true;
-			continue;
-		}
 
-		const serialEndpoints = snapshot.endpoints.filter((endpoint) => selectedPorts.includes(endpoint.id));
-		if (selectedPorts.length === 0 || serialEndpoints.length !== selectedPorts.length) {
-			unresolvedConnectionMode = true;
-			continue;
-		}
-		for (const endpoint of serialEndpoints) {
-			if (endpoint.dongle === "GX6") connectionModes.add("gx6");
-			else if (endpoint.dongle === "GX2") connectionModes.add("gx2");
-			else if (endpoint.model === "wired") connectionModes.add("serial");
-			else unresolvedConnectionMode = true;
-		}
+	for (const device of connectedDevices) {
+		if (device.model === "wired") {
+			if (device.wiredModel) trackerModels.add(device.wiredModel);
+		} else trackerModels.add(device.model);
+
+		const endpoint = snapshot.endpoints.find((item) => item.id === device.endpointId);
+		if (endpoint?.dongle === "GX6") connectionModes.add("gx6");
+		else if (endpoint?.dongle === "GX2") connectionModes.add("gx2");
+		else if (device.connection === "ble") connectionModes.add("ble");
+		else if (device.model === "wired") connectionModes.add("serial");
 	}
 
 	return {
 		appVersion: app.getVersion(),
 		operatingSystem: await operatingSystem(),
-		trackerCount: snapshot.devices.reduce(
+		trackerCount: connectedDevices.reduce(
 			(count, device) => count + device.trackers.filter((tracker) => tracker.connected).length,
 			0,
 		),
-		...(!unresolvedTrackerModel && trackerModels.size > 0 ? { trackerModel: [...trackerModels].sort() } : {}),
-		...(!unresolvedConnectionMode && connectionModes.size > 0
-			? { connectionMode: [...connectionModes].sort() }
-			: {}),
+		...(trackerModels.size ? { trackerModel: [...trackerModels].sort() } : {}),
+		...(connectionModes.size ? { connectionMode: [...connectionModes].sort() } : {}),
 	};
 }
 
 async function reportValues(): Promise<ReportValues | undefined> {
-	const setup = await currentSetup();
+	const setup = await connectedSetup();
 	if (!setup.trackerModel || !setup.connectionMode) return;
 	return {
 		appVersion: setup.appVersion,
@@ -174,12 +133,8 @@ async function reportAnalytics(): Promise<void> {
 	}
 }
 
-export async function getAnalyticsPreview(
-	models: string[],
-	modes: string[],
-	ports: string[],
-): Promise<AnalyticsPreview> {
-	return currentSetup(models, modes, ports);
+export async function getAnalyticsPreview(): Promise<AnalyticsPreview> {
+	return connectedSetup();
 }
 
 export function noteTrackerConnected(): void {

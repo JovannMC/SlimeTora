@@ -51,15 +51,7 @@ export function registerIpcHandlers(): void {
 	});
 
 	ipcMain.handle(Channels.analyticsGet, () => getAnalyticsEnabled());
-	ipcMain.handle(Channels.analyticsPreviewGet, (_event, models: unknown, modes: unknown, ports: unknown) => {
-		if (!Array.isArray(models) || !models.every((model) => typeof model === "string"))
-			throw new Error("Invalid analytics preview models");
-		if (!Array.isArray(modes) || !modes.every((mode) => typeof mode === "string"))
-			throw new Error("Invalid analytics preview modes");
-		if (!Array.isArray(ports) || !ports.every((port) => typeof port === "string"))
-			throw new Error("Invalid analytics preview ports");
-		return getAnalyticsPreview(models, modes, ports);
-	});
+	ipcMain.handle(Channels.analyticsPreviewGet, () => getAnalyticsPreview());
 	ipcMain.handle(Channels.analyticsSet, (_event, enabled: unknown) => {
 		if (typeof enabled !== "boolean") throw new Error("Invalid analytics preference");
 		setAnalyticsEnabled(enabled);

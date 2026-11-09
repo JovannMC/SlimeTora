@@ -5,6 +5,7 @@
 	import { t, locales, locale, changeLocale } from "#lib/lang/index";
 	import { error } from "#lib/log/index";
 	import { completeFirstRun } from "#lib/store/settings";
+	import Tooltip from "#lib/components/settings/Tooltip.svelte";
 
 	async function skipOnboarding() {
 		try {
@@ -40,13 +41,15 @@
 	<div class="flex w-full flex-col items-center gap-6 bg-panel p-8">
 		<p class="w-150 text-text-alt">{$t("onboarding.setup")}</p>
 		<div class="flex flex-row gap-4">
-			<Button
-				type="onboarding"
-				label={$t("onboarding.start")}
-				background="secondary"
-				onClick={() => goto("/onboarding/setup")}
-				disabled
-			/>
+			<Tooltip content={$t("onboarding.start_tooltip")} position="up">
+				<Button
+					type="onboarding"
+					label={$t("onboarding.start")}
+					background="secondary"
+					onClick={() => goto("/onboarding/setup")}
+					disabled
+				/>
+			</Tooltip>
 			<Button type="onboarding" label={$t("onboarding.skip")} background="button" onClick={skipOnboarding} />
 		</div>
 	</div>

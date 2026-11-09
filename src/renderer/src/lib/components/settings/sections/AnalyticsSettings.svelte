@@ -79,7 +79,7 @@
 			/>
 			<a
 				class="flex items-center justify-center gap-2 rounded-md bg-quaternary px-4 py-2 transition-colors hover:bg-tertiary/60 active:bg-tertiary/30"
-				href={`${PRIVALYTICS_ORIGIN}/projects/slimetora`}
+				href={PRIVALYTICS_ORIGIN}
 				target="_blank"
 				rel="noreferrer"
 			>

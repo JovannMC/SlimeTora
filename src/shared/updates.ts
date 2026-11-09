@@ -1,7 +1,11 @@
 import { GITHUB_URL } from "./consts";
 
 export type TranslationFile = Record<string, unknown>;
-export type LanguageData = { bundled: Record<string, TranslationFile>; downloaded: Record<string, TranslationFile> };
+export type LanguageData = {
+	bundled: Record<string, TranslationFile>;
+	downloaded: Record<string, TranslationFile>;
+	localFirst?: boolean;
+};
 export type AppUpdate = { version: string; url: string } | null;
 
 const VERSION = /^(?:v)?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/;
@@ -73,10 +77,13 @@ export function validateTranslation(value: unknown, english: TranslationFile): T
 
 export function findTranslation(data: LanguageData, locale: string, key: string): string | undefined {
 	// the downloaded english file can be used to correct the bundled english file if needed, but the bundled english file is always the fallback for keys missing from the downloaded english file
-	const layers =
-		locale === "en-US"
-			? [data.downloaded["en-US"], data.bundled["en-US"]]
-			: [data.downloaded[locale], data.bundled[locale], data.downloaded["en-US"], data.bundled["en-US"]];
+	const localeLayers = data.localFirst
+		? [data.bundled[locale], data.downloaded[locale]]
+		: [data.downloaded[locale], data.bundled[locale]];
+	const englishLayers = data.localFirst
+		? [data.bundled["en-US"], data.downloaded["en-US"]]
+		: [data.downloaded["en-US"], data.bundled["en-US"]];
+	const layers = locale === "en-US" ? englishLayers : [...localeLayers, ...englishLayers];
 
 	for (const layer of layers) {
 		const value = key.split(".").reduce<unknown>((current, part) => {

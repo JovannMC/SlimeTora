@@ -86,7 +86,7 @@ export async function getLanguages(): Promise<LanguageData> {
 		const saved = await readCached(locale, base["en-US"]!);
 		if (saved) downloaded[locale] = saved;
 	}
-	return { bundled: base, downloaded };
+	return { bundled: base, downloaded, localFirst: Boolean(process.env.VITE_DEV_SERVER_URL) };
 }
 
 export async function checkLanguages(): Promise<number> {

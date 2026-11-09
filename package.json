@@ -48,22 +48,22 @@
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
-		"@iconify/svelte": "^5.2.3",
-		"@types/node": "^24.10.1",
-		"@types/three": "^0.186.0",
-		"concurrently": "^10.0.6",
-		"electron": "^44.9.1",
+		"@iconify/svelte": "^5.2.4",
+		"@types/node": "^24.19.2",
+		"@types/three": "^0.187.0",
+		"concurrently": "^10.0.7",
+		"electron": "^45.2.3",
 		"electron-builder": "^26.18.0",
 		"esbuild": "^0.28.2",
-		"eslint": "^10.13.0",
+		"eslint": "^10.14.0",
 		"eslint-config-prettier": "^10.1.8",
-		"globals": "^17.13.0",
+		"globals": "^17.14.0",
 		"prettier": "^3.9.10",
 		"prettier-plugin-organize-imports": "^4.3.0",
 		"prettier-plugin-svelte": "^4.1.1",
 		"prettier-plugin-tailwindcss": "^0.8.1",
 		"typescript": "^6.0.3",
-		"typescript-eslint": "^8.72.0",
+		"typescript-eslint": "^8.72.1",
 		"wait-on": "^9.5.1"
 	},
 	"allowScripts": {
@@ -85,6 +85,6 @@
 		"quaternion": "^2.2.0",
 		"rand-seed": "^3.0.0",
 		"systeminformation": "^5.33.19",
-		"three": "^0.186.1"
+		"three": "^0.187.0"
 	}
 }

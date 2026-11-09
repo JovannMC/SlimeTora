@@ -30,6 +30,32 @@ permissions:
     contents: read
 
 jobs:
+    release_version:
+        name: Check release version
+        runs-on: ubuntu-24.04
+        outputs:
+            changed: ${{ steps.version.outputs.changed }}
+            tag: ${{ steps.version.outputs.tag }}
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  fetch-depth: 0
+
+            - name: Compare package version with the pushed commit's base
+              id: version
+              if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+              env:
+                  BASE_SHA: ${{ github.event.before }}
+              run: |
+                  current="$(node -p "require('./package.json').version")"
+                  previous="$(git show "$BASE_SHA:package.json" | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).version")"
+                  echo "tag=v$current" >> "$GITHUB_OUTPUT"
+                  if [ "$current" != "$previous" ]; then
+                    echo "changed=true" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "changed=false" >> "$GITHUB_OUTPUT"
+                  fi
+
     verify:
         strategy:
             fail-fast: false
@@ -114,8 +140,8 @@ jobs:
                   if-no-files-found: error
 
     release:
-        if: startsWith(github.ref, 'refs/tags/v')
-        needs: verify
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.release_version.outputs.changed == 'true')
+        needs: [release_version, verify]
         runs-on: ubuntu-24.04
         permissions:
             contents: write
@@ -132,8 +158,9 @@ jobs:
               uses: softprops/action-gh-release@v3
               with:
                   token: ${{ secrets.GITHUB_TOKEN }}
-                  tag_name: ${{ github.ref_name }}
+                  tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || needs.release_version.outputs.tag }}
+                  target_commitish: ${{ github.sha }}
                   draft: true
-                  prerelease: ${{ contains(github.ref_name, '-') }}
+                  prerelease: ${{ contains(startsWith(github.ref, 'refs/tags/v') && github.ref_name || needs.release_version.outputs.tag, '-') }}
                   files: release-assets/*
                   fail_on_unmatched_files: true

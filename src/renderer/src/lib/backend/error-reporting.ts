@@ -70,8 +70,8 @@ export function classifyBackendError(value: SerializedBackendError): BackendErro
 		return {
 			key: "serial_port",
 			params: {
-				port: context.endpointId ? ` on ${context.endpointId}` : "",
-				error: nativeCode ?? code ?? value.message,
+				tracker: context.trackerId ? ` (${context.trackerId})` : "",
+				error: `${nativeCode ?? code ?? value.message}${context.operation ? ` for ${context.operation}` : ""}`,
 			},
 			persistent: true,
 		};
@@ -80,21 +80,27 @@ export function classifyBackendError(value: SerializedBackendError): BackendErro
 		return {
 			key: "bluetooth",
 			params: {
-				device: context.endpointId ? ` (${context.endpointId})` : "",
-				state: context.adapterState ? `; adapter state: ${context.adapterState}` : "",
-				error: nativeCode ?? code ?? value.message,
+				tracker: context.trackerId ? ` (${context.trackerId})` : "",
+				state: context.adapterState ? `, adapter state: ${context.adapterState}` : "",
+				error: `${nativeCode ?? code ?? value.message}${context.operation ? ` for ${context.operation}` : ""}`,
 			},
 			persistent: true,
 		};
 	}
 	if (code === "DECODE_FAILED") {
-		return { key: "decode_failed", params: { error: value.message }, persistent: false };
+		return {
+			key: "decode_failed",
+			params: {
+				tracker: context.trackerId ? ` (${context.trackerId})` : "",
+				error: value.message,
+			},
+			persistent: false,
+		};
 	}
 	return {
 		key: "failed",
 		params: {
 			operation: context.operation ? ` (${context.operation})` : "",
-			endpoint: context.endpointId ? ` on ${context.endpointId}` : "",
 			error: value.message,
 		},
 		persistent: isTransportFailure || Boolean(context.adapterState),

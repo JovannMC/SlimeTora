@@ -347,6 +347,12 @@ async function createBackend(): Promise<HaritoraX> {
 	backend.on("error", (event) => {
 		if (enabled && generation === instanceGeneration) {
 			const serialized = serializeBackendError(event.error);
+			const trackerIds = event.endpointId
+				? (backend?.getDevices() ?? [])
+						.filter((device) => device.endpointId === event.endpointId)
+						.flatMap((device) => device.trackers.map((tracker) => tracker.trackerId))
+						.join(", ")
+				: "";
 			send("error", {
 				error: {
 					...serialized,
@@ -354,6 +360,7 @@ async function createBackend(): Promise<HaritoraX> {
 						...(serialized.context ?? {}),
 						...(event.connection ? { connection: event.connection } : {}),
 						...(event.endpointId ? { endpointId: event.endpointId } : {}),
+						...(trackerIds ? { trackerId: trackerIds } : {}),
 						...(event.operation ? { operation: event.operation } : {}),
 						...(event.characteristic ? { characteristic: event.characteristic } : {}),
 						...(event.command ? { command: event.command } : {}),

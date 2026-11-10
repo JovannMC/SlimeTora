@@ -2,6 +2,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { error } from "#lib/log/index";
+	import type { Quaternion } from "haritorax-interpreter";
 	import * as THREE from "three";
 	import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 	import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -11,7 +12,7 @@
 	import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
 
 	type Props = {
-		rotation: number[];
+		rotation: Quaternion;
 		acceleration: number[];
 		fps: number;
 	};
@@ -34,7 +35,8 @@
 	let visible = false;
 	let focused = false;
 	const quaternion = new THREE.Quaternion();
-	const euler = new THREE.Euler();
+	const sourceToScene = new THREE.Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
+	const meshToCase = new THREE.Quaternion(0, 0, 1, 0);
 	const gravity = new THREE.Vector3();
 	const gravityEnd = new THREE.Vector3();
 
@@ -42,7 +44,7 @@
 	let previousMotion: number[] = [];
 
 	$effect(() => {
-		const motion = [...rotation, ...acceleration];
+		const motion = [rotation.x, rotation.y, rotation.z, rotation.w, ...acceleration];
 		if (motion.length !== previousMotion.length || motion.some((value, index) => value !== previousMotion[index])) {
 			previousMotion = motion;
 			scheduleRender();
@@ -69,6 +71,8 @@
 		const height = 200;
 		camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
 		camera.position.z = 5;
+		camera.position.y = 2;
+		camera.lookAt(0, 0, 0);
 
 		renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false });
 		renderer.setSize(width, height);
@@ -189,15 +193,8 @@
 		lastFrameTime = currentTime;
 
 		if (trackerModel) {
-			euler.set(
-				THREE.MathUtils.degToRad(rotation[0] ?? 0),
-				THREE.MathUtils.degToRad(rotation[1] ?? 0),
-				THREE.MathUtils.degToRad(rotation[2] ?? 0),
-				"XYZ",
-			);
-			quaternion.setFromEuler(euler);
-
-			trackerModel.quaternion.copy(quaternion);
+			quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w).normalize().premultiply(sourceToScene);
+			trackerModel.quaternion.copy(quaternion).multiply(meshToCase);
 
 			if (gravityLine) {
 				gravity.set(acceleration[0] ?? 0, acceleration[1] ?? 0, acceleration[2] ?? 0);

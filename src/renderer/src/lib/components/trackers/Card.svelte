@@ -192,7 +192,11 @@
 				{#await import("./TrackerVisualization.svelte")}
 					<img src="/tracker.png" alt="Tracker" class="mx-auto mt-2" style="width: 150px;" />
 				{:then { default: TrackerVisualization }}
-					<TrackerVisualization {rotation} {acceleration} fps={visualizationFPS} />
+					<TrackerVisualization
+						rotation={$motion.quaternion}
+						acceleration={$motion.acceleration}
+						fps={visualizationFPS}
+					/>
 				{/await}
 			{:else}
 				<img src="/tracker.png" alt="Tracker" class="mx-auto mt-2" style="width: 150px;" />

@@ -248,10 +248,13 @@ export function attachNotifications(): () => void {
 			}
 		}),
 		listen("imu", ({ trackerId, rotation, acceleration }) => {
-			const euler = new BetterQuaternion(rotation.w, rotation.x, rotation.y, rotation.z).toEuler();
+			const euler = new BetterQuaternion(rotation.w, rotation.x, rotation.y, rotation.z)
+				.normalize()
+				.toEuler("XYZ");
 
 			setTrackerMotion(trackerId, {
 				rotation: euler.map((value) => value * (180 / Math.PI)),
+				quaternion: rotation,
 				acceleration: [acceleration.x, acceleration.y, acceleration.z],
 			});
 		}),

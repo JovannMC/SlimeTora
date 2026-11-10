@@ -11,7 +11,7 @@ allowBuilds:
     electron-winstaller: true
 
 minimumReleaseAgeExclude:
-    - haritorax-interpreter@4.2.0
+    - haritorax-interpreter@4.2.1
 
 overrides:
     # stupid dumb electron builder using usocker which is stupid old causing native compilation errors for noble

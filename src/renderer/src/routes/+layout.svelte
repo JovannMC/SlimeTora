@@ -16,7 +16,7 @@
 	import { initialized, initTranslations, t } from "#lib/lang/index";
 	import { captureUncaughtErrors, error, info, setLoggingMode } from "#lib/log/index";
 	import "#lib/api/icons";
-	import { registerBridge } from "#lib/api/bridge";
+	import { getBridge, registerBridge } from "#lib/api/bridge";
 	import { electronBridge } from "#lib/api/electronBridge";
 	import { attachNotifications } from "#lib/backend/notifications";
 	import { attachMotionVisibility } from "#lib/backend/motion-visibility";
@@ -24,6 +24,7 @@
 	import { attachBleTargets } from "#lib/backend/ble-targets";
 	import {
 		advanced,
+		customThemes,
 		firstRun,
 		program,
 		restartRequired,
@@ -55,9 +56,27 @@
 	onNavigate((event) => currentPath.set(event.to?.url.pathname ?? "/"));
 
 	onMount(() => {
-		const stopTheme = program.subscribe((settings) => {
-			document.documentElement.dataset.theme = settings.theme ?? "slimetora";
-		});
+		const customThemeStyle = document.createElement("style");
+		customThemeStyle.dataset.customThemes = "true";
+		document.head.append(customThemeStyle);
+
+		const applyTheme = (theme: string) => {
+			document.documentElement.dataset.theme = theme || "default";
+			const customTheme = get(customThemes).find((entry) => entry.id === theme);
+			customThemeStyle.textContent = customTheme
+				? `:root[data-theme="${customTheme.id}"] {\n${customTheme.css}\n}`
+				: "";
+		};
+		const stopTheme = program.subscribe((settings) => applyTheme(settings.theme));
+		const stopCustomThemes = customThemes.subscribe(() => applyTheme(get(program).theme));
+		void (async () => {
+			try {
+				customThemes.set(await getBridge().getCustomThemes());
+			} catch (err) {
+				error(["themes"], `Failed to load custom themes: ${err}`);
+			}
+		})();
+
 		const detachBackendState = attachBackendState();
 		const detachBleTargets = attachBleTargets();
 		const detachNotifications = attachNotifications();
@@ -120,6 +139,9 @@
 
 		return () => {
 			stopTheme();
+			stopCustomThemes();
+			customThemeStyle.remove();
+
 			disposed = true;
 
 			detachBackendState();

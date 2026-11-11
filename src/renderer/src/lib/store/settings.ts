@@ -1,13 +1,14 @@
 import { load, type Store } from "#lib/api/store";
 import { error, info } from "#lib/log/index";
 import { FPSMode, SensorAutoCorrection, SensorMode, TrackerModel } from "#lib/types/tracker";
+import type { CustomTheme } from "$shared/ipc/channels";
 import { derived, get, writable } from "svelte/store";
 
 export type LoggingMode = "minimal" | "debug" | "all";
 
 export type ProgramSettings = {
 	locale: string;
-	theme: "default" | "v1" | "trans" | "asexual" | "rainbow" | "nonbinary" | "oled" | "forest";
+	theme: string;
 	autoUpdate: boolean;
 	checkUpdatesApp: boolean;
 	checkUpdatesLanguage: boolean;
@@ -97,6 +98,7 @@ export const advanced = writable<AdvancedSettings>({
 export const restartRequired = writable(false);
 export const firstRun = writable(false);
 export const settingsFileErrors = writable<SettingsFileError[]>([]);
+export const customThemes = writable<CustomTheme[]>([]);
 
 let config: Store | undefined;
 let hydrationComplete = false;

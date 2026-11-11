@@ -3,7 +3,7 @@
 	import { getBridge } from "#lib/api/bridge";
 	import { appUpdate, checkUpdates, updateStatus } from "#lib/updates/index";
 	import Icon from "@iconify/svelte";
-	import { program } from "#lib/store/settings";
+	import { customThemes, program } from "#lib/store/settings";
 	import Checkbox from "#lib/components/settings/Checkbox.svelte";
 	import Input from "#lib/components/settings/Input.svelte";
 	import Select from "#lib/components/settings/Select.svelte";
@@ -69,6 +69,7 @@
 					{ value: "asexual", label: "Asexual Pride" },
 					{ value: "nonbinary", label: "Nonbinary Pride" },
 					{ value: "oled", label: "OLED" },
+					...$customThemes.map(({ id, name }) => ({ value: id, label: name })),
 				]}
 				bind:selected={$program.theme}
 				icon="ri:palette-line"

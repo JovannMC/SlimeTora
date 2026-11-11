@@ -14,6 +14,8 @@ export const Channels = {
 	backendEvent: "backend:event",
 	openLogsFolder: "log:open-folder",
 	openDataFolder: "data:open-folder",
+	customThemesGet: "themes:get-custom",
+	openThemesFolder: "themes:open-folder",
 	settingGet: "setting:get",
 	settingSet: "setting:set",
 	settingDelete: "setting:delete",
@@ -62,6 +64,12 @@ export interface AnalyticsPreview {
 	connectionMode?: string[];
 }
 
+export interface CustomTheme {
+	id: string;
+	name: string;
+	css: string;
+}
+
 // api exposed to renderer on `window.slimetora`
 export interface PlatformBridge {
 	getAppInfo(): Promise<AppInfo>;
@@ -74,6 +82,7 @@ export interface PlatformBridge {
 	backend: BackendBridge;
 	openLogsFolder(): Promise<string>;
 	openDataFolder(): Promise<string>;
+	getCustomThemes(): Promise<CustomTheme[]>;
 	getSetting<T = unknown>(key: string): Promise<T | undefined>;
 	setSetting(key: string, value: unknown): Promise<void>;
 	deleteSetting(key: string): Promise<void>;

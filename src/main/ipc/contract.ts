@@ -6,6 +6,7 @@ import { getTransportCapabilities, registerBackendIpc } from "../backend";
 import { configureLogging, logsDirectory, warn, writeRecord } from "../log";
 import { deleteSetting, getSetting, setSetting } from "../store";
 import { checkApp, checkLanguages, getLanguages, openRelease } from "../updates";
+import { getCustomThemes } from "../custom-themes";
 
 function getAppInfo(): AppInfo {
 	return {
@@ -42,6 +43,7 @@ export function registerIpcHandlers(): void {
 	ipcMain.handle(Channels.capabilities, getTransportCapabilities);
 	ipcMain.handle(Channels.openLogsFolder, () => shell.openPath(logsDirectory()));
 	ipcMain.handle(Channels.openDataFolder, () => shell.openPath(app.getPath("userData")));
+	ipcMain.handle(Channels.customThemesGet, () => getCustomThemes());
 
 	registerBackendIpc();
 

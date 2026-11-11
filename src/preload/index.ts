@@ -13,6 +13,7 @@ const bridge: PlatformBridge = {
 	log: (record) => ipcRenderer.send(Channels.log, record),
 	openLogsFolder: () => ipcRenderer.invoke(Channels.openLogsFolder),
 	openDataFolder: () => ipcRenderer.invoke(Channels.openDataFolder),
+	getCustomThemes: () => ipcRenderer.invoke(Channels.customThemesGet),
 	getSetting: (key) => ipcRenderer.invoke(Channels.settingGet, key),
 	setSetting: (key, value) => ipcRenderer.invoke(Channels.settingSet, key, value),
 	deleteSetting: (key) => ipcRenderer.invoke(Channels.settingDelete, key),

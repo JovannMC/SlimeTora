@@ -185,7 +185,11 @@ export function getAnalyticsEnabled(): boolean {
 
 export function setAnalyticsEnabled(enabled: boolean): void {
 	const saved = settings();
+	const wasEnabled = saved.enabled !== false;
+	if (wasEnabled === enabled) return;
+
 	setSetting(SETTINGS_FILE, { ...saved, enabled });
+	info(["settings", "analytics"], `Anonymous analytics changed from ${wasEnabled} to ${enabled}`);
 	if (enabled && trackerGateOpen) void reportAnalytics();
 }
 

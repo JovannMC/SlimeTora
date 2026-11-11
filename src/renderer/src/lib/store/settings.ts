@@ -106,6 +106,78 @@ let writing = false;
 let pendingSettings: SavedSettings | undefined;
 let errorSequence = 0;
 let latestSaveError = "";
+let previousSettings: SavedSettings | undefined;
+let settingsChangeTimer: ReturnType<typeof setTimeout> | undefined;
+const pendingSettingChanges = new Map<string, { before: unknown; after: unknown }>();
+
+type SettingChange = { path: string; before: unknown; after: unknown };
+
+function changedSettingValues(before: unknown, after: unknown, parent = ""): SettingChange[] {
+	if (JSON.stringify(before) === JSON.stringify(after)) return [];
+	if (
+		typeof before !== "object" ||
+		before === null ||
+		Array.isArray(before) ||
+		typeof after !== "object" ||
+		after === null ||
+		Array.isArray(after)
+	) {
+		return parent ? [{ path: parent, before, after }] : [];
+	}
+
+	const changes: SettingChange[] = [];
+	for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
+		changes.push(
+			...changedSettingValues(
+				(before as Record<string, unknown>)[key],
+				(after as Record<string, unknown>)[key],
+				parent ? `${parent}.${key}` : key,
+			),
+		);
+	}
+	return changes;
+}
+
+function formatSettingValue(value: unknown): string {
+	if (value === undefined) return "unset";
+	return JSON.stringify(value) ?? String(value);
+}
+
+function logSettingChanges(changes: SettingChange[]): void {
+	for (const change of changes) {
+		const previous = pendingSettingChanges.get(change.path);
+		pendingSettingChanges.set(change.path, {
+			before: previous ? previous.before : change.before,
+			after: change.after,
+		});
+	}
+	if (settingsChangeTimer) clearTimeout(settingsChangeTimer);
+
+	settingsChangeTimer = setTimeout(() => {
+		const changed = [...pendingSettingChanges.entries()].sort(([left], [right]) => left.localeCompare(right));
+		pendingSettingChanges.clear();
+		settingsChangeTimer = undefined;
+
+		const themeChange = changed.find(([path]) => path === "program.theme");
+		if (themeChange && JSON.stringify(themeChange[1].before) !== JSON.stringify(themeChange[1].after)) {
+			info(
+				["settings", "theme"],
+				`Theme changed from ${formatSettingValue(themeChange[1].before)} to ${formatSettingValue(themeChange[1].after)}`,
+			);
+		}
+
+		const otherChanges = changed
+			.filter(
+				([path, change]) =>
+					path !== "program.theme" && JSON.stringify(change.before) !== JSON.stringify(change.after),
+			)
+			.map(
+				([path, change]) =>
+					`${path}: ${formatSettingValue(change.before)} -> ${formatSettingValue(change.after)}`,
+			);
+		if (otherChanges.length > 0) info(["settings", "changed"], `Updated settings: ${otherChanges.join(", ")}`);
+	}, 300);
+}
 
 function currentSettings(): SavedSettings {
 	return {
@@ -176,8 +248,11 @@ export async function completeFirstRun(): Promise<void> {
 	if (!config || !get(firstRun)) return;
 
 	try {
-		await config.set("settings", currentSettings());
+		const initialSettings = currentSettings();
+		await config.set("settings", initialSettings);
 		firstRun.set(false);
+		info(["settings"], "Initial settings configured");
+		info(["settings", "theme"], `Initial theme selected: ${initialSettings.program.theme}`);
 		scheduleSave(currentSettings());
 	} catch (err) {
 		reportFileError("save", String(err));
@@ -191,6 +266,14 @@ derived([program, connection, tracker, advanced], ([$program, $connection, $trac
 	tracker: $tracker,
 	advanced: $advanced,
 })).subscribe((settings) => {
-	if (!hydrationComplete || get(firstRun)) return;
+	if (!hydrationComplete || get(firstRun)) {
+		previousSettings = structuredClone(settings);
+		return;
+	}
+	if (previousSettings) {
+		const changed = changedSettingValues(previousSettings, settings);
+		if (changed.length > 0) logSettingChanges(changed);
+	}
+	previousSettings = structuredClone(settings);
 	scheduleSave(settings);
 });

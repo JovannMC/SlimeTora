@@ -3,10 +3,10 @@ import { isLogRecord } from "$shared/log/index";
 import { app, ipcMain, shell } from "electron";
 import { getAnalyticsEnabled, getAnalyticsPreview, noteAnalyticsSetupChanged, setAnalyticsEnabled } from "../analytics";
 import { getTransportCapabilities, registerBackendIpc } from "../backend";
+import { getCustomThemes } from "../custom-themes";
 import { configureLogging, logsDirectory, warn, writeRecord } from "../log";
 import { deleteSetting, getSetting, setSetting } from "../store";
 import { checkApp, checkLanguages, getLanguages, openRelease } from "../updates";
-import { getCustomThemes } from "../custom-themes";
 
 function getAppInfo(): AppInfo {
 	return {

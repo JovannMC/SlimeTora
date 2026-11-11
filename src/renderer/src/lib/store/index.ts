@@ -67,6 +67,7 @@ export function saveTrackerConfig(tracker: TrackerSave): Promise<void> {
 	return trackersLoaded
 		.then(async () => {
 			let changed = false;
+			let changedFields: string[] = [];
 			await updateTrackerStore<Record<string, TrackerSave>>("trackers", (current) => {
 				const settings = current ?? {};
 				const saved = settings[tracker.id];
@@ -81,12 +82,30 @@ export function saveTrackerConfig(tracker: TrackerSave): Promise<void> {
 					return settings;
 
 				changed = true;
+				const previousCorrections = saved?.settings?.dynamicCalibration ?? [];
+				const nextCorrections = tracker.settings?.dynamicCalibration ?? [];
+				changedFields = !saved
+					? ["new configuration"]
+					: [
+							...(saved.name !== tracker.name ? ["name"] : []),
+							...(saved.connection_mode !== tracker.connection_mode ? ["connection_mode"] : []),
+							...(saved.tracker_type !== tracker.tracker_type ? ["tracker_type"] : []),
+							...(saved.bodyPart !== tracker.bodyPart ? ["bodyPart"] : []),
+							...(saved.settings?.fps !== tracker.settings?.fps ? ["settings.fps"] : []),
+							...(saved.settings?.mode !== tracker.settings?.mode ? ["settings.mode"] : []),
+							...(JSON.stringify(previousCorrections) !== JSON.stringify(nextCorrections)
+								? ["settings.dynamicCalibration"]
+								: []),
+							...(saved.settings?.emulatedFeet !== tracker.settings?.emulatedFeet
+								? ["settings.emulatedFeet"]
+								: []),
+						];
 				return { ...settings, [tracker.id]: tracker };
 			});
 
 			if (!changed) return;
 			knownTrackers.update((trackers) => [...trackers.filter((saved) => saved.id !== tracker.id), tracker]);
-			info(["store"], `Tracker ${tracker.id} saved to trackers.json`);
+			info(["store", "trackers"], `Saved tracker ${tracker.id} config changes: ${changedFields.join(", ")}`);
 		})
 		.catch((e) => {
 			error(["store"], `Failed to save tracker ${tracker.id} to trackers.json: ${e}`);

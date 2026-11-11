@@ -207,10 +207,24 @@
 			};
 			updateTrackerSettings(current, appliedSettings);
 			setFormSettings(appliedSettings);
+			const appliedDetails = [
+				...(appliedFields.has("fpsMode") ? [`fpsMode: ${base.fpsMode} -> ${appliedSettings.fpsMode}`] : []),
+				...(appliedFields.has("sensorMode")
+					? [`sensorMode: ${base.sensorMode} -> ${appliedSettings.sensorMode}`]
+					: []),
+				...(appliedFields.has("sensorAutoCorrection")
+					? [
+							`sensorAutoCorrection: [${base.sensorAutoCorrection.join(", ")}] -> [${appliedSettings.sensorAutoCorrection.join(", ")}]`,
+						]
+					: []),
+				...(appliedFields.has("ankleMotionDetection")
+					? [`ankleMotionDetection: ${base.ankleMotionDetection} -> ${appliedSettings.ankleMotionDetection}`]
+					: []),
+			];
 
 			info(
 				["trackers", "settings"],
-				`Tracker ${current.id}: applied [${result.applied.join(", ")}], unsupported [${result.unsupported.join(", ")}]`,
+				`Tracker ${current.id}: applied [${appliedDetails.join(", ")}], unsupported [${result.unsupported.join(", ")}]`,
 			);
 			if (result.unsupported.length > 0 || (result.failed?.length ?? 0) > 0) {
 				const allUnsupported = [...result.unsupported, ...(result.failed ?? [])];

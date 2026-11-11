@@ -5,6 +5,11 @@
 	--color-panel: var(--panel);
 	--color-text: var(--text);
 	--color-text-alt: var(--text-alt);
+	--color-on-primary: var(--on-primary);
+	--color-on-secondary: var(--on-secondary);
+	--color-on-tertiary: var(--on-tertiary);
+	--color-on-quaternary: var(--on-quaternary);
+	--color-on-button: var(--on-button);
 
 	--color-button: var(--button);
 	--color-card: var(--card);
@@ -26,6 +31,11 @@
 	--panel: #3b3c40;
 	--text: #ffffff;
 	--text-alt: rgba(255, 255, 255, 0.75);
+	--on-primary: #ffffff;
+	--on-secondary: #ffffff;
+	--on-tertiary: #ffffff;
+	--on-quaternary: #ffffff;
+	--on-button: #ffffff;
 
 	--button: var(--tertiary);
 	--card: var(--quaternary);
@@ -58,6 +68,110 @@
 	--slimetora-gradient: var(--primary);
 	--slimetora-gradient-alt: rgba(20, 144, 245, 0.34);
 	--brand-glow: linear-gradient(135deg, #1490f5 0%, #78c3ff 100%);
+	--status-glow: transparent;
+}
+
+:root[data-theme="forest"] {
+	--body: #101a17;
+	--panel: #1c2b25;
+	--card: #263a30;
+	--primary: #65c98f;
+	--secondary: #b9d96c;
+	--secondary-alt: #dcedac;
+	--on-primary: #0c2014;
+	--on-secondary: #202b0c;
+	--tertiary: #355442;
+	--quaternary: #2c4537;
+	--slimetora-gradient: linear-gradient(180deg, #b9d96c 0%, #65c98f 100%);
+	--slimetora-gradient-alt: linear-gradient(180deg, rgb(185 217 108 / 26%) 0%, rgb(101 201 143 / 26%) 100%);
+	--brand-glow: linear-gradient(135deg, #b9d96c 0%, #65c98f 100%);
+	--status-glow:
+		radial-gradient(ellipse 65% 120% at 0% 50%, #b9d96c 0%, transparent 100%),
+		radial-gradient(ellipse 75% 130% at 100% 0%, #65c98f 0%, transparent 100%);
+}
+
+:root[data-theme="trans"] {
+	--body: #111827;
+	--panel: #1b2638;
+	--card: #24334a;
+	--primary: #5bcefa;
+	--secondary: #f5a9b8;
+	--secondary-alt: #ffd5de;
+	--on-primary: #10202a;
+	--on-secondary: #302027;
+	--tertiary: #30435d;
+	--quaternary: #263950;
+	--slimetora-gradient: linear-gradient(180deg, #5bcefa 0%, #f5a9b8 25%, #ffffff 50%, #f5a9b8 75%, #5bcefa 100%);
+	--slimetora-gradient-alt: linear-gradient(
+		180deg,
+		rgb(91 206 250 / 28%),
+		rgb(245 169 184 / 28%),
+		rgb(255 255 255 / 28%)
+	);
+	--brand-glow: linear-gradient(135deg, #5bcefa 0%, #f5a9b8 35%, #ffffff 50%, #f5a9b8 65%, #5bcefa 100%);
+	--status-glow:
+		radial-gradient(ellipse 65% 120% at 0% 50%, #5bcefa 0%, transparent 100%),
+		radial-gradient(ellipse 75% 130% at 100% 0%, #f5a9b8 0%, transparent 100%);
+}
+
+:root[data-theme="asexual"] {
+	--body: #15131b;
+	--panel: #24212d;
+	--card: #302b3b;
+	--primary: #800080;
+	--secondary: #a3a3a3;
+	--secondary-alt: #ffffff;
+	--on-primary: #ffffff;
+	--on-secondary: #171717;
+	--tertiary: #443a54;
+	--quaternary: #352d43;
+	--slimetora-gradient: linear-gradient(180deg, #000000 0%, #a3a3a3 33%, #ffffff 66%, #800080 100%);
+	--slimetora-gradient-alt: linear-gradient(
+		180deg,
+		rgb(0 0 0 / 25%),
+		rgb(163 163 163 / 25%),
+		rgb(255 255 255 / 25%),
+		rgb(128 0 128 / 25%)
+	);
+	--brand-glow: linear-gradient(135deg, #000000 0%, #a3a3a3 33%, #ffffff 66%, #800080 100%);
+	--status-glow:
+		radial-gradient(ellipse 65% 120% at 0% 50%, #800080 0%, transparent 100%),
+		radial-gradient(ellipse 75% 130% at 100% 0%, #a3a3a3 0%, transparent 100%);
+}
+
+:root[data-theme="nonbinary"] {
+	--body: #191720;
+	--panel: #282431;
+	--card: #352f40;
+	--primary: #9c59d1;
+	--secondary: #fff430;
+	--secondary-alt: #ffffff;
+	--on-primary: #ffffff;
+	--on-secondary: #242200;
+	--tertiary: #4b4057;
+	--quaternary: #3b3347;
+	--slimetora-gradient: linear-gradient(180deg, #fff430 0%, #ffffff 33%, #9c59d1 66%, #2d2d2d 100%);
+	--slimetora-gradient-alt: linear-gradient(
+		180deg,
+		rgb(255 244 48 / 28%),
+		rgb(255 255 255 / 28%),
+		rgb(156 89 209 / 28%),
+		rgb(45 45 45 / 28%)
+	);
+	--brand-glow: linear-gradient(135deg, #fff430 0%, #ffffff 33%, #9c59d1 66%, #2d2d2d 100%);
+	--status-glow:
+		radial-gradient(ellipse 65% 120% at 0% 50%, #fff430 0%, transparent 100%),
+		radial-gradient(ellipse 75% 130% at 100% 0%, #9c59d1 0%, transparent 100%);
+}
+
+:root[data-theme="oled"] {
+	--body: #000000;
+	--panel: #070707;
+	--card: #151518;
+	--tertiary: #111111;
+	--quaternary: #191919;
+	--on-primary: #ffffff;
+	--brand-glow: transparent;
 	--status-glow: transparent;
 }
 

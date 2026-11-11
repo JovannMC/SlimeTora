@@ -64,6 +64,11 @@
 				options={[
 					{ value: "default", label: "SlimeTora" },
 					{ value: "v1", label: "SlimeTora v1 (legacy)" },
+					{ value: "forest", label: "Forest" },
+					{ value: "trans", label: "Trans Pride" },
+					{ value: "asexual", label: "Asexual Pride" },
+					{ value: "nonbinary", label: "Nonbinary Pride" },
+					{ value: "oled", label: "OLED" },
 				]}
 				bind:selected={$program.theme}
 				icon="ri:palette-line"

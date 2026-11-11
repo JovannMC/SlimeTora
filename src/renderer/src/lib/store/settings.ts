@@ -7,7 +7,7 @@ export type LoggingMode = "minimal" | "debug" | "all";
 
 export type ProgramSettings = {
 	locale: string;
-	theme: "default" | "v1";
+	theme: "default" | "v1" | "trans" | "asexual" | "rainbow" | "nonbinary" | "oled" | "forest";
 	autoUpdate: boolean;
 	checkUpdatesApp: boolean;
 	checkUpdatesLanguage: boolean;

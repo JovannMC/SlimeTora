@@ -56,7 +56,7 @@
 
 	onMount(() => {
 		const stopTheme = program.subscribe((settings) => {
-			document.documentElement.dataset.theme = settings.theme === "v1" ? "v1" : "default";
+			document.documentElement.dataset.theme = settings.theme ?? "slimetora";
 		});
 		const detachBackendState = attachBackendState();
 		const detachBleTargets = attachBleTargets();

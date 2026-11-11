@@ -3,13 +3,13 @@
 	import clsx from "clsx";
 
 	const backgrounds = {
-		primary: "bg-primary hover:bg-primary/70 active:bg-primary/50",
-		secondary: "bg-secondary hover:bg-secondary/70 active:bg-secondary/50",
-		tertiary: "bg-tertiary hover:bg-tertiary/70 active:bg-tertiary/50",
-		quaternary: "bg-quaternary hover:bg-tertiary/60 active:bg-tertiary/30",
-		button: "bg-button hover:bg-button/70 active:bg-button/50",
-		danger: "bg-red-500 hover:bg-red-500/70 active:bg-red-500/50",
-		warning: "bg-yellow-500 hover:bg-yellow-500/70 active:bg-yellow-500/50",
+		primary: "bg-primary text-on-primary hover:bg-primary/70 active:bg-primary/50",
+		secondary: "bg-secondary text-on-secondary hover:bg-secondary/70 active:bg-secondary/50",
+		tertiary: "bg-tertiary text-on-tertiary hover:bg-tertiary/70 active:bg-tertiary/50",
+		quaternary: "bg-quaternary text-on-quaternary hover:bg-tertiary/60 active:bg-tertiary/30",
+		button: "bg-button text-on-button hover:bg-button/70 active:bg-button/50",
+		danger: "bg-red-500 text-white hover:bg-red-500/70 active:bg-red-500/50",
+		warning: "bg-yellow-500 text-black hover:bg-yellow-500/70 active:bg-yellow-500/50",
 	};
 
 	type Props = {

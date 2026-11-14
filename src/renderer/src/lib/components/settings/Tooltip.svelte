@@ -18,6 +18,7 @@
 	const POSITIONS: TooltipPosition[] = ["up", "down", "left", "right"];
 
 	let showTooltip = $state(false);
+	let focused = $state(false);
 	let hoverable: HTMLElement;
 	let tooltipEl: HTMLElement | undefined = $state();
 	let tooltipStyle = $state({ top: 0, left: 0 });
@@ -73,24 +74,34 @@
 	}
 
 	$effect(() => {
-		if (showTooltip) setTimeout(updateTooltipPosition, 0);
+		if (showTooltip || focused) setTimeout(updateTooltipPosition, 0);
 	});
 </script>
 
 <div
-	class="relative inline-block"
+	class="focus-within-visible:outline focus-within-visible:outline-2 focus-within-visible:outline-secondary relative inline-block"
+	role="group"
 	onmouseenter={() => (showTooltip = true)}
 	onmouseleave={() => (showTooltip = false)}
+	onfocusin={() => (focused = true)}
+	onfocusout={(event) => {
+		if (!hoverable.contains(event.relatedTarget as Node | null)) focused = false;
+	}}
 	bind:this={hoverable}
-	role="tooltip"
 >
 	{#if icon}
-		<Icon {icon} width={20} class="cursor-pointer text-text-alt hover:text-text" />
+		<button
+			type="button"
+			aria-label={typeof content === "string" ? content : "More information"}
+			class="cursor-help rounded-sm text-text-alt hover:text-text focus-visible:outline focus-visible:outline-secondary"
+		>
+			<Icon {icon} width={20} />
+		</button>
 	{:else}
 		{@render children()}
 	{/if}
 
-	{#if showTooltip}
+	{#if showTooltip || focused}
 		<div
 			bind:this={tooltipEl}
 			class="fixed z-9999"

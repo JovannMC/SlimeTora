@@ -14,6 +14,7 @@
 
 	type Props = {
 		label?: string;
+		ariaLabel?: string;
 		className?: string;
 		icon?: string;
 		iconPosition?: "left" | "right";
@@ -26,6 +27,7 @@
 
 	let {
 		label,
+		ariaLabel,
 		className = "",
 		icon,
 		iconPosition = "left",
@@ -38,8 +40,9 @@
 </script>
 
 <button
+	aria-label={ariaLabel ?? (!label && icon ? icon : undefined)}
 	class={clsx(
-		"flex w-full items-center gap-2 transition-colors",
+		"flex w-full items-center gap-2 transition-colors focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-secondary",
 		rounded ? "rounded-full p-3" : "rounded-md px-4 py-2",
 		backgrounds[background],
 		{ button: type === "onboarding" },

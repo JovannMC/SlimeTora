@@ -7,6 +7,7 @@ import { flushPendingSettings } from "./store";
 import { createMainWindow, registerAppScheme, serveRenderer } from "./window";
 
 app.setName("SlimeTora");
+app.commandLine.appendSwitch("force_low_power_gpu");
 
 registerAppScheme();
 

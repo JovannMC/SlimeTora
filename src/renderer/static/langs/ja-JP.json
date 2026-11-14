@@ -1,8 +1,11 @@
 {
 	"meta": {
-		"version": "1",
+		"version": "1.1",
 		"language": "日本語",
-		"translators": [{ "name": "pikepikeid", "link": "https://github.com/pikepikeid", "pfp": "/pfp/pikepikeid.png" }]
+		"translators": [
+			{ "name": "pikepikeid", "link": "https://github.com/pikepikeid", "pfp": "/pfp/pikepikeid.png" },
+			{ "name": "Toko-Takamiya", "link": "https://github.com/toko-takamiya", "pfp": "/pfp/TokoTakamiya.png" }
+		]
 	},
 
 	"onboarding": {
@@ -10,6 +13,7 @@
 		"welcome": "SlimeToraは、HaritoraXを公式ソフトウェアを経由せず、SlimeVRサーバーに直接接続するためのソフトウェアです！",
 		"setup": "SlimeToraのセットアップ方法を選択してください。 プログラムのセットアップが完了したら、SlimeVRサーバーのセットアップ方法をご案内します。",
 		"start": "ガイド付きセットアップ",
+		"start_tooltip": "（まだ実装されていません）",
 		"skip": "手動セットアップ (スキップ)",
 		"next": "次へ",
 		"back": "戻る"
@@ -18,6 +22,12 @@
 	"home": {
 		"connected": "トラッカー接続済み",
 		"disconnected": "トラッカー未接続",
+		"starting": "接続中…",
+		"searching": "トラッカーを検索中…",
+		"stopping": "トラッカーを停止中…",
+		"session_error": "トラッカーエラー",
+		"retry_stop": "トラッカーの停止をリトライ中…",
+		"slimevr_not_found": "SlimeVRと接続していません",
 		"count": "{{value}} 台のトラッカーが接続済み",
 		"onboarding": "セットアップウィザード",
 		"none": "トラッカーが見つかりません！",
@@ -28,6 +38,17 @@
 			"status": "ステータス:",
 			"settings": "トラッカーの設定を開く: {{name}}",
 			"power_off": "トラッカーの電源を切る: {{name}}",
+			"error": {
+				"power_off_failed": "トラッカー {{name}} の停止に失敗: {{error}}"
+			},
+			"status": {
+				"text": "ステータス:",
+				"great": "GREAT",
+				"okay": "OKAY",
+				"bad": "BAD",
+				"very_bad": "VERY BAD",
+				"unknown": "N/A"
+			},
 			"tooltip": {
 				"mag_status": "地磁気センサーの状態。もし全てのトラッカーの状態が「GREAT」である場合、Mode 1の使用を推奨します。",
 				"rssi": "電波強度(RSSI)。 値が0に近いほど良いです。"
@@ -36,13 +57,82 @@
 		"settings": {
 			"title": "設定",
 			"collapse_expand": "すべて折りたたむ/展開する",
+			"turn_off": "すべてのトラッカーをオフにする",
+			"pairing": "トラッカーのペアリング",
 			"precise_data": "補正済みデータ",
 			"fast_data": "生データ",
 			"visualization": "トラッカーモデルの表示"
 		},
+			"bluetooth": {
+				"title": "Bluetooth (LE) ペアリング",
+				"paired_devices": "ペアリング済みデバイス",
+				"discovered_devices": "発見済みデバイス",
+				"scan_devices": "デバイスのスキャン",
+				"stop_scanning": "スキャンの停止",
+				"unpair_all": "すべての接続を切断",
+				"save": "保存",
+				"forget": "削除",
+				"pair": "Pair",
+				"connect": "接続",
+				"disconnect": "切断",
+				"unpair": "ペアリング解除",
+				"connected": "接続済み",
+				"disconnected": "切断済み",
+				"no_paired_devices": "保存済みのデバイスがありません。スキャンして追加してください。",
+				"searching": "デバイスを探しています...",
+				"no_devices_found": "デバイスが見つかりません。",
+				"body_part_unknown": "身体の部位が不明"
+			},
+			"serial": {
+				"title": "シリアル / GX(6/2) Pairing",
+				"no_ports": "シリアルポートが設定されていません。最初に接続設定でシリアルポートを設定してください。",
+				"serial_port": "シリアルポート: {{port}}",
+				"channel_num": "チャンネル {{num}}",
+				"channel_unknown": "不明のチャンネル",
+				"port_id": "ポートID {{id}}",
+				"body_part": "身体部位:",
+				"none": "None",
+				"paired": "ペアリング済み",
+				"pairing": "ペアリング中...",
+				"unpairing": "ペアリング解除中...",
+				"unpaired": "ペアリング解除済み",
+				"unknown": "不明",
+				"detected": "発見済み",
+				"pair": "ペア",
+				"unpair": "アンペア"
+			}
+		},
 		"per_tracker": {
 			"title": "{{name}} 設定",
 			"description": "このトラッカーのハードウェア設定を上書きします。 特定のトラッカーだけ地磁気状態が悪い場合に役立ちます。",
+			"info": {
+				"title": "トラッカーの情報",
+				"device": "デバイス:",
+				"model": "モデル:",
+				"connection": "接続状態:",
+				"endpoint": "エンドポイント / ポート:",
+				"bluetooth": "Bluetooth LE",
+				"serial": "シリアル / GXドングル",
+				"battery": "バッテリー:",
+				"communication": "接続方法:",
+				"switch_ble": "Bluetooth LE接続に変える",
+				"switch_serial": "シリアル / GXドングル接続に変える",
+				"power_off": "トラッカーの電源を切る"
+			},
+			"stats": {
+				"title": "トラッカーの状態",
+				"magnetometer": "磁力計:",
+				"rssi": "RSSI:",
+				"tracker_rssi": "トラッカーRSSI:",
+				"latency": "遅延:",
+				"unknown": "Unavailable"
+			},
+			"error": {
+				"apply_failed": "トラッカー設定の適用に失敗しました: {{error}}",
+				"get_failed": "トラッカーの設定の取得に失敗しました: {{error}}",
+				"settings_partial": "一部のトラッカー設定を適用できませんでした: {{settings}}",
+				"settings_unavailable": "接続されたデバイスからは設定を行うことができません。"
+			},
 			"fps": {
 				"name": "センサー通信頻度",
 				"tooltip": "トラッカーが1秒あたりにデータを送信する回数を選択します。 Bluetoothでは50 FPSに設定すると安定し、バッテリー消費も少なくなりますが、100 FPSほどスムーズではありません。"
@@ -66,6 +156,12 @@
 	},
 
 	"settings": {
+		"title": "設定",
+		"restart": "設定によっては、変更を反映させるためにトラッカー接続を再起動する必要がある場合があります。",
+		"file": {
+			"load_failed": "設定を読み込めませんでした。古いファイルはバックアップされています。: {{error}}",
+			"save_failed": "設定を保存できませんでした: {{error}}"
+		},
 		"program": {
 			"title": "アプリケーション設定",
 			"behavior": {
@@ -84,6 +180,16 @@
 					"tooltip": "トラッカーの3Dモデルのフレームレートを設定します。 値が低いほどリソースを節約できます。"
 				}
 			},
+			"appearance": {
+				"name": "外観",
+				"tooltip": "アプリの外観を変更します。",
+				"theme": {
+					"name": "テーマ"
+				},
+				"language": {
+					"name": "言語"
+				}
+			},
 			"update_settings": {
 				"name": "アップデート設定",
 				"tooltip": "アプリと翻訳のアップデート方法を管理します。",
@@ -94,7 +200,17 @@
 					"tooltip": "アプリのアップデートチャンネルを選択します。 ベータ版では最新の機能が提供されますが、バグが多い可能性があります。",
 					"stable": "安定版",
 					"beta": "ベータ版"
-				}
+				},
+				"check": "アップデートを確認",
+				"checking": "アップデートを確認中…",
+				"app_available": "SlimeTora v{{version}} に更新できます。",
+				"app_available_toast": "SlimeTora v{{version}} に更新できます。設定を確認して更新してください。",
+				"app_current": "最新の状態です。",
+				"app_failed": "更新を確認できませんでした。",
+				"language_updated": "言語ファイルの更新が完了しました。",
+				"language_current": "言語ファイルは最新の状態です。",
+				"language_failed": "言語ファイルのアップデートを確認またはインストールできませんでした。",
+				"open_download": "アップデートをダウンロードする"
 			}
 		},
 		"connection": {
@@ -106,6 +222,13 @@
 			"connection_mode": {
 				"name": "接続モード",
 				"tooltip": "トラッカーとの接続モードを選択します。 複数のモードを同時に使用できます。"
+			},
+			"available": "利用可能",
+			"unavailable": {
+				"unsupported-platform": "このプラットフォームではサポートされていません。",
+				"adapter-off": "アダプターがオフになっているか、利用できない状態です。",
+				"permission-missing": "アクセス拒否",
+				"binding-failed": "transport を起動できませんでした。"
 			},
 			"serial_ports": {
 				"name": "シリアルポート",
@@ -156,6 +279,10 @@
 		},
 		"advanced": {
 			"title": "詳細設定",
+			"show_all_ports": {
+				"name": "すべてのシリアルポートを表示する",
+				"tooltip": "プラットフォーム固有のフィルタリングを無効にし、検出されたすべてのシリアルポートを表示します。"
+			},
 			"write_logs": {
 				"name": "ログの記録",
 				"tooltip": "ディスクへのログの書き込みを有効または無効にします。"
@@ -167,10 +294,31 @@
 				"debug": "追加のデータ",
 				"all": "全データ (注意！！！)"
 			},
+			"open_data": {
+				"name": "データフォルダを開く",
+				"tooltip": "SlimeToraが設定ファイルやログなどのデータを保存しているフォルダを開きます。"
+			},
 			"open_logs": {
 				"name": "ログの保存先を開く",
 				"tooltip": "ログが保存されているフォルダを開きます。"
 			}
+		},
+		"analytics": {
+			"title": "匿名のアナリティクス",
+			"description": "匿名で利用状況を共有する - このアプリ、トラッカーの設定、およびOSのデータを、あくまでMaya（あるいはあなた！）の好奇心を満たすため、そして場合によってはアプリの改善に役立てることを目的に共有します。個人情報、ハードウェア識別子、その他の機密データは一切収集されません。",
+			"enabled": "匿名で分析データを共有する",
+			"dashboard": "公開分析データを表示する",
+			"show_details": "詳細を表示",
+			"hide_details": "詳細を非表示",
+			"payload_title": "この機能が有効になっている場合、レポートには以下の内容が含まれます:",
+			"payload_version": "アプリバージョン: {{value}}",
+			"payload_os": "オペレーティングシステム: {{value}}",
+			"payload_model": "トラッカーのモデル: {{value}}",
+			"payload_count": "トラッカーの個数: {{value}}",
+			"payload_mode": "接続モード: {{value}}",
+			"payload_id": "エンティティID: ランダムに生成されたインストールIDで、あなたと紐づけられておらず、誰にも表示されません。",
+			"payload_frequency": "接続を開始すると、最初のトラッカーが接続されてから1分後にレポートが送信されます。1分が経過する前に接続を解除した場合、レポートは送信されません。上記の情報の一部は、トラッカーが接続されている場合にのみ表示されることがあります。",
+			"unavailable": "N/A"
 		}
 	},
 
@@ -208,9 +356,16 @@
 		"about": "SlimeToraについて"
 	},
 	"toast": {
-		"success": "成功しました！",
-		"error": "エラーが発生しました。",
-		"info": "インフォメーション",
-		"warning": "警告"
+		"tracker_connection_lost": "トラッカーが切断されました: {{name}}",
+		"tracker_reconnected": "トラッカーを再接続しました: {{name}}",
+		"no_connection_mode": "接続モードが選択されていません。設定で接続モードを選択してください。",
+		"no_tracker_model": "トラッカーモデルが選択されていません。設定でトラッカーモデルを選択してください。",
+		"no_serial_ports": "シリアルポートが選択されていません。設定で、ドングルまたはトラッカーが使用しているポートを選択してください。",
+		"backend": {
+			"serial_port": "{{tracker}}のシリアル通信に失敗しました: ({{error}}). 正しいシリアルポートが選択されていること、およびデバイスが接続されており、アクセス可能であることを確認してください。",
+			"bluetooth": "{{tracker}}のBluetooth通信に失敗しました: ({{error}}{{state}}). Bluetoothが有効になっていること、SlimeToraがBluetoothを使用する権限を持っていること、そしてトラッカーの電源が入っており、近くにあることを確認してください。",
+			"failed": "{{operation}}バックエンドエラー: {{error}}",
+			"decode_failed": "接続された {{tracker}} からのデータを解析できませんでした: {{error}}"
+		}
 	}
 }

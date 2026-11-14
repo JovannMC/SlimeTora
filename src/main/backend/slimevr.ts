@@ -94,7 +94,7 @@ export class SlimeVRBridge {
 			tracker.on("error", (err) => {
 				this.#serverStates.set(device.deviceId, "error");
 				this.onServerState(device.deviceId, "error", err.message);
-				error(["backend", "slimevr"], `UDP tracker ${device.deviceId} failed:`, err);
+				error(["backend", "slimevr"], `UDP tracker ${device.deviceId} failed: ${String(err)}`);
 			});
 			tracker.on("searching-for-server", () => {
 				this.#serverStates.set(device.deviceId, "searching");
@@ -161,10 +161,10 @@ export class SlimeVRBridge {
 		const { rotation, acceleration } = sample;
 		sensor
 			.sendRotation(RotationDataType.NORMAL, new Quaternion(rotation.x, rotation.y, rotation.z, rotation.w), 0)
-			.catch((err) => error(["backend", "slimevr"], "Failed to send rotation:", err));
+			.catch((err) => error(["backend", "slimevr"], `Failed to send rotation: ${String(err)}`));
 		sensor
 			.sendAcceleration(new Vector(acceleration.x, acceleration.y, acceleration.z))
-			.catch((err) => error(["backend", "slimevr"], "Failed to send acceleration:", err));
+			.catch((err) => error(["backend", "slimevr"], `Failed to send acceleration: ${String(err)}`));
 	}
 
 	battery(battery: BatteryInfo): void {
@@ -173,7 +173,7 @@ export class SlimeVRBridge {
 
 		device.tracker
 			.changeBatteryLevel(battery.voltage / 1000, battery.level)
-			.catch((err) => error(["backend", "slimevr"], "Failed to send battery level:", err));
+			.catch((err) => error(["backend", "slimevr"], `Failed to send battery level: ${String(err)}`));
 	}
 
 	sendUserAction(deviceId: string, action: UserActionName): void {
@@ -182,7 +182,7 @@ export class SlimeVRBridge {
 
 		device.tracker
 			.sendUserAction(USER_ACTIONS[action])
-			.catch((err) => error(["backend", "slimevr"], "Failed to send user action:", err));
+			.catch((err) => error(["backend", "slimevr"], `Failed to send user action: ${String(err)}`));
 	}
 
 	async dispose(): Promise<void> {

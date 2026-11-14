@@ -13,7 +13,7 @@
 		try {
 			appVersion = (await getBridge().getAppInfo()).version;
 		} catch (err) {
-			error(["layout", "header"], "Failed to fetch app version:", err);
+			error(["layout", "header"], `Failed to fetch app version: ${String(err)}`);
 		}
 	});
 </script>

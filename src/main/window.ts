@@ -8,7 +8,7 @@ import { error } from "./log";
 const APP_SCHEME = "app";
 const APP_ORIGIN = `${APP_SCHEME}://bundle`;
 
-// keep in sync with `--body` in app.css
+// keep in sync with `--body` (of default theme, can't dynamically determine from themes now that we have them) in app.css
 const WINDOW_BACKGROUND = "#2c2d30";
 
 const devServerUrl = process.env.VITE_DEV_SERVER_URL;

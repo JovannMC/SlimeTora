@@ -17,7 +17,7 @@
 			const result = await getBridge().openLogsFolder();
 			if (result) throw new Error(result);
 		} catch (err) {
-			error(["settings", "advanced"], "Failed to open logs folder:", err);
+			error(["settings", "advanced"], `Failed to open logs folder: ${String(err)}`);
 			ToastManager.add({ type: "error", message: `Failed to open logs folder: ${err}` });
 		}
 	}
@@ -28,7 +28,7 @@
 			const result = await getBridge().openDataFolder();
 			if (result) throw new Error(result);
 		} catch (err) {
-			error(["settings", "advanced"], "Failed to open data folder:", err);
+			error(["settings", "advanced"], `Failed to open data folder: ${String(err)}`);
 			ToastManager.add({ type: "error", message: `Failed to open data folder: ${err}` });
 		}
 	}

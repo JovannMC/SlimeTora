@@ -129,7 +129,8 @@
 					},
 					undefined,
 					(err: unknown) => {
-						if (!destroyed) error(["trackers", "visualization"], "Error loading tracker texture:", err);
+						if (!destroyed)
+							error(["trackers", "visualization"], `Error loading tracker texture: ${String(err)}`);
 					},
 				);
 
@@ -138,7 +139,7 @@
 			},
 			undefined,
 			(err: unknown) => {
-				if (!destroyed) error(["trackers", "visualization"], "Error loading tracker model:", err);
+				if (!destroyed) error(["trackers", "visualization"], `Error loading tracker model: ${String(err)}`);
 			},
 		);
 

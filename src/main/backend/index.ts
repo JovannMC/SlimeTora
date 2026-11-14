@@ -246,13 +246,13 @@ async function loadConnections(
 
 		connections.push(createSerialConnection({ includeWired: true, heartbeatIntervalMs: interval, serialPorts }));
 	} catch (err) {
-		error(["backend", "serial"], "Serial connection unavailable:", err);
+		error(["backend", "serial"], `Serial connection unavailable: ${String(err)}`);
 	}
 
 	try {
 		connections.push(await getBleConnection());
 	} catch (err) {
-		error(["backend", "ble"], "BLE connection unavailable:", err);
+		error(["backend", "ble"], `BLE connection unavailable: ${String(err)}`);
 	}
 
 	return connections;
@@ -428,7 +428,7 @@ async function createBackend(): Promise<HaritoraX> {
 		for (const device of backend?.getDevices() ?? []) {
 			if (openEndpoints.has(device.endpointId) && slimevr.hasDevice(device.deviceId)) {
 				void track(bridgeTasks, slimevr.deviceConnected(device)).catch((err) =>
-					error(["backend", "slimevr"], `Failed to reconcile device ${device.deviceId}:`, err),
+					error(["backend", "slimevr"], `Failed to reconcile device ${device.deviceId}: ${String(err)}`),
 				);
 			}
 		}
@@ -450,7 +450,7 @@ async function createBackend(): Promise<HaritoraX> {
 		if (!deviceAfterDisconnect?.trackers.some((tracker) => tracker.connected)) {
 			pendingBridgeSamples.delete(deviceId);
 			void track(bridgeTasks, slimevr.deviceDisconnected(deviceId)).catch((err) =>
-				error(["backend", "slimevr"], `Failed to remove inactive device ${deviceId}:`, err),
+				error(["backend", "slimevr"], `Failed to remove inactive device ${deviceId}: ${String(err)}`),
 			);
 		}
 
@@ -490,7 +490,7 @@ async function createBackend(): Promise<HaritoraX> {
 		if (enabled && generation === instanceGeneration) {
 			pendingBridgeSamples.delete(deviceId);
 			void track(bridgeTasks, slimevr.deviceDisconnected(deviceId)).catch((err) =>
-				error(["backend", "slimevr"], `Failed to remove device ${deviceId}:`, err),
+				error(["backend", "slimevr"], `Failed to remove device ${deviceId}: ${String(err)}`),
 			);
 		}
 	});
@@ -526,7 +526,7 @@ async function createBackend(): Promise<HaritoraX> {
 						for (const pendingSample of pendingBridgeSamples.get(sample.deviceId)?.values() ?? [])
 							slimevr.imu(pendingSample);
 					})
-					.catch((err) => error(["backend", "slimevr"], "Failed to initialize device:", err))
+					.catch((err) => error(["backend", "slimevr"], `Failed to initialize device: ${String(err)}`))
 					.finally(() => {
 						bridgeStarting.delete(sample.deviceId);
 						pendingBridgeSamples.delete(sample.deviceId);
@@ -622,7 +622,7 @@ function startSession(options: SessionOptions): Promise<void> {
 					if (!isCurrent()) break;
 					await connectEndpoint(instance, endpoint.id);
 				} catch (err) {
-					error(["backend"], `Failed to connect to ${endpoint.displayName}:`, err);
+					error(["backend"], `Failed to connect to ${endpoint.displayName}: ${String(err)}`);
 					if (isCurrent())
 						send("error", {
 							error: {
@@ -670,7 +670,7 @@ function stopSession(powerOffTrackers = false): Promise<void> {
 
 	const pendingOperations = [...operations];
 	const cancelDiscovery = discovery.stopDiscovery().catch((err) => {
-		error(["backend"], "Failed to stop discovery:", err);
+		error(["backend"], `Failed to stop discovery: ${String(err)}`);
 	});
 	const next = transition
 		.catch(() => undefined)

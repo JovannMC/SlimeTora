@@ -40,10 +40,12 @@ export function formatRecord(record: LogRecord): string {
 }
 
 export function isLogRecord(value: unknown): value is LogRecord {
-	if (typeof value !== "object" || value === null) return false;
+	if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
 	const record = value as Partial<LogRecord>;
 	return (
 		typeof record.timestamp === "number" &&
+		Number.isFinite(record.timestamp) &&
+		Math.abs(record.timestamp) <= 8.64e15 &&
 		LOG_LEVELS.includes(record.level as LogLevel) &&
 		Array.isArray(record.categories) &&
 		record.categories.every((c) => typeof c === "string") &&

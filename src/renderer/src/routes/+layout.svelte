@@ -86,18 +86,19 @@
 		void loadPlatform();
 
 		let disposed = false;
-		let shownFileErrors = 0;
+		let lastShownFileErrorId = 0;
 
 		const showFileErrors = () => {
 			if (!get(initialized)) return;
 			const errors = get(settingsFileErrors);
-			for (const item of errors.slice(shownFileErrors)) {
+			for (const item of errors) {
+				if (item.id <= lastShownFileErrorId) continue;
 				ToastManager.add({
 					type: "error",
 					message: get(t)(`settings.file.${item.kind}_failed`, { error: item.detail }),
 				});
+				lastShownFileErrorId = item.id;
 			}
-			shownFileErrors = errors.length;
 		};
 		const stopFileErrors = settingsFileErrors.subscribe(showFileErrors);
 

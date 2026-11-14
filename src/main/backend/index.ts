@@ -343,7 +343,10 @@ async function createBackend(): Promise<HaritoraX> {
 		backend.on(event, (payload) => {
 			if (!enabled || generation !== instanceGeneration) return;
 			if (event === "tracker:connected") noteTrackerConnected();
-			if (event === "device:connected") noteAnalyticsSetupChanged();
+			if (event === "device:connected")
+				void noteAnalyticsSetupChanged().catch((err) =>
+					warn(["analytics"], `Failed to record connected device setup: ${String(err)}`),
+				);
 			send(event, payload);
 		});
 	}
@@ -435,7 +438,9 @@ async function createBackend(): Promise<HaritoraX> {
 		liveTrackers.delete(trackerId);
 		uiImuForwarding.forget(trackerId);
 		publishSnapshot();
-		noteAnalyticsSetupChanged();
+		void noteAnalyticsSetupChanged().catch((err) =>
+			warn(["analytics"], `Failed to record disconnected tracker setup: ${String(err)}`),
+		);
 		publishSession(sessionState.status, sessionState.error);
 		lastButtonAt.delete(trackerId);
 		reconnect.refresh();
@@ -498,7 +503,9 @@ async function createBackend(): Promise<HaritoraX> {
 			liveTrackers.set(sample.trackerId, device.endpointId);
 			reconnect.refresh();
 			publishSnapshot();
-			noteAnalyticsSetupChanged();
+			void noteAnalyticsSetupChanged().catch((err) =>
+				warn(["analytics"], `Failed to record live tracker setup: ${String(err)}`),
+			);
 			publishSession(sessionState.status, sessionState.error);
 		}
 
@@ -576,7 +583,9 @@ export async function getTransportCapabilities(): Promise<import("$shared/ipc/ch
 
 function startSession(options: SessionOptions): Promise<void> {
 	if (enabled) return transition;
-	noteAnalyticsConnectionStarted();
+	void noteAnalyticsConnectionStarted().catch((err) =>
+		warn(["analytics"], `Failed to initialize analytics session state: ${String(err)}`),
+	);
 	enabled = true;
 
 	const current = ++generation;

@@ -1,6 +1,7 @@
 import {
 	formatMessage,
 	formatRecord,
+	isLogRecord,
 	toCategories,
 	type LogCategory,
 	type LogLevel,
@@ -11,6 +12,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const MAX_LOG_FILES = 10;
+const MAX_PENDING_LOG_BYTES = 1024 * 1024;
 const LOG_FILE_PREFIX = "slimetora-";
 const LOG_LEVEL_WEIGHT: Record<LogLevel, number> = { trace: 0, debug: 1, info: 2, warn: 3, error: 4 };
 const MIN_LOG_WEIGHT: Record<LoggingMode, number> = { all: 0, debug: 1, minimal: 2 };
@@ -25,6 +27,12 @@ interface LoggingPreferences {
 let preferences: LoggingPreferences = { writeLogs: true, loggingMode: "minimal" };
 
 let stream: fs.WriteStream | undefined;
+let streamBackpressured = false;
+let fileLoggingFailed = false;
+let pendingLines: string[] = [];
+let pendingBytes = 0;
+let warnedAboutDroppedLogs = false;
+let fileSequence = 0;
 
 const failedConsoleStreams = new Set<NodeJS.WriteStream>();
 
@@ -73,24 +81,77 @@ function openLogFile(): fs.WriteStream {
 		fs.rmSync(path.join(dir, old), { force: true });
 	}
 
-	const name = `${LOG_FILE_PREFIX}${new Date().toISOString().replace(/[:.]/g, "-")}.log`;
-	stream = fs.createWriteStream(path.join(dir, name), { flags: "a" });
-	stream.on("error", (err) => writeToConsole("error", `[log] Failed to write log file: ${err}`));
-	return stream;
+	const name = `${LOG_FILE_PREFIX}${new Date().toISOString().replace(/[:.]/g, "-")}-${process.pid}-${fileSequence++}.log`;
+	const current = fs.createWriteStream(path.join(dir, name), { flags: "a" });
+	stream = current;
+
+	current.on("error", (err) => {
+		if (stream === current) {
+			stream = undefined;
+			streamBackpressured = false;
+			fileLoggingFailed = true;
+			pendingLines = [];
+			pendingBytes = 0;
+		}
+		writeToConsole("error", `[log] Failed to write log file: ${err}`);
+	});
+
+	current.on("drain", () => {
+		if (stream !== current) return;
+		streamBackpressured = false;
+		flushPendingLines();
+	});
+
+	return current;
+}
+function writeFileLine(line: string): void {
+	if (fileLoggingFailed) return;
+
+	const bytes = Buffer.byteLength(line);
+	if (streamBackpressured || pendingLines.length > 0) {
+		if (pendingBytes + bytes > MAX_PENDING_LOG_BYTES) {
+			if (!warnedAboutDroppedLogs) {
+				warnedAboutDroppedLogs = true;
+				writeToConsole("warn", "[log] Dropping file log records because the write queue is full");
+			}
+			return;
+		}
+		pendingLines.push(line);
+		pendingBytes += bytes;
+		return;
+	}
+
+	writeFileLineNow(line);
+}
+
+function writeFileLineNow(line: string): void {
+	const current = openLogFile();
+	if (!current.write(line)) streamBackpressured = true;
+}
+
+function flushPendingLines(): void {
+	while (!streamBackpressured && pendingLines.length > 0 && !fileLoggingFailed) {
+		const line = pendingLines.shift()!;
+		pendingBytes -= Buffer.byteLength(line);
+		writeFileLineNow(line);
+	}
 }
 
 export function writeRecord(record: LogRecord): void {
-	const minimumLevel = MIN_LOG_WEIGHT[preferences.loggingMode];
-	if (LOG_LEVEL_WEIGHT[record.level] < minimumLevel) return;
-
-	const line = formatRecord(record);
-	writeToConsole(record.level, line);
-	if (!preferences.writeLogs) return;
-
 	try {
-		openLogFile().write(`${line}\n`);
+		if (!isLogRecord(record)) {
+			writeToConsole("error", "[log] Dropped invalid log record");
+			return;
+		}
+
+		const minimumLevel = MIN_LOG_WEIGHT[preferences.loggingMode];
+		if (LOG_LEVEL_WEIGHT[record.level] < minimumLevel) return;
+
+		const line = formatRecord(record);
+		writeToConsole(record.level, line);
+		if (preferences.writeLogs) writeFileLine(`${line}\n`);
 	} catch (err) {
-		writeToConsole("error", `[log] Failed to write log file: ${err}`);
+		writeToConsole("error", `[log] Failed to process log record: ${String(err)}`);
 	}
 }
 
@@ -109,20 +170,25 @@ export const info = (category: LogCategory, ...args: unknown[]) => emit("info", 
 export const warn = (category: LogCategory, ...args: unknown[]) => emit("warn", category, args);
 export const error = (category: LogCategory, ...args: unknown[]) => emit("error", category, args);
 
-export function closeLogFile(): Promise<void> {
+export async function closeLogFile(): Promise<void> {
+	while (pendingLines.length > 0 && !fileLoggingFailed) {
+		if (streamBackpressured && stream) {
+			const current = stream;
+			await new Promise<void>((resolve) => {
+				current.once("drain", resolve);
+				current.once("error", () => resolve());
+			});
+		} else {
+			flushPendingLines();
+		}
+	}
+
 	const current = stream;
 	stream = undefined;
-	if (!current || current.destroyed || current.writableFinished) return Promise.resolve();
-
-	return new Promise((resolve) => {
-		const finish = () => {
-			current.off("finish", finish);
-			current.off("error", finish);
-			resolve();
-		};
-
-		current.once("finish", finish);
-		current.once("error", finish);
+	if (!current || current.destroyed || current.writableFinished) return;
+	await new Promise<void>((resolve) => {
+		current.once("finish", resolve);
+		current.once("error", () => resolve());
 		current.end();
 	});
 }

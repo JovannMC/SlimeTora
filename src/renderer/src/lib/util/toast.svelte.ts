@@ -84,8 +84,19 @@ class ToastState {
 
 export class ToastManager {
 	static pToasts = new ToastState();
+	private static timers = new Map<number, ReturnType<typeof setTimeout>>();
 
 	public static add<T = unknown>(toastOptions: ToastOptions<T>): number {
+		if (typeof toastOptions.message === "string") {
+			const existing = this.pToasts.toasts.find(
+				(toast) =>
+					typeof toast.message === "string" &&
+					toast.type === (toastOptions.type ?? "info") &&
+					toast.message === toastOptions.message,
+			);
+			if (existing) return existing.id;
+		}
+
 		const id = this.pToasts.id();
 		const {
 			type = "info",
@@ -120,16 +131,20 @@ export class ToastManager {
 			this.pToasts.add(newToast);
 		}
 
-		setTimeout(
+		const timer = setTimeout(
 			() => {
 				this.remove(id);
 			},
 			durations.enter + durations.stay + durations.exit,
 		);
+		this.timers.set(id, timer);
 		return id;
 	}
 
 	public static remove(id: number) {
+		const timer = this.timers.get(id);
+		if (timer) clearTimeout(timer);
+		this.timers.delete(id);
 		this.pToasts.remove(id);
 	}
 

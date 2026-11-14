@@ -56,9 +56,9 @@ export function registerIpcHandlers(): void {
 
 	ipcMain.handle(Channels.analyticsGet, () => getAnalyticsEnabled());
 	ipcMain.handle(Channels.analyticsPreviewGet, () => getAnalyticsPreview());
-	ipcMain.handle(Channels.analyticsSet, (_event, enabled: unknown) => {
+	ipcMain.handle(Channels.analyticsSet, async (_event, enabled: unknown) => {
 		if (typeof enabled !== "boolean") throw new Error("Invalid analytics preference");
-		setAnalyticsEnabled(enabled);
+		await setAnalyticsEnabled(enabled);
 	});
 
 	ipcMain.handle(Channels.settingGet, (_event, key: string) => {
@@ -78,12 +78,14 @@ export function registerIpcHandlers(): void {
 		}
 		return saved;
 	});
-	ipcMain.handle(Channels.settingSet, (_event, key: string, value: unknown) => {
+	ipcMain.handle(Channels.settingSet, async (_event, key: string, value: unknown) => {
 		if (key === "analytics.json") throw new Error("Analytics settings are private to the main process");
-		setSetting(key, value);
+		await setSetting(key, value);
 		if (key === "settings.json" && typeof value === "object" && value !== null) {
 			configureLogging((value as { settings?: { advanced?: unknown } }).settings?.advanced);
-			noteAnalyticsSetupChanged();
+			void noteAnalyticsSetupChanged().catch((err) =>
+				warn(["analytics"], `Failed to update analytics after settings changed: ${String(err)}`),
+			);
 		}
 	});
 	ipcMain.handle(Channels.settingDelete, (_event, key: string) => {

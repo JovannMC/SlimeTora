@@ -66,19 +66,26 @@
 			(device) => device.deviceId === (trackerData ? trackerDeviceId(trackerData.id) : ""),
 		),
 	);
-	const trackerSnapshot = $derived(deviceSnapshot?.trackers.find((item) => item.trackerId === trackerData?.id));
+	const liveTrackerData = $derived($connectedTrackers.find((tracker) => tracker.id === trackerId));
+	const trackerSnapshot = $derived(deviceSnapshot?.trackers.find((item) => item.trackerId === trackerId));
 	const liveTracker = $derived(
 		liveSnapshot?.devices
 			.find((device) => device.deviceId === (trackerData ? trackerDeviceId(trackerData.id) : ""))
-			?.trackers.find((item) => item.trackerId === trackerData?.id),
+			?.trackers.find((item) => item.trackerId === trackerId),
 	);
-	const rssi = $derived(liveTracker?.rssi ?? trackerData?.data.rssi ?? trackerSnapshot?.rssi);
-	const sensorRssi = $derived(liveTracker?.sensorRssi ?? trackerData?.data.sensorRssi ?? trackerSnapshot?.sensorRssi);
-	const magStatus = $derived(trackerData?.data.magnetometer ?? liveTracker?.mag ?? "unknown");
+	const rssi = $derived(liveTracker?.rssi ?? liveTrackerData?.data.rssi ?? trackerSnapshot?.rssi);
+	const sensorRssi = $derived(
+		liveTracker?.sensorRssi ?? liveTrackerData?.data.sensorRssi ?? trackerSnapshot?.sensorRssi,
+	);
+	const magStatus = $derived(liveTracker?.mag ?? liveTrackerData?.data.magnetometer ?? "unknown");
 	const magStatusKey = $derived(magStatus.toLowerCase().replace("verybad", "very_bad"));
 	const nextConnection = $derived(
 		trackerData?.connection_mode === ConnectionMode.BLE ? ConnectionMode.Serial : ConnectionMode.BLE,
 	);
+
+	$effect(() => {
+		if (trackerId && !$connectedTrackers.some((tracker) => tracker.id === trackerId)) goto("/");
+	});
 
 	$effect(() => {
 		const id = trackerData?.id;

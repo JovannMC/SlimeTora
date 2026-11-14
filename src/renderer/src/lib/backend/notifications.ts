@@ -41,10 +41,29 @@ function trackersOfDevice(deviceId: string) {
 }
 
 const BUTTON_PRESS_WINDOW_MS = 750;
+const BACKEND_ERROR_REPEAT_WINDOW_MS = 5_000;
 const buttonPressTimestamps: Record<string, number[]> = {};
 const buttonActionTimeout: Record<string, ReturnType<typeof setTimeout> | null> = {};
+const recentBackendErrors = new Map<string, number>();
 
 function backendErrorToast(value: Parameters<typeof classifyBackendError>[0]) {
+	const now = Date.now();
+	const errorKey = JSON.stringify({ message: value.message, code: value.code, context: value.context });
+	const lastSeen = recentBackendErrors.get(errorKey);
+	if (lastSeen !== undefined && now - lastSeen < BACKEND_ERROR_REPEAT_WINDOW_MS) return;
+	recentBackendErrors.set(errorKey, now);
+	if (recentBackendErrors.size > 256) {
+		for (const [errorKey, timestamp] of recentBackendErrors) {
+			if (now - timestamp >= BACKEND_ERROR_REPEAT_WINDOW_MS) recentBackendErrors.delete(errorKey);
+		}
+
+		while (recentBackendErrors.size > 256) {
+			const oldestKey = recentBackendErrors.keys().next().value;
+			if (oldestKey === undefined) break;
+			recentBackendErrors.delete(oldestKey);
+		}
+	}
+
 	const { key, params, persistent } = classifyBackendError(value);
 	error(["backend", "notifications"], value);
 	if (value.context?.connection === "ble" && value.context.operation === "close") return;

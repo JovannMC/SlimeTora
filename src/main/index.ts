@@ -3,6 +3,7 @@ import { startAnalyticsReporting } from "./analytics";
 import { disposeBackend } from "./backend";
 import { registerIpcHandlers } from "./ipc/contract";
 import { closeLogFile, error } from "./log";
+import { flushPendingSettings } from "./store";
 import { createMainWindow, registerAppScheme, serveRenderer } from "./window";
 
 app.setName("SlimeTora");
@@ -27,7 +28,9 @@ void app.whenReady().then(() => {
 	if (process.env.VITE_DEV_SERVER_URL === undefined) serveRenderer();
 
 	registerIpcHandlers();
-	startAnalyticsReporting();
+	void startAnalyticsReporting().catch((err) =>
+		error(["analytics"], `Could not initialize analytics reporting: ${String(err)}`),
+	);
 	mainWindow = createMainWindow();
 
 	app.on("activate", () => {
@@ -54,10 +57,15 @@ app.on("before-quit", (event) => {
 	}, SHUTDOWN_TIMEOUT_MS);
 
 	void disposeBackend()
-		.catch((err) => error("main", "Failed to shut down backend:", err))
+		.catch((err) => error("main", `Failed to shut down backend: ${String(err)}`))
 		.then(async () => {
 			if (shutdownTimedOut) return;
 			clearTimeout(shutdownTimeout);
+			try {
+				await flushPendingSettings();
+			} catch (err) {
+				error("main", `Failed to flush pending settings: ${String(err)}`);
+			}
 
 			const flushTimeout = setTimeout(() => {
 				error("main", "Log flush timed out after 2 seconds, forcing application exit");

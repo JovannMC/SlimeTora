@@ -87,20 +87,20 @@ async function setupSignature(): Promise<string | undefined> {
 }
 
 async function reportAnalytics(): Promise<void> {
-	if (reportRunning || !trackerGateOpen || settings().enabled === false) return;
-	const values = await reportValues();
-	if (!values) return;
-
-	const signature = JSON.stringify(values);
-	if (signature === lastReportedSignature) return;
-
+	if (reportRunning || !trackerGateOpen) return;
 	reportRunning = true;
 	let succeeded = false;
 	try {
 		const state = settings();
 		if (state.enabled === false) return;
+		const values = await reportValues();
+		if (!values) return;
+
+		const signature = JSON.stringify(values);
+		if (signature === lastReportedSignature) return;
+
 		const entityId = state.entityId ?? randomUUID();
-		if (!state.entityId) setSetting(SETTINGS_FILE, { ...state, entityId });
+		if (!state.entityId) await setSetting(SETTINGS_FILE, { ...state, entityId });
 
 		const controller = new AbortController();
 		const timeout = setTimeout(() => controller.abort(), 5_000);
@@ -124,11 +124,15 @@ async function reportAnalytics(): Promise<void> {
 		info(["analytics"], `Analytics report skipped: ${String(err)}`);
 	} finally {
 		reportRunning = false;
-		if (!succeeded) {
+		if (changedWhileReporting) {
 			changedWhileReporting = false;
-		} else if (changedWhileReporting) {
-			changedWhileReporting = false;
-			if ((await setupSignature()) !== lastReportedSignature) void reportAnalytics();
+			if (succeeded) {
+				try {
+					if ((await setupSignature()) !== lastReportedSignature) void reportAnalytics();
+				} catch (err) {
+					info(["analytics"], `Could not refresh analytics setup after reporting: ${String(err)}`);
+				}
+			}
 		}
 	}
 }
@@ -148,7 +152,9 @@ export function noteTrackerConnected(): void {
 		firstTrackerTimer.unref();
 		return;
 	}
-	noteAnalyticsSetupChanged();
+	void noteAnalyticsSetupChanged().catch((err) =>
+		info(["analytics"], `Could not observe tracker setup change: ${String(err)}`),
+	);
 }
 
 export async function noteAnalyticsConnectionStarted(): Promise<void> {
@@ -180,16 +186,21 @@ export async function noteAnalyticsSetupChanged(): Promise<void> {
 }
 
 export function getAnalyticsEnabled(): boolean {
-	return settings().enabled !== false;
+	try {
+		return settings().enabled !== false;
+	} catch (err) {
+		info(["analytics"], `Could not read analytics preference: ${String(err)}`);
+		return true;
+	}
 }
 
-export function setAnalyticsEnabled(enabled: boolean): void {
+export async function setAnalyticsEnabled(enabled: boolean): Promise<void> {
 	const saved = settings();
 	const wasEnabled = saved.enabled !== false;
 	if (wasEnabled === enabled) return;
 
-	setSetting(SETTINGS_FILE, { ...saved, enabled });
-	info(["settings", "analytics"], `Anonymous analytics changed from ${wasEnabled} to ${enabled}`);
+	await setSetting(SETTINGS_FILE, { ...saved, enabled });
+	info(["settings", "analytics"], `Analytics changed from ${wasEnabled} to ${enabled}`);
 	if (enabled && trackerGateOpen) void reportAnalytics();
 }
 

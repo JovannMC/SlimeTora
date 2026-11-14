@@ -8,6 +8,8 @@
 	import { t } from "#lib/lang/index";
 	import { PRIVALYTICS_ORIGIN } from "$shared/consts";
 	import type { AnalyticsPreview } from "$shared/ipc/channels";
+	import { ToastManager } from "#lib/util/toast.svelte";
+	import { error } from "#lib/log/index";
 
 	let analyticsEnabled = $state(true);
 	let preferenceLoaded = $state(false);
@@ -15,6 +17,7 @@
 	let analyticsPreview = $state<AnalyticsPreview>();
 	let previewLoading = $state(true);
 	let previewRequest = 0;
+	let preferenceRequest = 0;
 
 	onMount(() => {
 		if (!isBridgeAvailable()) {
@@ -29,10 +32,22 @@
 			.finally(() => (preferenceLoaded = true));
 	});
 
-	$effect(() => {
-		const enabled = analyticsEnabled;
-		if (preferenceLoaded && isBridgeAvailable()) void getBridge().setAnalyticsEnabled(enabled);
-	});
+	async function updateAnalyticsPreference(enabled: boolean) {
+		const previous = analyticsEnabled;
+		const request = ++preferenceRequest;
+		analyticsEnabled = enabled;
+		if (!preferenceLoaded || !isBridgeAvailable()) return;
+
+		try {
+			await getBridge().setAnalyticsEnabled(enabled);
+		} catch (err) {
+			if (request !== preferenceRequest) return;
+
+			analyticsEnabled = previous;
+			error(["settings", "analytics"], `Failed to save analytics preference: ${String(err)}`);
+			ToastManager.add({ type: "error", message: `Failed to save analytics preference: ${String(err)}` });
+		}
+	}
 
 	$effect(() => {
 		$backendSnapshot.revision;
@@ -68,7 +83,11 @@
 	<div class="flex flex-col gap-4">
 		<p class="text-sm text-text-alt">{$t("settings.analytics.description")}</p>
 		<div class="flex flex-col gap-3 pl-1">
-			<Checkbox label={$t("settings.analytics.enabled")} bind:checked={analyticsEnabled} />
+			<Checkbox
+				label={$t("settings.analytics.enabled")}
+				disabled={!preferenceLoaded}
+				bind:checked={() => analyticsEnabled, (enabled) => updateAnalyticsPreference(enabled)}
+			/>
 		</div>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<Button

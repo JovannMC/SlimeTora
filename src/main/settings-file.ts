@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
 export function readSettingsFile<T = unknown>(file: string, options: { backupCorrupt?: boolean } = {}): T | undefined {
@@ -56,4 +56,10 @@ export function writeSettingsFile(file: string, value: unknown): void {
 		}
 		throw err;
 	}
+}
+
+export function backupSettingsFile(file: string): string {
+	const backup = `${file}.invalid-${new Date().toISOString().replace(/[:.]/g, "-")}-${randomUUID()}.bak`;
+	copyFileSync(file, backup);
+	return backup;
 }

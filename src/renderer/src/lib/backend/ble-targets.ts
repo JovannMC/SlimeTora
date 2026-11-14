@@ -1,6 +1,6 @@
 import { invoke } from "#lib/api/backend";
 import { error } from "#lib/log/index";
-import { bleDevicesLoaded, savedBleDevices } from "#lib/store/ble-devices";
+import { loadBleDevices, savedBleDevices } from "#lib/store/ble-devices";
 import { derived } from "svelte/store";
 import { sessionState } from "./state";
 
@@ -29,7 +29,7 @@ export function attachBleTargets(): () => void {
 		});
 	}
 
-	void bleDevicesLoaded
+	void loadBleDevices()
 		.then(() => {
 			if (disposed) return;
 			unsubscribe = combined.subscribe(({ devices, session }) => update(devices, session.status));

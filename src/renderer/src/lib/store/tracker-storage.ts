@@ -4,7 +4,10 @@ let config: Promise<Store> | undefined;
 let writeQueue = Promise.resolve();
 
 export function trackerStore(): Promise<Store> {
-	config ??= load("trackers.json");
+	config ??= load("trackers.json").catch((err) => {
+		config = undefined;
+		throw err;
+	});
 	return config;
 }
 

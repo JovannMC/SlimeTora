@@ -1,7 +1,14 @@
 import { startInterpreting, stopInterpreting } from "#lib/backend/index";
 import { error, info } from "#lib/log/index";
-import type { ConnectionMode } from "#lib/types/connection";
-import type { ChargeStatus, MagStatus, TrackerModel } from "#lib/types/tracker";
+import { ConnectionMode } from "#lib/types/connection";
+import {
+	FPSMode,
+	SensorAutoCorrection,
+	SensorMode,
+	TrackerModel,
+	type ChargeStatus,
+	type MagStatus,
+} from "#lib/types/tracker";
 import { DISCORD_URL, GITHUB_URL } from "#lib/util/consts.ts";
 import { writable, type Writable } from "svelte/store";
 import type { TrackerSettings } from "./settings";
@@ -40,6 +47,31 @@ export interface TrackerData {
 
 export type TrackerSave = Omit<Tracker, "data">;
 
+function isValidTracker(value: unknown): value is TrackerSave {
+	if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+
+	const save = value as Partial<TrackerSave>;
+	if (
+		typeof save.id !== "string" ||
+		typeof save.name !== "string" ||
+		!Object.values(ConnectionMode).includes(save.connection_mode as ConnectionMode) ||
+		!Object.values(TrackerModel).includes(save.tracker_type as TrackerModel)
+	)
+		return false;
+	if (save.bodyPart !== undefined && typeof save.bodyPart !== "string") return false;
+	if (save.settings === undefined) return true;
+
+	const settings = save.settings as Partial<TrackerSettings> | null;
+	return Boolean(
+		settings &&
+		[FPSMode.Mode50, FPSMode.Mode100].includes(settings.fps as FPSMode) &&
+		[SensorMode.MagEnabled, SensorMode.MagDisabled].includes(settings.mode as SensorMode) &&
+		Array.isArray(settings.dynamicCalibration) &&
+		settings.dynamicCalibration.every((item) => Object.values(SensorAutoCorrection).includes(item)) &&
+		typeof settings.emulatedFeet === "boolean",
+	);
+}
+
 export const connectedTrackers = writable<Tracker[]>([]);
 export const knownTrackers = writable<TrackerSave[]>([]);
 
@@ -50,9 +82,8 @@ export const trackersLoaded: Promise<void> = (async () => {
 	try {
 		try {
 			const loaded = await (await trackerStore()).get("trackers");
-			if (loaded && typeof loaded === "object") {
-				// for every Tracker in loaded, place into knownTrackers
-				knownTrackers.set(Object.values(loaded));
+			if (loaded && typeof loaded === "object" && !Array.isArray(loaded)) {
+				knownTrackers.set(Object.values(loaded).filter(isValidTracker));
 			}
 			info(["store"], `Loaded ${Object.keys(loaded ?? {}).length} saved tracker records from trackers.json`);
 		} catch (e) {

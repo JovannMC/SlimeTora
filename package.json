@@ -85,6 +85,7 @@
 		"quaternion": "^2.2.0",
 		"rand-seed": "^3.0.0",
 		"systeminformation": "^5.33.19",
-		"three": "^0.187.0"
+		"three": "^0.187.0",
+		"zod": "^4.6.7"
 	}
 }

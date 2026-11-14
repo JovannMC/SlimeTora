@@ -1,6 +1,6 @@
 import { app } from "electron";
 import { unlinkSync } from "node:fs";
-import { readSettingsFile, writeSettingsFile } from "./settings-file";
+import { backupSettingsFile, readSettingsFile, writeSettingsFile } from "./settings-file";
 
 export function getSetting<T = unknown>(path: string, options: { backupCorrupt?: boolean } = {}): T | undefined {
 	return readSettingsFile(fileFor(path), options);
@@ -8,6 +8,10 @@ export function getSetting<T = unknown>(path: string, options: { backupCorrupt?:
 
 export function setSetting(path: string, value: unknown): void {
 	writeJson(fileFor(path), value);
+}
+
+export function backupSetting(path: string): string {
+	return backupSettingsFile(fileFor(path));
 }
 
 export function deleteSetting(path: string): void {

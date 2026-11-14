@@ -1,6 +1,6 @@
 import { invoke } from "#lib/api/backend";
 import { t } from "#lib/lang/index";
-import { bleDevicesLoaded, savedBleDevices } from "#lib/store/ble-devices";
+import { loadBleDevices, savedBleDevices } from "#lib/store/ble-devices";
 import { isOn, settings } from "#lib/store/index";
 import { TrackerModel } from "#lib/types/tracker";
 import { ToastManager } from "#lib/util/toast.svelte";
@@ -14,7 +14,6 @@ const models: Record<TrackerModel, LibraryModel> = {
 };
 
 export async function startInterpreting(): Promise<boolean | void> {
-	await bleDevicesLoaded;
 	if (!get(isOn)) return;
 
 	const { modes, models: selectedModels, ports, slimevr } = get(settings.connection);
@@ -28,6 +27,7 @@ export async function startInterpreting(): Promise<boolean | void> {
 		isOn.set(false);
 		return false;
 	}
+	if (modes.includes("ble")) await loadBleDevices();
 
 	const configuredHeartbeat = get(settings.tracker).heartbeat;
 	const heartbeatIntervalMs =
@@ -37,7 +37,7 @@ export async function startInterpreting(): Promise<boolean | void> {
 	const buttonDebounceMs =
 		Number.isFinite(configuredButtonDebounce) && configuredButtonDebounce >= 0 ? configuredButtonDebounce : 500;
 
-	const bleSerials = get(savedBleDevices).map((device) => device.serial);
+	const bleSerials = modes.includes("ble") ? get(savedBleDevices).map((device) => device.serial) : [];
 
 	await invoke("startSession", {
 		modes: modes as ConnectionKind[],

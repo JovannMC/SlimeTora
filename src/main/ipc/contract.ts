@@ -1,11 +1,13 @@
 import { Channels, type AppInfo } from "$shared/ipc/channels";
 import { isLogRecord } from "$shared/log/index";
+import { settingsSchema } from "$shared/settings-schema";
 import { app, ipcMain, shell } from "electron";
+import { isDeepStrictEqual } from "node:util";
 import { getAnalyticsEnabled, getAnalyticsPreview, noteAnalyticsSetupChanged, setAnalyticsEnabled } from "../analytics";
 import { getTransportCapabilities, registerBackendIpc } from "../backend";
 import { getCustomThemes } from "../custom-themes";
 import { configureLogging, logsDirectory, warn, writeRecord } from "../log";
-import { deleteSetting, getSetting, setSetting } from "../store";
+import { backupSetting, deleteSetting, getSetting, setSetting } from "../store";
 import { checkApp, checkLanguages, getLanguages, openRelease } from "../updates";
 
 function getAppInfo(): AppInfo {
@@ -61,7 +63,20 @@ export function registerIpcHandlers(): void {
 
 	ipcMain.handle(Channels.settingGet, (_event, key: string) => {
 		if (key === "analytics.json") throw new Error("Analytics settings are private to the main process");
-		return getSetting(key, { backupCorrupt: true });
+		const saved = getSetting<Record<string, unknown>>(key, { backupCorrupt: true });
+		if (key === "settings.json" && saved !== undefined) {
+			const originalSettings = saved.settings;
+			const normalized = settingsSchema.parse(originalSettings);
+			if (!isDeepStrictEqual(normalized, originalSettings)) {
+				try {
+					const backup = backupSetting(key);
+					warn(["store", "settings"], `Invalid settings were preserved as ${backup}`);
+				} catch (err) {
+					throw new Error(`Invalid settings could not be backed up: ${String(err)}`, { cause: err });
+				}
+			}
+		}
+		return saved;
 	});
 	ipcMain.handle(Channels.settingSet, (_event, key: string, value: unknown) => {
 		if (key === "analytics.json") throw new Error("Analytics settings are private to the main process");

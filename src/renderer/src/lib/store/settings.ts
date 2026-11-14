@@ -1,99 +1,24 @@
 import { load, type Store } from "#lib/api/store";
 import { error, info } from "#lib/log/index";
-import { FPSMode, SensorAutoCorrection, SensorMode, TrackerModel } from "#lib/types/tracker";
 import type { CustomTheme } from "$shared/ipc/channels";
+import { settingsSchema, type AppSettings } from "$shared/settings-schema";
 import { derived, get, writable } from "svelte/store";
 
-export type LoggingMode = "minimal" | "debug" | "all";
-
-export type ProgramSettings = {
-	locale: string;
-	theme: string;
-	autoUpdate: boolean;
-	checkUpdatesApp: boolean;
-	checkUpdatesLanguage: boolean;
-	updateChannel: string;
-	autoStart: boolean;
-	autoOff: boolean;
-	visualization: boolean;
-	visualizationFPS: number;
-	preciseData: boolean;
-	fastData: boolean;
-};
-
-export type ConnectionSettings = {
-	models: TrackerModel[];
-	modes: string[];
-	ports: string[]; // for serial
-	slimevr: {
-		ip: string;
-		port: number;
-	};
-};
-
-export type TrackerSettings = {
-	fps: FPSMode;
-	mode: SensorMode;
-	dynamicCalibration: SensorAutoCorrection[];
-	emulatedFeet: boolean;
-	heartbeat: number;
-	buttonDebounce: number;
-};
-
-export type AdvancedSettings = {
-	showAllSerialPorts: boolean;
-	writeLogs: boolean;
-	loggingMode: LoggingMode;
-};
-
-type SavedSettings = {
-	program: ProgramSettings;
-	connection: ConnectionSettings;
-	tracker: TrackerSettings;
-	advanced: AdvancedSettings;
-};
+export type LoggingMode = AppSettings["advanced"]["loggingMode"];
+export type ProgramSettings = AppSettings["program"];
+export type ConnectionSettings = AppSettings["connection"];
+export type TrackerSettings = AppSettings["tracker"];
+export type AdvancedSettings = AppSettings["advanced"];
+type SavedSettings = AppSettings;
 
 export type SettingsFileError = { kind: "load" | "save"; detail: string; id: number };
 
-export const program = writable<ProgramSettings>({
-	locale: "en-US",
-	theme: "default",
-	autoUpdate: false,
-	checkUpdatesApp: true,
-	checkUpdatesLanguage: true,
-	updateChannel: "stable",
-	autoStart: false,
-	autoOff: false,
-	visualization: false,
-	visualizationFPS: 10,
-	preciseData: false,
-	fastData: false,
-});
+const defaultSettings = settingsSchema.parse({});
 
-export const connection = writable<ConnectionSettings>({
-	models: [],
-	modes: [],
-	ports: [],
-	slimevr: {
-		ip: "255.255.255.255",
-		port: 6969,
-	},
-});
-
-export const tracker = writable<TrackerSettings>({
-	fps: 100,
-	mode: 2,
-	dynamicCalibration: [SensorAutoCorrection.Accel],
-	emulatedFeet: false,
-	heartbeat: 2000,
-	buttonDebounce: 100,
-});
-
-export const advanced = writable<AdvancedSettings>({
-	showAllSerialPorts: false,
-	writeLogs: true,
-	loggingMode: "minimal",
-});
+export const program = writable<ProgramSettings>(defaultSettings.program);
+export const connection = writable<ConnectionSettings>(defaultSettings.connection);
+export const tracker = writable<TrackerSettings>(defaultSettings.tracker);
+export const advanced = writable<AdvancedSettings>(defaultSettings.advanced);
 
 export const restartRequired = writable(false);
 export const firstRun = writable(false);
@@ -188,6 +113,10 @@ function currentSettings(): SavedSettings {
 	};
 }
 
+function normalizeSettings(value: unknown): SavedSettings {
+	return settingsSchema.parse(value);
+}
+
 function reportFileError(kind: SettingsFileError["kind"], detail: string): void {
 	if (kind === "save" && detail === latestSaveError) return;
 	if (kind === "save") latestSaveError = detail;
@@ -219,18 +148,14 @@ function scheduleSave(settings: SavedSettings): void {
 export const settingsLoaded = (async () => {
 	try {
 		config = await load("settings.json");
-		const loaded = await config.get<Partial<SavedSettings>>("settings");
+		const loaded = await config.get<unknown>("settings");
 		firstRun.set(loaded === undefined);
-		if (loaded && typeof loaded === "object") {
-			if (loaded.program) program.set({ ...get(program), ...loaded.program });
-			if (loaded.connection)
-				connection.set({
-					...get(connection),
-					...loaded.connection,
-					slimevr: { ...get(connection).slimevr, ...loaded.connection.slimevr },
-				});
-			if (loaded.tracker) tracker.set({ ...get(tracker), ...loaded.tracker });
-			if (loaded.advanced) advanced.set({ ...get(advanced), ...loaded.advanced });
+		if (loaded !== undefined) {
+			const normalized = normalizeSettings(loaded);
+			program.set(normalized.program);
+			connection.set(normalized.connection);
+			tracker.set(normalized.tracker);
+			advanced.set(normalized.advanced);
 		}
 		info(["store", "settings"], "Loaded settings from settings.json");
 	} catch (err) {

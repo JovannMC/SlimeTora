@@ -12,21 +12,24 @@ export interface SavedBleDevice {
 export const savedBleDevices = writable<SavedBleDevice[]>([]);
 
 let queue = Promise.resolve();
+let loading: Promise<void> | undefined;
 
-export const bleDevicesLoaded = (async () => {
-	const config = await trackerStore();
-	const devices = await config.get<SavedBleDevice[]>("bleDevices");
-	savedBleDevices.set(Array.isArray(devices) ? devices : []);
-})().catch((err) => {
-	error(["store"], `Failed to load saved BLE devices: ${err}`);
-	throw err;
-});
-
-void bleDevicesLoaded.catch(() => undefined);
+export function loadBleDevices(): Promise<void> {
+	loading ??= (async () => {
+		const config = await trackerStore();
+		const devices = await config.get<SavedBleDevice[]>("bleDevices");
+		savedBleDevices.set(Array.isArray(devices) ? devices : []);
+	})().catch((err) => {
+		loading = undefined;
+		error(["store"], `Failed to load saved BLE devices: ${err}`);
+		throw err;
+	});
+	return loading;
+}
 
 function updateDevices(change: (devices: SavedBleDevice[]) => SavedBleDevice[]): Promise<void> {
 	const task = queue.then(async () => {
-		await bleDevicesLoaded;
+		await loadBleDevices();
 		const devices = change(get(savedBleDevices));
 		await updateTrackerStore<SavedBleDevice[]>("bleDevices", () => devices);
 		savedBleDevices.set(devices);

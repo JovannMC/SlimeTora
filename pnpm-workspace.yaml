@@ -11,11 +11,12 @@ allowBuilds:
     electron-winstaller: true
 
 minimumReleaseAgeExclude:
-    - haritorax-interpreter@4.2.1
+    - haritorax-interpreter@4.2.2
 
 overrides:
     # stupid dumb electron builder using usocker which is stupid old causing native compilation errors for noble
     "usocket@0.3.0>node-gyp": "13.1.0"
+    "dbus-next>xml2js": "^0.5.0"
 
 patchedDependencies:
     dbus-next@0.10.2: patches/dbus-next@0.10.2.patch

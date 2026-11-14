@@ -85,6 +85,12 @@ export interface SessionOptions {
 	slimevr: { ip: string; port: number };
 }
 
+export interface PowerOffResult {
+	deviceId: string;
+	success: boolean;
+	error?: string;
+}
+
 // calls the renderer can make into the main process, by name
 export interface BackendCalls {
 	startSession(options: SessionOptions): Promise<void>;
@@ -110,7 +116,7 @@ export interface BackendCalls {
 		settings: TrackerSettings,
 	): Promise<SettingsApplyResult & { failed?: (keyof TrackerSettings)[] }>;
 	setBodyPart(deviceId: string, bodyPart: BodyPart): Promise<void>;
-	powerOff(deviceId: string | string[]): Promise<void[]>;
+	powerOff(deviceId: string | string[]): Promise<PowerOffResult[]>;
 	switchCommunication(deviceId: string, mode: "ble" | "serial"): Promise<void>;
 	setChannel(endpointId: string, channel: number): Promise<void>;
 	pair(endpointId: string, slot: string): Promise<void>;

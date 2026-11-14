@@ -51,7 +51,8 @@
 		poweringOff = true;
 		const clearExpectedPowerOff = expectTrackerPowerOff([deviceId]);
 		try {
-			await invoke("powerOff", deviceId);
+			const [result] = await invoke("powerOff", deviceId);
+			if (!result?.success) throw new Error(result?.error ?? `power off failed for ${deviceId}`);
 			info(["trackers", "card"], `Powered off tracker device: ${displayName} (${deviceId})`);
 		} catch (err) {
 			clearExpectedPowerOff();

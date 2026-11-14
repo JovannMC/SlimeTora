@@ -4,14 +4,23 @@ import { t } from "#lib/lang/index";
 import { error, info } from "#lib/log/index";
 import { confirmBleDevice } from "#lib/store/ble-devices";
 import { connectedTrackers, knownTrackers, saveTrackerConfig, type BatteryData, type Tracker } from "#lib/store/index";
-import { program } from "#lib/store/settings";
+import {
+	tracker as globalTrackerSettings,
+	program,
+	type TrackerSettings as GlobalTrackerSettings,
+} from "#lib/store/settings";
 import { setTrackerMotion } from "#lib/store/tracker-motion";
-import { ChargeStatus, SensorAutoCorrection } from "#lib/types/tracker";
+import { ChargeStatus } from "#lib/types/tracker";
 import { serialFromBleName } from "#lib/util/index";
 import { ToastManager } from "#lib/util/toast.svelte";
 import { browser } from "$app/env";
 import type { UserActionName } from "$shared/backend/contract";
-import type { BatteryInfo, DeviceSnapshot, TrackerSnapshot } from "haritorax-interpreter";
+import type {
+	BatteryInfo,
+	TrackerSettings as DeviceSettings,
+	DeviceSnapshot,
+	TrackerSnapshot,
+} from "haritorax-interpreter";
 import { Quaternion as BetterQuaternion } from "quaternion";
 import { get } from "svelte/store";
 import { classifyBackendError } from "./error-reporting";
@@ -43,26 +52,12 @@ function backendErrorToast(value: Parameters<typeof classifyBackendError>[0]) {
 	ToastManager.add({ type: "error", message, disappearing: !persistent });
 }
 
-const expectedPowerOffs = new Map<string, ReturnType<typeof setTimeout>>();
-
-export function expectTrackerPowerOff(deviceIds: string[]): () => void {
-	const trackerIds = get(connectedTrackers)
-		.filter((tracker) => deviceIds.includes(tracker.id.slice(0, tracker.id.lastIndexOf(":"))))
-		.map((tracker) => tracker.id);
-	for (const trackerId of trackerIds) {
-		const previous = expectedPowerOffs.get(trackerId);
-		if (previous) clearTimeout(previous);
-		expectedPowerOffs.set(
-			trackerId,
-			setTimeout(() => expectedPowerOffs.delete(trackerId), 30_000),
-		);
-	}
-	return () => {
-		for (const trackerId of trackerIds) {
-			const timer = expectedPowerOffs.get(trackerId);
-			if (timer) clearTimeout(timer);
-			expectedPowerOffs.delete(trackerId);
-		}
+function toDeviceSettings(settings: GlobalTrackerSettings): DeviceSettings {
+	return {
+		fpsMode: settings.fps,
+		sensorMode: settings.mode,
+		sensorAutoCorrection: [...settings.dynamicCalibration],
+		ankleMotionDetection: false,
 	};
 }
 
@@ -115,6 +110,8 @@ function onTrackerConnected(device: DeviceSnapshot, snapshot: TrackerSnapshot) {
 
 	const current = get(connectedTrackers).find((tracker) => tracker.id === snapshot.trackerId);
 	const saved = get(knownTrackers).find((tracker) => tracker.id === snapshot.trackerId);
+	const savedSettings = saved?.settings;
+	const globalSettings = get(globalTrackerSettings);
 	const rssi = snapshot.rssi ?? device.trackers.find((tracker) => tracker.rssi !== undefined)?.rssi;
 
 	const tracker: Tracker = {
@@ -123,13 +120,12 @@ function onTrackerConnected(device: DeviceSnapshot, snapshot: TrackerSnapshot) {
 		connection_mode: MODE_FROM_LIBRARY[device.connection],
 		tracker_type: MODEL_FROM_LIBRARY[device.model],
 		bodyPart: snapshot.bodyPart,
-		settings: current?.settings ??
-			saved?.settings ?? {
-				fps: 50,
-				mode: 1,
-				dynamicCalibration: [SensorAutoCorrection.Accel],
-				emulatedFeet: false,
-			},
+		settings: savedSettings ?? {
+			fps: globalSettings.fps,
+			mode: globalSettings.mode,
+			dynamicCalibration: [...globalSettings.dynamicCalibration],
+			emulatedFeet: globalSettings.emulatedFeet,
+		},
 		data: {
 			...(current?.data ?? { rotation: [0, 0, 0], acceleration: [0, 0, 0] }),
 			...(snapshot.mag === undefined ? {} : { magnetometer: MAG_FROM_LIBRARY[snapshot.mag] }),
@@ -149,7 +145,7 @@ function onTrackerConnected(device: DeviceSnapshot, snapshot: TrackerSnapshot) {
 		connection_mode: tracker.connection_mode,
 		tracker_type: tracker.tracker_type,
 		bodyPart: tracker.bodyPart,
-		settings: tracker.settings,
+		settings: savedSettings,
 	};
 	if (
 		!saved ||
@@ -165,6 +161,27 @@ function onTrackerConnected(device: DeviceSnapshot, snapshot: TrackerSnapshot) {
 		const current = prev[index];
 		if (!current) return [...prev, tracker];
 		return [...prev.slice(0, index), tracker, ...prev.slice(index + 1)];
+	});
+}
+
+const appliedGlobalSettings = new Map<string, string>();
+function applyGlobalSettings(device: DeviceSnapshot): void {
+	if (!device.trackers.some((item) => item.connected)) return;
+
+	const known = get(knownTrackers);
+	if (device.trackers.some((item) => known.find((tracker) => tracker.id === item.trackerId)?.settings)) {
+		appliedGlobalSettings.delete(device.deviceId);
+		return;
+	}
+
+	const settings = toDeviceSettings(get(globalTrackerSettings));
+	const fingerprint = JSON.stringify(settings);
+	if (appliedGlobalSettings.get(device.deviceId) === fingerprint) return;
+
+	appliedGlobalSettings.set(device.deviceId, fingerprint);
+	void invoke("setSettings", device.deviceId, settings).catch((err) => {
+		if (appliedGlobalSettings.get(device.deviceId) === fingerprint) appliedGlobalSettings.delete(device.deviceId);
+		error(["backend", "settings"], `Failed to apply global tracker settings to ${device.deviceId}: ${String(err)}`);
 	});
 }
 
@@ -196,6 +213,32 @@ function onBattery(battery: BatteryInfo) {
 	}
 }
 
+const expectedPowerOffs = new Map<string, ReturnType<typeof setTimeout>>();
+export function expectTrackerPowerOff(deviceIds: string[]): (deviceIdsToClear?: string[]) => void {
+	const trackerIds = get(connectedTrackers)
+		.filter((tracker) => deviceIds.includes(tracker.id.slice(0, tracker.id.lastIndexOf(":"))))
+		.map((tracker) => tracker.id);
+
+	for (const trackerId of trackerIds) {
+		const previous = expectedPowerOffs.get(trackerId);
+		if (previous) clearTimeout(previous);
+		expectedPowerOffs.set(
+			trackerId,
+			setTimeout(() => expectedPowerOffs.delete(trackerId), 10_000),
+		);
+	}
+
+	return (deviceIdsToClear?: string[]) => {
+		for (const trackerId of trackerIds) {
+			const deviceId = trackerId.slice(0, trackerId.lastIndexOf(":"));
+			if (deviceIdsToClear && !deviceIdsToClear.includes(deviceId)) continue;
+			const timer = expectedPowerOffs.get(trackerId);
+			if (timer) clearTimeout(timer);
+			expectedPowerOffs.delete(trackerId);
+		}
+	};
+}
+
 export function attachNotifications(): () => void {
 	let disposed = false;
 	let fastData: boolean | undefined;
@@ -214,8 +257,13 @@ export function attachNotifications(): () => void {
 			);
 		}
 	});
+	const unsubscribeTrackerSettings = globalTrackerSettings.subscribe(() => {
+		for (const device of get(backendSnapshot).devices) applyGlobalSettings(device);
+	});
+
 	const unlisteners = [
 		listen("device:disconnected", ({ deviceId }) => {
+			appliedGlobalSettings.delete(deviceId);
 			for (const identity of confirmedBleDevices)
 				if (identity.startsWith(`${deviceId}:`)) confirmedBleDevices.delete(identity);
 			connectedTrackers.update((prev) => prev.filter((t) => !t.id.startsWith(`${deviceId}:`)));
@@ -281,6 +329,7 @@ export function attachNotifications(): () => void {
 		if (disposed || snapshot.revision < 0) return;
 		syncDevices(snapshot.devices);
 		for (const device of snapshot.devices) {
+			applyGlobalSettings(device);
 			if (device.connection !== "ble" || !device.trackers.some((tracker) => tracker.connected)) continue;
 			const endpoint = snapshot.endpoints.find((item) => item.id === device.endpointId);
 			const advertisedSerial = endpoint ? serialFromBleName(endpoint.displayName) : undefined;
@@ -298,6 +347,7 @@ export function attachNotifications(): () => void {
 		disposed = true;
 		unsubscribeSnapshot();
 		unsubscribeProgram();
+		unsubscribeTrackerSettings();
 		for (const unlisten of unlisteners) unlisten();
 		for (const timer of Object.values(buttonActionTimeout)) {
 			if (timer) clearTimeout(timer);

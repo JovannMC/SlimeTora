@@ -79,14 +79,30 @@
 
 	async function powerOffTrackers() {
 		if (poweringOff) return;
-		const deviceIds = $connectedTrackers.map((tracker) => tracker.id.split(":")[0] as string);
+		const deviceIds = [
+			...new Set($connectedTrackers.map((tracker) => tracker.id.slice(0, tracker.id.lastIndexOf(":")))),
+		];
 		const displayNames = $connectedTrackers.map((tracker) => tracker.name).join(", ");
 
 		poweringOff = true;
 		const clearExpectedPowerOff = expectTrackerPowerOff(deviceIds);
 		try {
-			await invoke("powerOff", deviceIds);
-			info(["trackers", "card"], `Powered off tracker devices: ${displayNames} (${deviceIds.join(", ")})`);
+			const results = await invoke("powerOff", deviceIds);
+			const failed = results.filter((result) => !result.success);
+			if (failed.length > 0) {
+				clearExpectedPowerOff(failed.map((result) => result.deviceId));
+
+				const details = failed
+					.map((result) => `${result.deviceId}: ${result.error ?? "unknown error"}`)
+					.join(", ");
+				error(["trackers", "card"], `Failed to power off some tracker devices: ${details}`);
+				ToastManager.add({
+					type: "error",
+					message: $t("home.card.error.power_off_failed", { name: displayNames, error: details }),
+				});
+			} else {
+				info(["trackers", "card"], `Powered off tracker devices: ${displayNames} (${deviceIds.join(", ")})`);
+			}
 		} catch (err) {
 			clearExpectedPowerOff();
 			error(["trackers", "card"], `Failed to power off tracker ${deviceIds.join(", ")}: ${String(err)}`);

@@ -822,8 +822,17 @@ export const backendCalls: BackendCalls = {
 	setBodyPart: (deviceId, bodyPart) => withBackend((instance) => instance.setBodyPart(deviceId, bodyPart)),
 	powerOff: (deviceIds) =>
 		withBackend((instance) => {
-			if (!Array.isArray(deviceIds)) deviceIds = [deviceIds];
-			return Promise.all(deviceIds.map((id) => instance.powerOff(id)));
+			const uniqueIds = [...new Set(Array.isArray(deviceIds) ? deviceIds : [deviceIds])];
+			return Promise.all(
+				uniqueIds.map(async (deviceId) => {
+					try {
+						await instance.powerOff(deviceId);
+						return { deviceId, success: true };
+					} catch (err) {
+						return { deviceId, success: false, error: String(err) };
+					}
+				}),
+			);
 		}),
 	switchCommunication: (deviceId, mode) => withBackend((instance) => instance.switchCommunication(deviceId, mode)),
 	setChannel: (endpointId, channel) => withBackend((instance) => instance.setChannel(endpointId, channel)),

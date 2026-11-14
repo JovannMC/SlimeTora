@@ -11,6 +11,7 @@
 	import { invoke } from "#lib/api/backend";
 	import { info, warn } from "#lib/log/index";
 	import { t } from "#lib/lang/index";
+	import { get } from "svelte/store";
 	import Button from "#lib/components/settings/Button.svelte";
 	import Checkbox from "#lib/components/settings/Checkbox.svelte";
 	import Input from "#lib/components/settings/Input.svelte";
@@ -75,7 +76,7 @@
 			await loadPlatform();
 			detectedPorts = (await invoke("listSerialPorts")).sort();
 			try {
-				const endpoints = await invoke("discoverSerialPorts");
+				const endpoints = await invoke("discoverSerialPorts", get(connection).ports);
 				identifiedPorts = Object.fromEntries(
 					endpoints
 						.filter((endpoint) => endpoint.dongle || endpoint.model === "wired")
@@ -144,7 +145,15 @@
 
 	function setPort(port: string, on: boolean) {
 		markRestartRequired();
-		connection.update((s) => ({ ...s, ports: toggleListed(s.ports, port, on, availablePorts) }));
+		connection.update((s) => ({
+			...s,
+			ports: (() => {
+				const ports = new Set(s.ports);
+				if (on) ports.add(port);
+				else ports.delete(port);
+				return [...ports].sort();
+			})(),
+		}));
 	}
 
 	function markRestartRequired() {

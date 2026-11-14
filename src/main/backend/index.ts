@@ -217,7 +217,10 @@ function scanBlePreview(): Promise<import("haritorax-interpreter").EndpointDescr
 	return result;
 }
 
-async function loadConnections(heartbeatIntervalMs?: number): Promise<Connection[]> {
+async function loadConnections(
+	heartbeatIntervalMs?: number,
+	serialPorts: readonly string[] = [],
+): Promise<Connection[]> {
 	const connections: Connection[] = [];
 
 	try {
@@ -240,7 +243,7 @@ async function loadConnections(heartbeatIntervalMs?: number): Promise<Connection
 					? Math.max(0, configuredHeartbeat)
 					: 2000;
 
-		connections.push(createSerialConnection({ includeWired: true, heartbeatIntervalMs: interval }));
+		connections.push(createSerialConnection({ includeWired: true, heartbeatIntervalMs: interval, serialPorts }));
 	} catch (err) {
 		error(["backend", "serial"], "Serial connection unavailable:", err);
 	}
@@ -321,7 +324,7 @@ function getBackend(): Promise<HaritoraX> {
 async function createBackend(): Promise<HaritoraX> {
 	const instanceGeneration = generation;
 	const { createHaritoraX } = await import("haritorax-interpreter");
-	const connections = await loadConnections(activeOptions?.heartbeatIntervalMs);
+	const connections = await loadConnections(activeOptions?.heartbeatIntervalMs, activeOptions?.ports);
 	const modes = activeOptions?.modes ?? [];
 	if (!connections.some((connection) => modes.includes(connection.kind))) {
 		throw new Error(`No usable connection is available for selected modes: ${modes.join(", ") || "none"}`);
@@ -749,9 +752,9 @@ export const backendCalls: BackendCalls = {
 		const { autoDetect } = await import("@serialport/bindings-cpp");
 		return (await autoDetect().list()).map((port: { path: string }) => port.path).sort();
 	},
-	discoverSerialPorts: async () => {
+	discoverSerialPorts: async (ports: string[] = []) => {
 		const { createSerialConnection } = await import("haritorax-interpreter/connections/serial");
-		const serial = createSerialConnection({ includeWired: true });
+		const serial = createSerialConnection({ includeWired: true, serialPorts: ports });
 		try {
 			return await serial.list({ signal: AbortSignal.timeout(10_000) });
 		} finally {

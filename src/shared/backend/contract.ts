@@ -98,7 +98,7 @@ export interface BackendCalls {
 	updateBleTargets(serials: string[]): void;
 	forgetBleTarget(serial: string): Promise<void>;
 	listSerialPorts(): Promise<string[]>;
-	discoverSerialPorts(): Promise<EndpointDescriptor[]>;
+	discoverSerialPorts(ports?: string[]): Promise<EndpointDescriptor[]>;
 	scanBlePreview(): Promise<EndpointDescriptor[]>;
 	stopBlePreview(): Promise<void>;
 	discover(): Promise<EndpointDescriptor[]>;

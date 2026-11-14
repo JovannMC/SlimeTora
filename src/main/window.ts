@@ -87,16 +87,30 @@ export function createMainWindow(): BrowserWindow {
 
 	// open external links in default browser
 	window.webContents.setWindowOpenHandler(({ url }) => {
-		if (url.startsWith("http://") || url.startsWith("https://")) void shell.openExternal(url);
+		try {
+			const parsed = new URL(url);
+			if (parsed.protocol === "http:" || parsed.protocol === "https:") void shell.openExternal(parsed.href);
+		} catch {
+			// invalid URLs denied
+		}
+
 		return { action: "deny" };
 	});
 
 	window.webContents.on("will-navigate", (event, url) => {
-		const allowedPrefix = isDev ? devServerUrl : APP_ORIGIN;
-		if (allowedPrefix && url.startsWith(allowedPrefix)) return;
+		try {
+			const parsed = new URL(url);
+			if (isDev && devServerUrl) {
+				if (parsed.origin === new URL(devServerUrl).origin) return;
+			} else if (parsed.protocol === `${APP_SCHEME}:` && parsed.hostname === "bundle" && !parsed.port) {
+				return;
+			}
+			if (parsed.protocol === "http:" || parsed.protocol === "https:") void shell.openExternal(parsed.href);
+		} catch {
+			// invalid URLs denied
+		}
 
 		event.preventDefault();
-		if (url.startsWith("http://") || url.startsWith("https://")) void shell.openExternal(url);
 	});
 
 	if (isDev && devServerUrl) void window.loadURL(devServerUrl);

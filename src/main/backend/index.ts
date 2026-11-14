@@ -8,7 +8,7 @@ import type {
 } from "$shared/backend/contract";
 import { BACKEND_EVENTS } from "$shared/backend/contract";
 import { Channels, type CapabilityStatus } from "$shared/ipc/channels";
-import { BrowserWindow, ipcMain } from "electron";
+import { BrowserWindow } from "electron";
 import type {
 	Connection,
 	DeviceSnapshot,
@@ -24,6 +24,7 @@ import {
 	noteAnalyticsSetupChanged,
 	noteTrackerConnected,
 } from "../analytics";
+import { handleIpc } from "../ipc/security";
 import { debug, error, info, trace, warn } from "../log";
 import { getSetting } from "../store";
 import { createDiscoveryController } from "./discovery";
@@ -854,13 +855,14 @@ export const backendCalls: BackendCalls = {
 };
 
 export function registerBackendIpc(): void {
-	ipcMain.handle(Channels.backendInvoke, (_event, command: unknown, args: unknown) => {
+	handleIpc(Channels.backendInvoke, (_event, command: unknown, args: unknown) => {
 		if (typeof command !== "string" || !Object.hasOwn(backendCalls, command)) {
 			throw new Error(`Unknown backend command: ${String(command)}`);
 		}
 
+		if (!Array.isArray(args)) throw new Error("Invalid backend arguments");
 		const call = backendCalls[command as keyof BackendCalls] as (...params: unknown[]) => unknown;
-		return call(...(Array.isArray(args) ? args : []));
+		return call(...args);
 	});
 }
 

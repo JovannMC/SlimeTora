@@ -9,6 +9,7 @@ import { getCustomThemes } from "../custom-themes";
 import { configureLogging, logsDirectory, warn, writeRecord } from "../log";
 import { backupSetting, deleteSetting, getSetting, setSetting } from "../store";
 import { checkApp, checkLanguages, getLanguages, openRelease } from "../updates";
+import { assertTrustedIpcSender, handleIpc } from "./security";
 
 function getAppInfo(): AppInfo {
 	return {
@@ -30,38 +31,45 @@ export function registerIpcHandlers(): void {
 		configureLogging(undefined);
 	}
 
-	ipcMain.handle(Channels.appInfo, () => getAppInfo());
-	ipcMain.handle(Channels.languagesGet, () => getLanguages());
-	ipcMain.handle(Channels.languagesCheck, () => checkLanguages());
-	ipcMain.handle(Channels.appCheck, (_event, channel: unknown) => {
+	handleIpc(Channels.appInfo, () => getAppInfo());
+	handleIpc(Channels.languagesGet, () => getLanguages());
+	handleIpc(Channels.languagesCheck, () => checkLanguages());
+	handleIpc(Channels.appCheck, (_event, channel: unknown) => {
 		if (channel !== "stable" && channel !== "beta") throw new Error("Invalid update channel");
 		return checkApp(channel);
 	});
-	ipcMain.handle(Channels.openRelease, (_event, url: unknown) => {
+	handleIpc(Channels.openRelease, (_event, url: unknown) => {
 		if (typeof url !== "string") throw new Error("Invalid URL");
 		return openRelease(url);
 	});
 
-	ipcMain.handle(Channels.capabilities, getTransportCapabilities);
-	ipcMain.handle(Channels.openLogsFolder, () => shell.openPath(logsDirectory()));
-	ipcMain.handle(Channels.openDataFolder, () => shell.openPath(app.getPath("userData")));
-	ipcMain.handle(Channels.customThemesGet, () => getCustomThemes());
+	handleIpc(Channels.capabilities, getTransportCapabilities);
+	handleIpc(Channels.openLogsFolder, () => shell.openPath(logsDirectory()));
+	handleIpc(Channels.openDataFolder, () => shell.openPath(app.getPath("userData")));
+	handleIpc(Channels.customThemesGet, () => getCustomThemes());
 
 	registerBackendIpc();
 
-	ipcMain.on(Channels.log, (_event, record: unknown) => {
+	ipcMain.on(Channels.log, (event, record: unknown) => {
+		try {
+			assertTrustedIpcSender(event);
+		} catch {
+			warn("ipc", "Dropped log record from an untrusted renderer frame");
+			return;
+		}
 		if (isLogRecord(record)) writeRecord(record);
 		else warn("ipc", "Dropped malformed log record from renderer");
 	});
 
-	ipcMain.handle(Channels.analyticsGet, () => getAnalyticsEnabled());
-	ipcMain.handle(Channels.analyticsPreviewGet, () => getAnalyticsPreview());
-	ipcMain.handle(Channels.analyticsSet, async (_event, enabled: unknown) => {
+	handleIpc(Channels.analyticsGet, () => getAnalyticsEnabled());
+	handleIpc(Channels.analyticsPreviewGet, () => getAnalyticsPreview());
+	handleIpc(Channels.analyticsSet, async (_event, enabled: unknown) => {
 		if (typeof enabled !== "boolean") throw new Error("Invalid analytics preference");
 		await setAnalyticsEnabled(enabled);
 	});
 
-	ipcMain.handle(Channels.settingGet, (_event, key: string) => {
+	handleIpc(Channels.settingGet, (_event, key: unknown) => {
+		if (typeof key !== "string") throw new Error("Invalid setting key");
 		if (key === "analytics.json") throw new Error("Analytics settings are private to the main process");
 		const saved = getSetting<Record<string, unknown>>(key, { backupCorrupt: true });
 		if (key === "settings.json" && saved !== undefined) {
@@ -78,7 +86,8 @@ export function registerIpcHandlers(): void {
 		}
 		return saved;
 	});
-	ipcMain.handle(Channels.settingSet, async (_event, key: string, value: unknown) => {
+	handleIpc(Channels.settingSet, async (_event, key: unknown, value: unknown) => {
+		if (typeof key !== "string") throw new Error("Invalid setting key");
 		if (key === "analytics.json") throw new Error("Analytics settings are private to the main process");
 		await setSetting(key, value);
 		if (key === "settings.json" && typeof value === "object" && value !== null) {
@@ -88,7 +97,8 @@ export function registerIpcHandlers(): void {
 			);
 		}
 	});
-	ipcMain.handle(Channels.settingDelete, (_event, key: string) => {
+	handleIpc(Channels.settingDelete, (_event, key: unknown) => {
+		if (typeof key !== "string") throw new Error("Invalid setting key");
 		if (key === "analytics.json") throw new Error("Analytics settings are private to the main process");
 		deleteSetting(key);
 	});

@@ -1,6 +1,6 @@
 {
 	"meta": {
-		"version": "1.1",
+		"version": "2",
 		"language": "日本語",
 		"translators": [
 			{ "name": "pikepikeid", "link": "https://github.com/pikepikeid", "pfp": "/pfp/pikepikeid.png" },
@@ -35,7 +35,6 @@
 			"device": "デバイス:",
 			"imu": "IMU:",
 			"battery": "バッテリー残量:",
-			"status": "ステータス:",
 			"settings": "トラッカーの設定を開く: {{name}}",
 			"power_off": "トラッカーの電源を切る: {{name}}",
 			"error": {
@@ -354,7 +353,10 @@
 		},
 		"translators": "翻訳者",
 		"other_credits": "その他のクレジット",
-		"gh_contributors": "GitHub コントリビューター"
+		"gh_contributors": {
+			"title": "GitHub コントリビューター",
+			"none": "GitHubのコントリビューターが見つかりませんでした（または接続に失敗しました）。ぜひ最初のコントリビューターになってください！"
+		}
 	},
 
 	"common": {

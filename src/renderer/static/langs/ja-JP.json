@@ -63,6 +63,20 @@
 			"fast_data": "生データ",
 			"visualization": "トラッカーモデルの表示"
 		},
+		"pairing": {
+			"title": "ペアリング管理",
+			"subtitle": "Bluetooth LE たはシリアル／GX(6/2)接続を介して、HaritoraXトラッカーをペアリングし、管理します",
+			"enable_connect": "トラッカーがデバイスに接続またはペアリングできるようにする",
+			"error": {
+				"device_not_found": "{{name}} ({{serial}}) を見つけられませんでした。電源は入っていて、近くにありますか？",
+				"failed_connect": "{{name}} の接続に失敗しました: {{error}}",
+				"invalid_advertisement": "Bluetoothの通知内容にトラッカーのシリアル番号が含まれていません。",
+				"failed_save": "{{name}} の保存または接続に失敗しました: {{error}}",
+				"failed_disconnect": "{{device}} の切断に失敗しました: {{error}}",
+				"failed_forget": "{{name}} の削除に失敗しました: {{error}}",
+				"failed_slot": "ポート {{port}} のスロット {{slot}} で {{action}} に失敗しました: {{error}}",
+				"failed_channel": "チャンネルの設定に失敗しました: {{error}}"
+			},
 			"bluetooth": {
 				"title": "Bluetooth (LE) ペアリング",
 				"paired_devices": "ペアリング済みデバイス",

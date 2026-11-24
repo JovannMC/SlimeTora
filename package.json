@@ -44,7 +44,8 @@
 		"format:check": "prettier --check .",
 		"check": "pnpm run typecheck && pnpm run lint && pnpm run format:check",
 		"package": "pnpm run build && electron-builder --dir",
-		"dist": "pnpm run build && electron-builder --publish never"
+		"dist": "pnpm run build && electron-builder --publish never",
+		"release": "node scripts/tag-release.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

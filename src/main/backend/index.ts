@@ -30,7 +30,7 @@ import { getSetting } from "../store";
 import { createDiscoveryController } from "./discovery";
 import { createImuForwarding } from "./imu-forwarding";
 import { createReconnectController, endpointIdentity } from "./reconnect";
-import { SlimeVRBridge } from "./slimevr";
+import { SlimeVRBridge } from "./slimevr/udp";
 
 let backend: HaritoraX | undefined;
 let backendStarting: Promise<HaritoraX> | undefined;

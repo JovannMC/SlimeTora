@@ -1,6 +1,7 @@
 dist
 release
 build
+SolarXR-Protocol/
 
 node_modules
 src/renderer/node_modules

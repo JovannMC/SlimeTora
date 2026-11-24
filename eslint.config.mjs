@@ -5,7 +5,14 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
 	{
-		ignores: ["dist/**", "release/**", "node_modules/**", "src/renderer/.svelte-kit/**", "src/renderer/build/**"],
+		ignores: [
+			"dist/**",
+			"release/**",
+			"node_modules/**",
+			"SolarXR-Protocol/**",
+			"src/renderer/.svelte-kit/**",
+			"src/renderer/build/**",
+		],
 	},
 	js.configs.recommended,
 	...tseslint.configs.recommended,

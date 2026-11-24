@@ -13,6 +13,8 @@ on:
             - "pnpm-lock.yaml"
             - "pnpm-workspace.yaml"
             - "electron-builder.yml"
+            - ".gitmodules"
+            - "SolarXR-Protocol"
             - ".github/workflows/**"
     pull_request:
         paths:
@@ -23,6 +25,8 @@ on:
             - "pnpm-lock.yaml"
             - "pnpm-workspace.yaml"
             - "electron-builder.yml"
+            - ".gitmodules"
+            - "SolarXR-Protocol"
             - ".github/workflows/**"
     workflow_dispatch:
 
@@ -84,6 +88,8 @@ jobs:
 
         steps:
             - uses: actions/checkout@v7
+              with:
+                  submodules: true
 
             - uses: pnpm/action-setup@v6
 

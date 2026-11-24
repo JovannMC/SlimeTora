@@ -12,7 +12,7 @@ import {
 import { EmulatedTracker, type EmulatedSensor } from "@slimevr/tracker-emulation";
 import type { BatteryInfo, DeviceSnapshot, ImuSample } from "haritorax-interpreter";
 import { createHash } from "node:crypto";
-import { error, info } from "../log";
+import { error, info } from "../../log";
 
 type MACAddressBytes = [number, number, number, number, number, number];
 

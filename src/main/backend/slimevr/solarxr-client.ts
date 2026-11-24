@@ -64,7 +64,7 @@ export class SolarXRClient {
 
 	sendDriver(type: DriverMessage, message: NonNullable<DriverMessageHeaderT["message"]>): void {
 		this.#requireReady();
-		this.#send(new DriverMessageHeaderT(null, null, type, message));
+		this.#send(new DriverMessageHeaderT(null, null, type, message), type === DriverMessage.UpdateTrackerPosition);
 	}
 
 	sendRpc(type: RpcMessage, message: NonNullable<RpcMessageHeaderT["message"]>): void {
@@ -176,10 +176,14 @@ export class SolarXRClient {
 		if (this.#state.status !== "ready") throw new Error("SolarXR driver is not ready");
 	}
 
-	#send(header: Header): void {
+	#send(header: Header, droppable = false): void {
 		const socket = this.#socket;
 		if (socket?.readyState !== WebSocket.OPEN) throw new Error("SolarXR socket is not open");
-		if (socket.bufferedAmount >= MAX_BUFFERED_BYTES) throw new Error("SolarXR send buffer is full");
+		if (socket.bufferedAmount >= MAX_BUFFERED_BYTES) {
+			if (droppable) return;
+			this.#disconnect(socket, "SolarXR send buffer is full");
+			throw new Error("SolarXR send buffer is full");
+		}
 
 		const bundle = new MessageBundleT();
 		if (header instanceof DriverMessageHeaderT) bundle.driverMsgs.push(header);

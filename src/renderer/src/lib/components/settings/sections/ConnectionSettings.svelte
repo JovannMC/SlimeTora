@@ -17,6 +17,8 @@
 	import Input from "#lib/components/settings/Input.svelte";
 	import Switch from "#lib/components/settings/Switch.svelte";
 	import Tooltip from "#lib/components/settings/Tooltip.svelte";
+	import Select from "#lib/components/settings/Select.svelte";
+	import { DEFAULT_SOLARXR_ENDPOINT, DEFAULT_UDP_ENDPOINT } from "$shared/slimevr-settings";
 	import type { Capabilities } from "$shared/ipc/channels";
 	import clsx from "clsx";
 
@@ -271,36 +273,59 @@
 			{:else}
 				<p class="text-text-alt italic">{$t("settings.connection.serial_ports.none")}</p>
 			{/if}
+		</div>
+	</div>
 
-			<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
-				{$t("settings.connection.slimevr_server.name")}
-				<Tooltip
-					content={$t("settings.connection.slimevr_server.tooltip")}
-					icon="ri:information-line"
-					width="300px"
-				/>
-			</h3>
-			<div class="grid grid-cols-3 gap-4">
-				<div class="col-span-2">
-					<Input
-						label={$t("settings.connection.server_ip")}
-						icon="ri:global-line"
-						placeholder="255.255.255.255"
-						onchange={markRestartRequired}
-						bind:value={$connection.slimevr.ip}
-					/>
-				</div>
-				<div>
-					<Input
-						label={$t("settings.connection.server_port")}
-						type="number"
-						icon="ri:door-line"
-						placeholder="6969"
-						onchange={markRestartRequired}
-						bind:value={$connection.slimevr.port}
-					/>
-				</div>
-			</div>
+	<div class="mt-8 flex flex-col gap-4">
+		<h3 class="flex items-center gap-2 border-b border-secondary/50 pb-2 font-heading text-lg">
+			{$t("settings.connection.slimevr_server.name")}
+			<Tooltip
+				content={$t("settings.connection.slimevr_server.tooltip")}
+				icon="ri:information-line"
+				width="300px"
+			/>
+		</h3>
+		<Select
+			label={$t("settings.connection.slimevr_server.transport")}
+			options={[
+				{ value: "auto", label: $t("settings.connection.slimevr_server.auto") },
+				{ value: "solarxr", label: $t("settings.connection.slimevr_server.solarxr") },
+				{ value: "udp", label: $t("settings.connection.slimevr_server.udp") },
+			]}
+			selected={$connection.slimevr.transport}
+			onChange={(mode) => {
+				if (mode !== "auto" && mode !== "solarxr" && mode !== "udp") return;
+				$connection.slimevr.transport = mode;
+				markRestartRequired();
+			}}
+		/>
+		<div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+			{@render endpoint("solarxr", DEFAULT_SOLARXR_ENDPOINT)}
+			{@render endpoint("udp", DEFAULT_UDP_ENDPOINT)}
 		</div>
 	</div>
 </div>
+
+{#snippet endpoint(protocol: "solarxr" | "udp", defaults: typeof DEFAULT_SOLARXR_ENDPOINT)}
+	<div class="grid grid-cols-[2fr_1fr] gap-4">
+		<div>
+			<Input
+				label={`${$t(`settings.connection.slimevr_server.${protocol}`)} - ${$t("settings.connection.server_ip")}`}
+				icon="ri:global-line"
+				placeholder={defaults.ip}
+				disabled={$connection.slimevr.transport !== "auto" && $connection.slimevr.transport !== protocol}
+				onchange={markRestartRequired}
+				bind:value={$connection.slimevr[protocol].ip}
+			/>
+		</div>
+		<Input
+			label={$t("settings.connection.server_port")}
+			type="number"
+			icon="ri:door-line"
+			placeholder={String(defaults.port)}
+			disabled={$connection.slimevr.transport !== "auto" && $connection.slimevr.transport !== protocol}
+			onchange={markRestartRequired}
+			bind:value={$connection.slimevr[protocol].port}
+		/>
+	</div>
+{/snippet}

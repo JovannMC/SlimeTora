@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { FPSMode, SensorAutoCorrection, SensorMode, TrackerModel } from "../renderer/src/lib/types/tracker";
+import { DEFAULT_SOLARXR_ENDPOINT, DEFAULT_UDP_ENDPOINT, type SlimeVREndpoint } from "./slimevr-settings";
 
 const trackerModel = z.custom<TrackerModel>(
 	(value): value is TrackerModel => typeof value === "string" && ["X2", "Wireless", "Wired"].includes(value),
@@ -40,19 +41,51 @@ const program = z
 		fastData: false,
 	});
 
+const endpoint = (defaults: SlimeVREndpoint) =>
+	z
+		.object({
+			ip: z.string().trim().min(1).catch(defaults.ip),
+			port: z.number().int().min(1).max(65535).catch(defaults.port),
+		})
+		.catch(() => ({ ...defaults }));
+
+const solarxrEndpoint = endpoint(DEFAULT_SOLARXR_ENDPOINT);
+const udpEndpoint = endpoint(DEFAULT_UDP_ENDPOINT);
+export const slimevrSettingsSchema = z.preprocess(
+	(value) => {
+		if (!value || typeof value !== "object" || !("ip" in value || "port" in value)) return value;
+		const { ip, port } = solarxrEndpoint.parse(value);
+		const usesBroadcast = ip === DEFAULT_UDP_ENDPOINT.ip;
+		const usesUdpPort = port === DEFAULT_UDP_ENDPOINT.port;
+		return {
+			solarxr: {
+				ip: usesBroadcast ? DEFAULT_SOLARXR_ENDPOINT.ip : ip,
+				port: usesUdpPort ? DEFAULT_SOLARXR_ENDPOINT.port : port,
+			},
+			udp: usesBroadcast || usesUdpPort ? value : DEFAULT_UDP_ENDPOINT,
+		};
+	},
+	z
+		.object({
+			transport: z.enum(["auto", "solarxr", "udp"]).catch("auto"),
+			solarxr: solarxrEndpoint,
+			udp: udpEndpoint,
+		})
+		.catch(() => ({
+			transport: "auto" as const,
+			solarxr: { ...DEFAULT_SOLARXR_ENDPOINT },
+			udp: { ...DEFAULT_UDP_ENDPOINT },
+		})),
+);
+
 const connection = z
 	.object({
 		models: z.array(trackerModel).catch([]),
 		modes: z.array(z.string()).catch([]),
 		ports: z.array(z.string()).catch([]),
-		slimevr: z
-			.object({
-				ip: z.string().catch("255.255.255.255"),
-				port: z.number().min(1).max(65535).catch(6969),
-			})
-			.catch({ ip: "255.255.255.255", port: 6969 }),
+		slimevr: slimevrSettingsSchema,
 	})
-	.catch({ models: [], modes: [], ports: [], slimevr: { ip: "255.255.255.255", port: 6969 } });
+	.catch(() => ({ models: [], modes: [], ports: [], slimevr: slimevrSettingsSchema.parse(undefined) }));
 
 const tracker = z
 	.object({

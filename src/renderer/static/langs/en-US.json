@@ -261,7 +261,11 @@
 			},
 			"slimevr_server": {
 				"name": "SlimeVR Server",
-				"tooltip": "Configure where SlimeTora looks for the SlimeVR server. By default, it will look for the server across all of your networks using the local broadcast address (255.255.255.255)."
+				"tooltip": "Configure where SlimeTora looks for and how it connects to the SlimeVR server. Auto tries SolarXR first, then uses UDP if no SolarXR handshake is available. Some features may not be available over UDP for certain setups.",
+				"transport": "Transport",
+				"auto": "Auto",
+				"solarxr": "SolarXR",
+				"udp": "UDP"
 			},
 			"server_ip": "Server IP",
 			"server_port": "Server Port"

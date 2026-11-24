@@ -9,6 +9,8 @@ import type {
 	TrackerSettings,
 } from "haritorax-interpreter";
 
+import type { SlimeVRSettings } from "../slimevr-settings";
+
 type InterpreterEventName = Exclude<keyof Events, "log">;
 export interface SerializedBackendError {
 	message: string;
@@ -82,7 +84,7 @@ export interface SessionOptions {
 	bleSerials: string[];
 	heartbeatIntervalMs: number;
 	buttonDebounceMs: number;
-	slimevr: { ip: string; port: number };
+	slimevr: SlimeVRSettings;
 }
 
 export interface PowerOffResult {

@@ -11,7 +11,8 @@
 
 	onMount(async () => {
 		try {
-			appVersion = (await getBridge().getAppInfo()).version;
+			const info = await getBridge().getAppInfo();
+			appVersion = info.isRelease ? `v${info.version}` : info.version;
 		} catch (err) {
 			error(["layout", "header"], `Failed to fetch app version: ${String(err)}`);
 		}
@@ -22,7 +23,7 @@
 	<div class="flex h-full items-center justify-between px-3">
 		<div class="flex flex-row items-center gap-2">
 			<img src="/logo.png" alt="Logo" class="w-10 rounded-md" />
-			<h1 class="text-xl font-bold">SlimeTora <span class="text-xs text-text-alt">v{appVersion}</span></h1>
+			<h1 class="text-xl font-bold">SlimeTora <span class="text-xs text-text-alt">{appVersion}</span></h1>
 		</div>
 		<div class="flex flex-row items-center gap-2 pr-1">
 			{#if currentNavLink}

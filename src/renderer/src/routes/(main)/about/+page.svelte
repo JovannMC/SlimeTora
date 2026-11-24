@@ -13,7 +13,8 @@
 
 	onMount(async () => {
 		try {
-			appVersion = (await getBridge().getAppInfo()).version;
+			const info = await getBridge().getAppInfo();
+			appVersion = info.isRelease ? `v${info.version}` : info.version;
 		} catch (err) {
 			error(["about"], `Failed to fetch app version: ${String(err)}`);
 		}
@@ -102,7 +103,7 @@
 			<div class="flex items-center gap-3">
 				<img src="/logo.png" alt="SlimeTora Logo" class="h-14 w-14 rounded-lg drop-shadow-lg" />
 				<span class="font-heading text-3xl font-bold text-text">
-					SlimeTora <span class="text-xs text-text-alt">v{appVersion}</span>
+					SlimeTora <span class="text-xs text-text-alt">{appVersion}</span>
 				</span>
 			</div>
 			<p class="max-w-lg text-center text-base text-text-alt">{$t("about.description")}</p>

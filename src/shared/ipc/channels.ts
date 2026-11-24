@@ -28,6 +28,7 @@ export type ChannelName = (typeof Channels)[keyof typeof Channels];
 
 export interface AppInfo {
 	version: string;
+	isRelease: boolean;
 	electronVersion: string;
 	chromeVersion: string;
 	nodeVersion: string;

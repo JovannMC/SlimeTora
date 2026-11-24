@@ -90,6 +90,7 @@ export async function getLanguages(): Promise<LanguageData> {
 }
 
 export async function checkLanguages(): Promise<number> {
+	if (!__BUILD_VERSION__.release) throw new Error("Update checks are disabled for development builds");
 	const base = await bundled();
 
 	const files = JSON.parse((await fetchBytes(LANGUAGE_DIRECTORY, 1_000_000)).toString()) as {
@@ -135,6 +136,7 @@ export async function checkLanguages(): Promise<number> {
 }
 
 export async function checkApp(channel: "stable" | "beta"): Promise<AppUpdate> {
+	if (!__BUILD_VERSION__.release) throw new Error("Update checks are disabled for development builds");
 	const releases: unknown = JSON.parse((await fetchBytes(RELEASES, 1_000_000)).toString());
 
 	return selectRelease(releases, channel, app.getVersion());

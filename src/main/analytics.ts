@@ -58,7 +58,7 @@ async function connectedSetup(): Promise<AnalyticsPreview> {
 	}
 
 	return {
-		appVersion: app.getVersion(),
+		appVersion: __BUILD_VERSION__.release ? app.getVersion() : __BUILD_VERSION__.version,
 		operatingSystem: await operatingSystem(),
 		trackerCount: connectedDevices.reduce(
 			(count, device) => count + device.trackers.filter((tracker) => tracker.connected).length,
@@ -87,7 +87,7 @@ async function setupSignature(): Promise<string | undefined> {
 }
 
 async function reportAnalytics(): Promise<void> {
-	if (reportRunning || !trackerGateOpen) return;
+	if (!__BUILD_VERSION__.release || reportRunning || !trackerGateOpen) return;
 	reportRunning = true;
 	let succeeded = false;
 	try {

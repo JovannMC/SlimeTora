@@ -19,6 +19,15 @@ export async function checkUpdates(app: boolean, language: boolean): Promise<voi
 	appUpdate.set(null);
 
 	const bridge = getBridge();
+	try {
+		if (!(await bridge.getAppInfo()).isRelease) {
+			updateStatus.set({ checking: false, app: app ? "skipped" : "", language: language ? "skipped" : "" });
+			return;
+		}
+	} catch {
+		updateStatus.set({ checking: false, app: app ? "failed" : "", language: language ? "failed" : "" });
+		return;
+	}
 
 	await Promise.all([
 		app ? updateApp(bridge) : Promise.resolve(),

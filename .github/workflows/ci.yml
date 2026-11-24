@@ -83,7 +83,7 @@ jobs:
                     - name: macOS Apple Silicon
                       runner: macos-15
                       arch: arm64
-        name: Verify (${{ matrix.name }})
+        name: Verify and package (${{ matrix.name }})
         runs-on: ${{ matrix.runner }}
 
         steps:

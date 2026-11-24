@@ -12,11 +12,13 @@
 
 	function statusIcon(status: string): string {
 		if (status === "failed") return "ri:error-warning-line";
+		if (status === "skipped") return "ri:information-line";
 		if (status === "available" || status === "updated") return "ri:download-cloud-2-line";
 		return "ri:checkbox-circle-line";
 	}
 
 	function statusClass(status: string): string {
+		if (status === "skipped") return "text-text-alt";
 		if (status === "failed") return "text-yellow-400";
 		if (status === "available" || status === "updated") return "text-secondary-alt";
 		return "text-green-400";

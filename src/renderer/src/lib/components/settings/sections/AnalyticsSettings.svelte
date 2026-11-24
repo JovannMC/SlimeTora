@@ -12,6 +12,7 @@
 	import { error } from "#lib/log/index";
 
 	let analyticsEnabled = $state(true);
+	let isRelease = $state(true);
 	let preferenceLoaded = $state(false);
 	let showDetails = $state(false);
 	let analyticsPreview = $state<AnalyticsPreview>();
@@ -24,6 +25,11 @@
 			preferenceLoaded = true;
 			return;
 		}
+
+		void getBridge()
+			.getAppInfo()
+			.then((info) => (isRelease = info.isRelease))
+			.catch(() => undefined);
 
 		void getBridge()
 			.getAnalyticsEnabled()
@@ -82,6 +88,9 @@
 
 	<div class="flex flex-col gap-4">
 		<p class="text-sm text-text-alt">{$t("settings.analytics.description")}</p>
+		{#if !isRelease}
+			<p class="text-sm text-text-alt font-semibold">{$t("settings.analytics.non_release")}</p>
+		{/if}
 		<div class="flex flex-col gap-3 pl-1">
 			<Checkbox
 				label={$t("settings.analytics.enabled")}

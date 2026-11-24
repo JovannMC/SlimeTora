@@ -13,7 +13,8 @@ import { assertTrustedIpcSender, handleIpc } from "./security";
 
 function getAppInfo(): AppInfo {
 	return {
-		version: app.getVersion(),
+		version: __BUILD_VERSION__.release ? app.getVersion() : __BUILD_VERSION__.version,
+		isRelease: __BUILD_VERSION__.release,
 		electronVersion: process.versions.electron,
 		chromeVersion: process.versions.chrome,
 		nodeVersion: process.versions.node,

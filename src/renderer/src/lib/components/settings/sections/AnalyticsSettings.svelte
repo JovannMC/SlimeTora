@@ -89,7 +89,7 @@
 	<div class="flex flex-col gap-4">
 		<p class="text-sm text-text-alt">{$t("settings.analytics.description")}</p>
 		{#if !isRelease}
-			<p class="text-sm text-text-alt font-semibold">{$t("settings.analytics.non_release")}</p>
+			<p class="text-sm font-semibold text-text-alt">{$t("settings.analytics.non_release")}</p>
 		{/if}
 		<div class="flex flex-col gap-3 pl-1">
 			<Checkbox

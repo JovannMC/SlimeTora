@@ -235,36 +235,40 @@ async function loadConnections(
 ): Promise<Connection[]> {
 	const connections: Connection[] = [];
 
-	if (modes.includes("serial")) try {
-		const { createSerialConnection } = await import("haritorax-interpreter/connections/serial");
-		let saved: { settings?: { tracker?: { heartbeat?: number } } } | undefined;
+	if (modes.includes("serial"))
 		try {
-			saved = getSetting("settings.json");
-		} catch (err) {
-			warn(
-				["backend", "settings"],
-				`Ignoring unreadable settings while loading serial connection: ${String(err)}`,
+			const { createSerialConnection } = await import("haritorax-interpreter/connections/serial");
+			let saved: { settings?: { tracker?: { heartbeat?: number } } } | undefined;
+			try {
+				saved = getSetting("settings.json");
+			} catch (err) {
+				warn(
+					["backend", "settings"],
+					`Ignoring unreadable settings while loading serial connection: ${String(err)}`,
+				);
+			}
+
+			const configuredHeartbeat = saved?.settings?.tracker?.heartbeat;
+			const interval =
+				typeof heartbeatIntervalMs === "number" && Number.isFinite(heartbeatIntervalMs)
+					? Math.max(0, heartbeatIntervalMs)
+					: typeof configuredHeartbeat === "number" && Number.isFinite(configuredHeartbeat)
+						? Math.max(0, configuredHeartbeat)
+						: 2000;
+
+			connections.push(
+				createSerialConnection({ includeWired: true, heartbeatIntervalMs: interval, serialPorts }),
 			);
+		} catch (err) {
+			error(["backend", "serial"], `Serial connection unavailable: ${String(err)}`);
 		}
 
-		const configuredHeartbeat = saved?.settings?.tracker?.heartbeat;
-		const interval =
-			typeof heartbeatIntervalMs === "number" && Number.isFinite(heartbeatIntervalMs)
-				? Math.max(0, heartbeatIntervalMs)
-				: typeof configuredHeartbeat === "number" && Number.isFinite(configuredHeartbeat)
-					? Math.max(0, configuredHeartbeat)
-					: 2000;
-
-		connections.push(createSerialConnection({ includeWired: true, heartbeatIntervalMs: interval, serialPorts }));
-	} catch (err) {
-		error(["backend", "serial"], `Serial connection unavailable: ${String(err)}`);
-	}
-
-	if (modes.includes("ble")) try {
-		connections.push(await getBleConnection());
-	} catch (err) {
-		error(["backend", "ble"], `BLE connection unavailable: ${String(err)}`);
-	}
+	if (modes.includes("ble"))
+		try {
+			connections.push(await getBleConnection());
+		} catch (err) {
+			error(["backend", "ble"], `BLE connection unavailable: ${String(err)}`);
+		}
 
 	return connections;
 }

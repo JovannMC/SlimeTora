@@ -229,12 +229,13 @@ function scanBlePreview(): Promise<import("haritorax-interpreter").EndpointDescr
 }
 
 async function loadConnections(
+	modes: readonly SessionOptions["modes"][number][],
 	heartbeatIntervalMs?: number,
 	serialPorts: readonly string[] = [],
 ): Promise<Connection[]> {
 	const connections: Connection[] = [];
 
-	try {
+	if (modes.includes("serial")) try {
 		const { createSerialConnection } = await import("haritorax-interpreter/connections/serial");
 		let saved: { settings?: { tracker?: { heartbeat?: number } } } | undefined;
 		try {
@@ -259,7 +260,7 @@ async function loadConnections(
 		error(["backend", "serial"], `Serial connection unavailable: ${String(err)}`);
 	}
 
-	try {
+	if (modes.includes("ble")) try {
 		connections.push(await getBleConnection());
 	} catch (err) {
 		error(["backend", "ble"], `BLE connection unavailable: ${String(err)}`);
@@ -335,8 +336,8 @@ function getBackend(): Promise<HaritoraX> {
 async function createBackend(): Promise<HaritoraX> {
 	const instanceGeneration = generation;
 	const { createHaritoraX } = await import("haritorax-interpreter");
-	const connections = await loadConnections(activeOptions?.heartbeatIntervalMs, activeOptions?.ports);
 	const modes = activeOptions?.modes ?? [];
+	const connections = await loadConnections(modes, activeOptions?.heartbeatIntervalMs, activeOptions?.ports);
 	if (!connections.some((connection) => modes.includes(connection.kind))) {
 		throw new Error(`No usable connection is available for selected modes: ${modes.join(", ") || "none"}`);
 	}

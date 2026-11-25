@@ -10,6 +10,7 @@ import {
 	ResetRequestT,
 	ResetType,
 	RpcMessage,
+	BodyPart as SolarXRBodyPart,
 	TrackerStatus,
 	TrackingPauseStateResponseT,
 	UpdateTrackerBatteryT,
@@ -31,9 +32,34 @@ type Sensor = {
 	rotation?: ImuSample["rotation"];
 	acceleration?: ImuSample["acceleration"];
 };
-type Device = { battery?: BatteryInfo; sensors: Map<string, Sensor>; name: string };
 
-type DeviceMetadata = Pick<DeviceSnapshot, "model" | "wiredModel" | "battery">;
+type Device = {
+	battery?: BatteryInfo;
+	sensors: Map<string, Sensor>;
+	name: string;
+	bodyParts: Map<string, SolarXRBodyPart>;
+};
+
+type DeviceMetadata = Pick<DeviceSnapshot, "model" | "wiredModel" | "battery" | "trackers">;
+
+const BODY_PARTS: Record<DeviceSnapshot["trackers"][number]["bodyPart"], SolarXRBodyPart> = {
+	chest: SolarXRBodyPart.UPPER_CHEST,
+	hip: SolarXRBodyPart.HIP,
+	leftKnee: SolarXRBodyPart.LEFT_UPPER_LEG,
+	leftAnkle: SolarXRBodyPart.LEFT_LOWER_LEG,
+	rightKnee: SolarXRBodyPart.RIGHT_UPPER_LEG,
+	rightAnkle: SolarXRBodyPart.RIGHT_LOWER_LEG,
+	leftElbow: SolarXRBodyPart.LEFT_UPPER_ARM,
+	leftWrist: SolarXRBodyPart.LEFT_LOWER_ARM,
+	rightElbow: SolarXRBodyPart.RIGHT_UPPER_ARM,
+	rightWrist: SolarXRBodyPart.RIGHT_LOWER_ARM,
+	leftHand: SolarXRBodyPart.LEFT_HAND,
+	rightHand: SolarXRBodyPart.RIGHT_HAND,
+	head: SolarXRBodyPart.HEAD,
+	leftFoot: SolarXRBodyPart.LEFT_FOOT,
+	rightFoot: SolarXRBodyPart.RIGHT_FOOT,
+	unassigned: SolarXRBodyPart.NONE,
+};
 
 function friendlyModel({ model, wiredModel }: DeviceMetadata): string {
 	switch (model) {
@@ -89,11 +115,12 @@ export class SolarXRBridge {
 		let device = this.#devices.get(deviceId);
 		const name = friendlyModel(metadata);
 		if (!device) {
-			device = { battery: metadata.battery, sensors: new Map(), name };
+			device = { battery: metadata.battery, sensors: new Map(), name, bodyParts: new Map() };
 			this.#devices.set(deviceId, device);
-		} else {
-			device.name = name;
 		}
+
+		device.name = name;
+		for (const tracker of metadata.trackers) device.bodyParts.set(tracker.trackerId, BODY_PARTS[tracker.bodyPart]);
 
 		let sensor = device.sensors.get(trackerId);
 		if (sensor) {
@@ -214,10 +241,12 @@ export class SolarXRBridge {
 		const isCurrent = () => this.#client === client && sensor.registration === attempt;
 		try {
 			const trackerNumber = Number(trackerId.slice(deviceId.length + 1)) + 1;
+			const bodyPart = device.bodyParts.get(trackerId) ?? SolarXRBodyPart.NONE;
 			const request = new AddTrackerRequestT(
 				`slimetora:${trackerId}`,
 				`HaritoraX ${device.name} (${deviceId}, ${trackerNumber})`,
 				"Shiftall",
+				bodyPart,
 			);
 			const { message } = await client.requestDriver(
 				DriverMessage.AddTrackerRequest,

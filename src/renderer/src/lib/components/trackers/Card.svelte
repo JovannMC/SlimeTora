@@ -6,6 +6,7 @@
 	import { trackerMotion } from "#lib/store/tracker-motion";
 	import { observeTrackerMotion } from "#lib/backend/motion-visibility";
 	import { expectTrackerPowerOff } from "#lib/backend/notifications";
+	import { sessionState } from "#lib/backend/state";
 	import { ConnectionMode } from "#lib/types/connection";
 	import { program } from "#lib/store/settings";
 	import { error, info } from "#lib/log/index";
@@ -40,6 +41,18 @@
 			: $t(`home.card.status.${magStatus.toLowerCase()}`),
 	);
 	const rssi = $derived(tracker?.data.rssi);
+
+	const slimevrDiagnostic = $derived($sessionState.slimevrDiagnostics?.[id]);
+	const slimevrStatus = $derived(
+		slimevrDiagnostic?.status ?? ($sessionState.slimevrConnected ? "waiting" : "unavailable"),
+	);
+	const slimevrAssignment = $derived(
+		!slimevrDiagnostic?.bodyPart
+			? $t("home.card.slimevr.unknown")
+			: slimevrDiagnostic.bodyPart === "NONE"
+				? $t("home.card.slimevr.unassigned")
+				: $t(`home.card.slimevr.assignments.${slimevrDiagnostic.bodyPart}`),
+	);
 
 	const visualization = $derived($program.visualization ?? true);
 	const visualizationFPS = $derived($program.visualizationFPS ?? 60);
@@ -76,7 +89,7 @@
 	id="tracker-card-{id}"
 >
 	<!-- collapsed header -->
-	<div class="tracker-card-header flex h-14 items-center justify-between px-4">
+	<div class="tracker-card-header flex min-h-14 items-center justify-between px-4">
 		<button
 			type="button"
 			class="hoverable flex h-full min-w-0 flex-1 items-center justify-between text-left"
@@ -85,7 +98,7 @@
 		>
 			<span class="min-w-0">
 				<span class="block text-left font-body">{displayName}</span>
-				<span class="flex items-center gap-2 text-sm">
+				<span class="flex flex-wrap items-center gap-2 text-sm">
 					<Icon icon={connectionIcon} width={14} class="text-text-alt" />
 					<span class="flex items-center gap-1">
 						<Icon icon="ri:battery-fill" width={14} class="text-text-alt" />
@@ -101,6 +114,12 @@
 						<Icon icon="ri:signal-wifi-fill" width={14} class="text-text-alt" />
 						<span class="text-text-alt" id="rssi">{rssi === undefined ? "N/A" : `${rssi} dBm`}</span>
 					</span>
+					{#if $sessionState.slimevrTransport === "solarxr" && slimevrDiagnostic?.tps !== undefined}
+						<span class="flex items-center gap-1" id="slimevr-tps">
+							<Icon icon="ri:speed-up-fill" width={14} class="text-text-alt" />
+							<span class="text-text-alt" aria-label="SlimeVR TPS">{slimevrDiagnostic.tps} TPS</span>
+						</span>
+					{/if}
 				</span>
 			</span>
 			<Icon icon={isOpen ? "ri:arrow-up-s-line" : "ri:arrow-down-s-line"} width={24} class="text-text-alt" />
@@ -144,7 +163,8 @@
 
 			<!-- imu data -->
 			<p>
-				<b>{$t("home.card.imu")}</b> <span id="imu">{rotation.join(", ")} ({acceleration.join(", ")})</span>
+				<b>{$t("home.card.imu")}</b>
+				<span id="imu">R ({rotation.join(", ")}) - A ({acceleration.join(", ")})</span>
 			</p>
 
 			<!-- battery data -->
@@ -160,6 +180,15 @@
 					{/if}
 				</span>
 			</p>
+
+			<!-- slimevr diagnostic info -->
+			{#if $sessionState.slimevrTransport === "solarxr"}
+				<p aria-label="SlimeVR diagnostics">
+					<b>{$t("home.card.slimevr.title")}</b>
+					{$t(`home.card.slimevr.status.${slimevrStatus}`)} - {slimevrAssignment} - {slimevrDiagnostic?.tps ??
+						$t("home.card.slimevr.unknown")} TPS
+				</p>
+			{/if}
 
 			<!-- status data -->
 			<div id="status" class="flex items-center gap-1 text-center">

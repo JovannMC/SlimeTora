@@ -57,6 +57,12 @@ export const BACKEND_EVENTS = [
 
 export type UserActionName = "ResetYaw" | "Reset" | "ResetMounting" | "PauseTracking";
 
+export interface SlimeVRTrackerDiagnostic {
+	status: string;
+	bodyPart: string | null;
+	tps: number | null;
+}
+
 export interface SessionState {
 	status: "off" | "starting" | "on" | "stopping" | "error";
 	phase?: "connecting" | "searching";
@@ -64,6 +70,8 @@ export interface SessionState {
 	revision: number;
 	connectedTrackers?: number;
 	slimevrConnected?: boolean;
+	slimevrTransport?: "solarxr" | "udp";
+	slimevrDiagnostics?: Record<string, SlimeVRTrackerDiagnostic>;
 	error?: string;
 }
 

@@ -1,16 +1,22 @@
-import type { UserActionName } from "$shared/backend/contract";
+import type { SlimeVRTrackerDiagnostic, UserActionName } from "$shared/backend/contract";
 import type { SlimeVREndpoint } from "$shared/slimevr-settings";
 import type { BatteryInfo, DeviceSnapshot, ImuSample } from "haritorax-interpreter";
 import {
 	AddTrackerRequestT,
 	AddTrackerResponseT,
 	AddTrackerStatus,
+	DataFeedConfigT,
+	DataFeedMessage,
+	DataFeedUpdateT,
+	DeviceDataMaskT,
 	DriverMessage,
 	QuatT,
 	ResetRequestT,
 	ResetType,
 	RpcMessage,
 	BodyPart as SolarXRBodyPart,
+	StartDataFeedT,
+	TrackerDataMaskT,
 	TrackerStatus,
 	TrackingPauseStateResponseT,
 	UpdateTrackerBatteryT,
@@ -24,10 +30,27 @@ import { SolarXRPause } from "./solarxr-pause.js";
 const RESET_TYPES = { ResetYaw: ResetType.YAW, Reset: ResetType.FULL, ResetMounting: ResetType.MOUNTING };
 const RETRY_MS = 5000;
 
+function diagnosticStatus(status: TrackerStatus): string {
+	switch (TrackerStatus[status]) {
+		case "DISCONNECTED":
+			return "disconnected";
+		case "OK":
+			return "ok";
+		case "BUSY":
+			return "busy";
+		case "ERROR":
+			return "error";
+		default:
+			return "unknown";
+	}
+}
+
 type Sensor = {
 	active: boolean;
 	id?: number;
 	registration?: symbol;
+	registrationFailed?: boolean;
+	registeredFeedVersion?: number;
 	retryAt?: number;
 	rotation?: ImuSample["rotation"];
 	acceleration?: ImuSample["acceleration"];
@@ -76,11 +99,38 @@ export class SolarXRBridge {
 	#client?: SolarXRClient;
 	#devices = new Map<string, Device>();
 	#pause?: SolarXRPause;
+	#feedTimer?: ReturnType<typeof setTimeout>;
+	#feedExpired = false;
+	#feedVersion = 0;
+	#diagnostics = new Map<number, SlimeVRTrackerDiagnostic>();
 
 	constructor(
 		private readonly onState: (state: SolarXRState) => void,
 		private readonly onError: (error: unknown) => void,
+		private readonly onDiagnostics: () => void,
 	) {}
+
+	get diagnostics(): Record<string, SlimeVRTrackerDiagnostic> {
+		const result: Record<string, SlimeVRTrackerDiagnostic> = {};
+		for (const device of this.#devices.values()) {
+			for (const [trackerId, sensor] of device.sensors) {
+				if (!sensor.active) continue;
+
+				let status = "waiting";
+				if (this.#feedExpired) status = "unavailable";
+				else if (sensor.registrationFailed) status = "registration_failed";
+				else if (sensor.registeredFeedVersion !== undefined && this.#feedVersion > sensor.registeredFeedVersion)
+					status = "not_found";
+
+				result[trackerId] = (sensor.id === undefined ? undefined : this.#diagnostics.get(sensor.id)) ?? {
+					status,
+					bodyPart: null,
+					tps: null,
+				};
+			}
+		}
+		return result;
+	}
 
 	get serverConnected(): boolean {
 		return this.#client?.state.status === "ready";
@@ -92,6 +142,9 @@ export class SolarXRBridge {
 		const host = ip.includes(":") && !ip.startsWith("[") ? `[${ip}]` : ip;
 		const client = new SolarXRClient(`ws://${host}:${port}`, {
 			onState: (state) => this.#handleState(client, state),
+			onDataFeed: ({ message }) => {
+				if (client === this.#client && message instanceof DataFeedUpdateT) this.#handleFeed(message);
+			},
 			onMessage: ({ message, messageType }) => {
 				if (
 					messageType === RpcMessage.TrackingPauseStateResponse &&
@@ -197,6 +250,25 @@ export class SolarXRBridge {
 		if (client !== this.#client) return;
 
 		if (state.status === "ready") {
+			this.#feedExpired = false;
+
+			const mask = new TrackerDataMaskT();
+			mask.info = true;
+			mask.status = true;
+			mask.tps = true;
+
+			const started = this.#send(() =>
+				client.sendDataFeed(
+					DataFeedMessage.StartDataFeed,
+					new StartDataFeedT([new DataFeedConfigT(1000, new DeviceDataMaskT(mask, true))]),
+				),
+			);
+
+			if (client.state.status !== "ready") return;
+
+			if (started) this.#scheduleFeedTimeout();
+			else this.#feedExpired = true;
+
 			this.#pause = new SolarXRPause(client, this.onError);
 			for (const [deviceId, device] of this.#devices) {
 				for (const [trackerId, sensor] of device.sensors) {
@@ -204,11 +276,43 @@ export class SolarXRBridge {
 				}
 			}
 		} else {
+			clearTimeout(this.#feedTimer);
+			this.#diagnostics.clear();
+			this.#feedExpired = true;
 			this.#pause?.dispose();
 			this.#pause = undefined;
 			this.#resetRegistrations();
 		}
 		this.onState(state);
+	}
+
+	#scheduleFeedTimeout(): void {
+		clearTimeout(this.#feedTimer);
+		this.#feedTimer = setTimeout(() => {
+			this.#feedExpired = true;
+			this.#diagnostics.clear();
+			this.onDiagnostics();
+		}, 5000);
+	}
+
+	#handleFeed(update: DataFeedUpdateT): void {
+		this.#feedVersion++;
+		this.#feedExpired = false;
+		this.#scheduleFeedTimeout();
+
+		const next = new Map<number, SlimeVRTrackerDiagnostic>();
+		for (const device of update.devices) {
+			for (const tracker of device.trackers) {
+				next.set(tracker.trackerId, {
+					status: diagnosticStatus(tracker.status),
+					bodyPart: tracker.info ? (SolarXRBodyPart[tracker.info.bodyPart] ?? null) : null,
+					tps: tracker.tps,
+				});
+			}
+		}
+
+		this.#diagnostics = next;
+		this.onDiagnostics();
 	}
 
 	#resetRegistrations(): void {
@@ -220,7 +324,9 @@ export class SolarXRBridge {
 				}
 
 				sensor.id = undefined;
+				sensor.registeredFeedVersion = undefined;
 				sensor.registration = undefined;
+				sensor.registrationFailed = false;
 				sensor.retryAt = undefined;
 			}
 			if (!device.sensors.size) this.#devices.delete(deviceId);
@@ -269,15 +375,22 @@ export class SolarXRBridge {
 			}
 			if (!this.#sendStatus(client, id, TrackerStatus.OK)) {
 				sensor.retryAt = Date.now() + RETRY_MS;
+				sensor.registrationFailed = true;
+				this.onDiagnostics();
 				return;
 			}
 
 			sensor.id = id;
+			sensor.registeredFeedVersion = this.#feedVersion;
+			sensor.registrationFailed = false;
+			this.onDiagnostics();
 			if (device.battery) this.#sendBattery(client, id, device.battery);
 			if (sensor.rotation) this.#sendRotation(client, id, sensor.rotation, sensor.acceleration);
 		} catch (error) {
 			if (isCurrent() && sensor.active) {
 				sensor.retryAt = Date.now() + RETRY_MS;
+				sensor.registrationFailed = true;
+				this.onDiagnostics();
 				this.onError(error);
 			}
 		} finally {

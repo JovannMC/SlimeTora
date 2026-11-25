@@ -293,6 +293,8 @@ function publishSession(
 		revision: sessionState.revision + 1,
 		connectedTrackers: liveTrackers.size,
 		slimevrConnected: slimevr.serverConnected,
+		slimevrTransport: slimevr.transport,
+		slimevrDiagnostics: slimevr.diagnostics,
 		...(failure === undefined ? {} : { error: failure instanceof Error ? failure.message : String(failure) }),
 	};
 	send("session", sessionState);

@@ -1,4 +1,6 @@
 import {
+	DataFeedMessage,
+	DataFeedMessageHeaderT,
 	DriverMessage,
 	DriverMessageHeaderT,
 	HandshakeRequestT,
@@ -29,6 +31,7 @@ type Pending = {
 type ClientOptions = {
 	onState?: (state: SolarXRState) => void;
 	onMessage?: (message: Header) => void;
+	onDataFeed?: (message: DataFeedMessageHeaderT) => void;
 	reconnectDelayMs?: number;
 	requestTimeoutMs?: number;
 };
@@ -72,6 +75,11 @@ export class SolarXRClient {
 		this.#send(new RpcMessageHeaderT(null, null, type, message));
 	}
 
+	sendDataFeed(type: DataFeedMessage, message: NonNullable<DataFeedMessageHeaderT["message"]>): void {
+		this.#requireReady();
+		this.#send(new DataFeedMessageHeaderT(type, message));
+	}
+
 	async requestDriver(
 		type: DriverMessage,
 		message: NonNullable<DriverMessageHeaderT["message"]>,
@@ -113,6 +121,7 @@ export class SolarXRClient {
 
 		socket.addEventListener("open", () => {
 			if (socket !== this.#socket) return;
+
 			clearTimeout(this.#connectTimer);
 			this.#setState({ status: "waiting" });
 		});
@@ -125,6 +134,7 @@ export class SolarXRClient {
 		});
 		socket.addEventListener("message", ({ data }) => {
 			if (socket !== this.#socket || !(data instanceof ArrayBuffer)) return;
+
 			let bundle: MessageBundleT;
 			try {
 				bundle = decodeSolarXRBundle(new Uint8Array(data)).unpack();
@@ -132,6 +142,12 @@ export class SolarXRClient {
 				this.#disconnect(socket, "Invalid SolarXR message bundle");
 				return;
 			}
+
+			for (const header of bundle.dataFeedMsgs) {
+				if (socket !== this.#socket) return;
+				if (this.#state.status === "ready") this.options.onDataFeed?.(header);
+			}
+
 			for (const header of [...bundle.driverMsgs, ...bundle.rpcMsgs]) {
 				if (socket !== this.#socket) return;
 				this.#receive(socket, header);
@@ -176,7 +192,7 @@ export class SolarXRClient {
 		if (this.#state.status !== "ready") throw new Error("SolarXR driver is not ready");
 	}
 
-	#send(header: Header, droppable = false): void {
+	#send(header: Header | DataFeedMessageHeaderT, droppable = false): void {
 		const socket = this.#socket;
 		if (socket?.readyState !== WebSocket.OPEN) throw new Error("SolarXR socket is not open");
 		if (socket.bufferedAmount >= MAX_BUFFERED_BYTES) {
@@ -186,7 +202,8 @@ export class SolarXRClient {
 		}
 
 		const bundle = new MessageBundleT();
-		if (header instanceof DriverMessageHeaderT) bundle.driverMsgs.push(header);
+		if (header instanceof DataFeedMessageHeaderT) bundle.dataFeedMsgs.push(header);
+		else if (header instanceof DriverMessageHeaderT) bundle.driverMsgs.push(header);
 		else bundle.rpcMsgs.push(header);
 
 		socket.send(encodeSolarXRBundle(bundle));

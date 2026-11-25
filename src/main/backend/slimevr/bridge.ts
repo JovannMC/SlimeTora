@@ -36,15 +36,27 @@ export class SlimeVRConnection {
 	#mode?: "solarxr" | "udp";
 
 	constructor(private readonly options: ConnectionOptions) {
-		this.#solarxr = new SolarXRBridge((state) => {
-			if (state.status === "ready" || state.status === "rejected") this.#clearProbe();
-			options.onSolarXRState(state);
-			options.onState();
-		}, options.onError);
+		this.#solarxr = new SolarXRBridge(
+			(state) => {
+				if (state.status === "ready" || state.status === "rejected") this.#clearProbe();
+				options.onSolarXRState(state);
+				options.onState();
+			},
+			options.onError,
+			options.onState,
+		);
 	}
 
 	get serverConnected(): boolean {
 		return this.#mode === "solarxr" ? this.#solarxr.serverConnected : (this.#udp?.serverConnected ?? false);
+	}
+
+	get transport(): "solarxr" | "udp" | undefined {
+		return this.#mode;
+	}
+
+	get diagnostics() {
+		return this.#mode === "solarxr" ? this.#solarxr.diagnostics : undefined;
 	}
 
 	start(settings: SlimeVRSettings): void {

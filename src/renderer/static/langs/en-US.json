@@ -43,6 +43,41 @@
 			"battery": "Battery:",
 			"settings": "Open tracker settings: {{name}}",
 			"power_off": "Power off tracker: {{name}}",
+			"slimevr": {
+				"title": "SlimeVR:",
+				"unknown": "Unknown",
+				"unassigned": "Unassigned",
+				"assignments": {
+					"HEAD": "Head",
+					"NECK": "Neck",
+					"UPPER_CHEST": "Upper chest",
+					"CHEST": "Chest",
+					"WAIST": "Waist",
+					"HIP": "Hip",
+					"LEFT_UPPER_LEG": "Left thigh",
+					"RIGHT_UPPER_LEG": "Right thigh",
+					"LEFT_LOWER_LEG": "Left ankle",
+					"RIGHT_LOWER_LEG": "Right ankle",
+					"LEFT_FOOT": "Left foot",
+					"RIGHT_FOOT": "Right foot",
+					"LEFT_UPPER_ARM": "Left upper arm",
+					"RIGHT_UPPER_ARM": "Right upper arm",
+					"LEFT_LOWER_ARM": "Left lower arm",
+					"RIGHT_LOWER_ARM": "Right lower arm",
+					"LEFT_HAND": "Left hand",
+					"RIGHT_HAND": "Right hand"
+				},
+				"status": {
+					"waiting": "Waiting for diagnostics",
+					"unavailable": "Diagnostics unavailable",
+					"registration_failed": "Tracker registration failed",
+					"not_found": "Not found in SlimeVR",
+					"disconnected": "Disconnected",
+					"ok": "Connected",
+					"error": "Error",
+					"unknown": "Unknown"
+				}
+			},
 			"error": {
 				"power_off_failed": "Failed to power off {{name}}: {{error}}"
 			},

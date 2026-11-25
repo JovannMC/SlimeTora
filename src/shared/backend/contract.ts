@@ -20,11 +20,11 @@ export interface SerializedBackendError {
 	cause?: SerializedBackendError;
 	causes?: SerializedBackendError[];
 }
-export type BackendEventName = InterpreterEventName | "session" | "snapshot";
+export type BackendEventName = InterpreterEventName | "session" | "snapshot" | "slimevr-reset";
 
 export type BackendEvents = {
 	[E in InterpreterEventName]: E extends "error" ? { error: SerializedBackendError } : Events[E];
-} & { session: SessionState; snapshot: BackendSnapshot };
+} & { session: SessionState; snapshot: BackendSnapshot; "slimevr-reset": Record<string, never> };
 
 export interface BackendEventMessage<E extends BackendEventName = BackendEventName> {
 	event: E;

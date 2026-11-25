@@ -66,6 +66,7 @@ const slimevr = new SlimeVRConnection({
 		if (state.status === "rejected") warn(["backend", "slimevr"], `SolarXR handshake rejected (${state.reason})`);
 		if (state.status === "disconnected") debug(["backend", "slimevr"], state.reason);
 	},
+	onResetStarted: () => send("slimevr-reset", {}),
 	onFallback: () => info(["backend", "slimevr"], "SolarXR unavailable, using UDP"),
 	onError: (err) => error(["backend", "slimevr"], String(err)),
 });

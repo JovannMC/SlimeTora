@@ -23,6 +23,7 @@ type ConnectionOptions = {
 	createUdp: (endpoint: SlimeVREndpoint, onState: () => void) => UdpTransport;
 	onState: () => void;
 	onSolarXRState: (state: SolarXRState) => void;
+	onResetStarted: () => void;
 	onFallback: () => void;
 	onError: (error: unknown) => void;
 	probeMs?: number;
@@ -44,6 +45,7 @@ export class SlimeVRConnection {
 			},
 			options.onError,
 			options.onState,
+			options.onResetStarted,
 		);
 	}
 

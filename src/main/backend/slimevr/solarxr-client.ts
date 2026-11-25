@@ -44,6 +44,7 @@ export class SolarXRClient {
 	#nextId = 1;
 	#handshakeAttempt = 0;
 	#pending = new Map<number, Pending>();
+	#trackedTransactions = new Set<number>();
 
 	constructor(
 		private readonly url: string,
@@ -73,6 +74,24 @@ export class SolarXRClient {
 	sendRpc(type: RpcMessage, message: NonNullable<RpcMessageHeaderT["message"]>): void {
 		this.#requireReady();
 		this.#send(new RpcMessageHeaderT(null, null, type, message));
+	}
+
+	sendTrackedRpc(type: RpcMessage, message: NonNullable<RpcMessageHeaderT["message"]>): number {
+		this.#requireReady();
+		const txId = this.#nextTransactionId();
+		this.#trackedTransactions.add(txId);
+
+		try {
+			this.#send(new RpcMessageHeaderT(txId, null, type, message));
+			return txId;
+		} catch (error) {
+			this.#trackedTransactions.delete(txId);
+			throw error;
+		}
+	}
+
+	releaseTrackedTransaction(txId: number): void {
+		this.#trackedTransactions.delete(txId);
 	}
 
 	sendDataFeed(type: DataFeedMessage, message: NonNullable<DataFeedMessageHeaderT["message"]>): void {
@@ -171,6 +190,7 @@ export class SolarXRClient {
 
 	#dropSocket(reason: string): void {
 		clearTimeout(this.#connectTimer);
+		this.#trackedTransactions.clear();
 
 		const socket = this.#socket;
 		this.#socket = undefined;
@@ -210,11 +230,7 @@ export class SolarXRClient {
 	}
 
 	#request<T extends Header>(header: T, expected: T["messageType"]): Promise<T> {
-		let id: number;
-		do {
-			id = this.#nextId;
-			this.#nextId = id === 0xffffffff ? 1 : id + 1;
-		} while (this.#pending.has(id));
+		const id = this.#nextTransactionId();
 
 		header.txId = id;
 
@@ -242,24 +258,33 @@ export class SolarXRClient {
 		});
 	}
 
+	#nextTransactionId(): number {
+		let id: number;
+		do {
+			id = this.#nextId;
+			this.#nextId = id === 0xffffffff ? 1 : id + 1;
+		} while (this.#pending.has(id) || this.#trackedTransactions.has(id));
+		return id;
+	}
+
 	#receive(socket: WebSocket, header: Header): void {
 		const isDriver = header instanceof DriverMessageHeaderT;
 
 		if (header.replyTo !== null) {
 			const pending = this.#pending.get(header.replyTo);
-			if (
-				!pending ||
-				pending.channel !== (isDriver ? "driver" : "rpc") ||
-				pending.expected !== header.messageType ||
-				!header.message
-			)
+			if (pending) {
+				if (
+					pending.channel !== (isDriver ? "driver" : "rpc") ||
+					pending.expected !== header.messageType ||
+					!header.message
+				)
+					return;
+
+				clearTimeout(pending.timer);
+				this.#pending.delete(header.replyTo);
+				pending.resolve(header);
 				return;
-
-			clearTimeout(pending.timer);
-			this.#pending.delete(header.replyTo);
-			pending.resolve(header);
-
-			return;
+			}
 		}
 		if (isDriver && header.messageType === DriverMessage.HandshakeAvailable) {
 			if (this.#state.status === "waiting" || this.#state.status === "rejected") void this.#handshake(socket);

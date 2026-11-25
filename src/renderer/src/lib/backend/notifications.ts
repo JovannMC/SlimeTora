@@ -42,9 +42,13 @@ function trackersOfDevice(deviceId: string) {
 
 const BUTTON_PRESS_WINDOW_MS = 750;
 const BACKEND_ERROR_REPEAT_WINDOW_MS = 5_000;
+const RESET_TIP_WINDOW_MS = 15 * 60 * 1_000;
+const RESET_TIP_THRESHOLD = 3;
 const buttonPressTimestamps: Record<string, number[]> = {};
 const buttonActionTimeout: Record<string, ReturnType<typeof setTimeout> | null> = {};
 const recentBackendErrors = new Map<string, number>();
+const recentResets: number[] = [];
+let resetTipShown = false;
 
 function backendErrorToast(value: Parameters<typeof classifyBackendError>[0]) {
 	const now = Date.now();
@@ -78,6 +82,31 @@ function toDeviceSettings(settings: GlobalTrackerSettings): DeviceSettings {
 		sensorAutoCorrection: [...settings.dynamicCalibration],
 		ankleMotionDetection: false,
 	};
+}
+
+function suggestSensorMode(): void {
+	const now = Date.now();
+	while (recentResets.length && now - recentResets[0]! >= RESET_TIP_WINDOW_MS) recentResets.shift();
+	recentResets.push(now);
+
+	if (recentResets.length < RESET_TIP_THRESHOLD) {
+		resetTipShown = false;
+		return;
+	}
+	if (resetTipShown) return;
+
+	resetTipShown = true;
+	const currentMode = get(globalTrackerSettings).mode;
+	const suggestedMode = currentMode === 1 ? 2 : 1;
+
+	ToastManager.add({
+		type: "info",
+		message: get(t)("toast.frequent_resets_sensor_mode", {
+			count: recentResets.length,
+			sensorMode: suggestedMode,
+		}),
+		disappearing: false,
+	});
 }
 
 function consumeExpectedPowerOff(trackerId: string): boolean {
@@ -310,6 +339,8 @@ export function attachNotifications(): () => void {
 		listen("session", ({ status }) => {
 			if (status === "off") {
 				disconnectedTrackers.clear();
+				recentResets.length = 0;
+				resetTipShown = false;
 				for (const timer of expectedPowerOffs.values()) clearTimeout(timer);
 				expectedPowerOffs.clear();
 			}
@@ -341,6 +372,7 @@ export function attachNotifications(): () => void {
 			info(["backend", "notifications"], `Button ${button} pressed on ${trackerId ?? deviceId}`);
 			onButton(deviceId, trackerId, button);
 		}),
+		listen("slimevr-reset", suggestSensorMode),
 		listen("error", ({ error: err }) => backendErrorToast(err)),
 	];
 
@@ -373,6 +405,8 @@ export function attachNotifications(): () => void {
 		}
 		for (const key of Object.keys(buttonActionTimeout)) delete buttonActionTimeout[key];
 		for (const key of Object.keys(buttonPressTimestamps)) delete buttonPressTimestamps[key];
+		recentResets.length = 0;
+		resetTipShown = false;
 		disconnectedTrackers.clear();
 		info(["backend", "notifications"], "Stopped listening to backend events");
 	};

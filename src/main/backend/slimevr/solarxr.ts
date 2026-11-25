@@ -11,7 +11,9 @@ import {
 	DeviceDataMaskT,
 	DriverMessage,
 	QuatT,
+	ResetLifecycle,
 	ResetRequestT,
+	ResetStatusResponseT,
 	ResetType,
 	RpcMessage,
 	BodyPart as SolarXRBodyPart,
@@ -29,6 +31,9 @@ import { SolarXRPause } from "./solarxr-pause.js";
 
 const RESET_TYPES = { ResetYaw: ResetType.YAW, Reset: ResetType.FULL, ResetMounting: ResetType.MOUNTING };
 const RETRY_MS = 5000;
+const RESET_RESPONSE_TIMEOUT_MS = 30_000;
+
+type PendingReset = { timer: ReturnType<typeof setTimeout>; started: boolean };
 
 function diagnosticStatus(status: TrackerStatus): string {
 	switch (TrackerStatus[status]) {
@@ -103,11 +108,14 @@ export class SolarXRBridge {
 	#feedExpired = false;
 	#feedVersion = 0;
 	#diagnostics = new Map<number, SlimeVRTrackerDiagnostic>();
+	#pendingResets = new Map<number, PendingReset>();
+	#resetRunning = false;
 
 	constructor(
 		private readonly onState: (state: SolarXRState) => void,
 		private readonly onError: (error: unknown) => void,
 		private readonly onDiagnostics: () => void,
+		private readonly onResetStarted: () => void,
 	) {}
 
 	get diagnostics(): Record<string, SlimeVRTrackerDiagnostic> {
@@ -145,7 +153,11 @@ export class SolarXRBridge {
 			onDataFeed: ({ message }) => {
 				if (client === this.#client && message instanceof DataFeedUpdateT) this.#handleFeed(message);
 			},
-			onMessage: ({ message, messageType }) => {
+			onMessage: ({ message, messageType, replyTo }) => {
+				if (messageType === RpcMessage.ResetStatusResponse && message instanceof ResetStatusResponseT) {
+					this.#handleResetStatus(client, replyTo, message);
+					return;
+				}
 				if (
 					messageType === RpcMessage.TrackingPauseStateResponse &&
 					message instanceof TrackingPauseStateResponseT
@@ -236,18 +248,65 @@ export class SolarXRBridge {
 		if (![...device.sensors.values()].some((sensor) => sensor.active)) return;
 
 		if (action === "PauseTracking") this.#pause?.toggle();
-		else this.#send(() => client.sendRpc(RpcMessage.ResetRequest, new ResetRequestT(RESET_TYPES[action])));
+		else if (action === "ResetYaw" || action === "Reset") {
+			this.#send(() => {
+				const txId = client.sendTrackedRpc(RpcMessage.ResetRequest, new ResetRequestT(RESET_TYPES[action]));
+				const timer = setTimeout(() => {
+					this.#pendingResets.delete(txId);
+					client.releaseTrackedTransaction(txId);
+				}, RESET_RESPONSE_TIMEOUT_MS);
+
+				this.#pendingResets.set(txId, { timer, started: false });
+			});
+		} else this.#send(() => client.sendRpc(RpcMessage.ResetRequest, new ResetRequestT(RESET_TYPES[action])));
 	}
 
 	dispose(): void {
 		for (const deviceId of this.#devices.keys()) this.deviceDisconnected(deviceId);
-		this.#client?.stop();
+
+		const client = this.#client;
+		client?.stop();
 		this.#client = undefined;
+
+		for (const [txId, pending] of this.#pendingResets) {
+			clearTimeout(pending.timer);
+			client?.releaseTrackedTransaction(txId);
+		}
+
+		this.#pendingResets.clear();
 		this.#devices.clear();
+	}
+
+	#handleResetStatus(client: SolarXRClient, replyTo: number | null, status: ResetStatusResponseT): void {
+		if (client !== this.#client) return;
+
+		const pending = replyTo === null ? undefined : this.#pendingResets.get(replyTo);
+		if (status.lifecycle === ResetLifecycle.RUNNING) {
+			const isYawOrFull = status.resetType === ResetType.YAW || status.resetType === ResetType.FULL;
+			if (isYawOrFull && (pending ? !pending.started : !this.#resetRunning)) {
+				this.onResetStarted();
+			}
+			if (pending) pending.started = true;
+			this.#resetRunning = true;
+		}
+
+		if (
+			status.lifecycle === ResetLifecycle.DONE ||
+			status.lifecycle === ResetLifecycle.CANCELED ||
+			status.lifecycle === ResetLifecycle.FAILED
+		) {
+			this.#resetRunning = false;
+			if (pending && replyTo !== null) {
+				clearTimeout(pending.timer);
+				this.#pendingResets.delete(replyTo);
+				client.releaseTrackedTransaction(replyTo);
+			}
+		}
 	}
 
 	#handleState(client: SolarXRClient, state: SolarXRState): void {
 		if (client !== this.#client) return;
+		if (state.status === "disconnected" || state.status === "stopped") this.#clearPendingResets(client);
 
 		if (state.status === "ready") {
 			this.#feedExpired = false;
@@ -284,6 +343,16 @@ export class SolarXRBridge {
 			this.#resetRegistrations();
 		}
 		this.onState(state);
+	}
+
+	#clearPendingResets(client: SolarXRClient): void {
+		for (const [txId, pending] of this.#pendingResets) {
+			clearTimeout(pending.timer);
+			client.releaseTrackedTransaction(txId);
+		}
+
+		this.#pendingResets.clear();
+		this.#resetRunning = false;
 	}
 
 	#scheduleFeedTimeout(): void {

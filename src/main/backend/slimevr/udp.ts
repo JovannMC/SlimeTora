@@ -35,6 +35,7 @@ export function macFromSerial(serial: string): MACAddress {
 interface EmulatedDevice {
 	tracker: EmulatedTracker;
 	sensors: EmulatedSensor[];
+	signalStrengths: (number | undefined)[];
 }
 
 type ServerState = "searching" | "connected" | "disconnected" | "error";
@@ -108,7 +109,7 @@ export class UdpBridge {
 				for (let i = 0; i < device.imuCount; i++)
 					sensors.push(await tracker.addSensor(SensorType.UNKNOWN, SensorStatus.OK));
 
-				this.#devices.set(device.deviceId, { tracker, sensors });
+				this.#devices.set(device.deviceId, { tracker, sensors, signalStrengths: [] });
 				setState("searching");
 
 				info(["backend", "slimevr"], `Emulating ${device.deviceId} with MAC ${mac}`);
@@ -139,11 +140,25 @@ export class UdpBridge {
 		return [...this.#serverStates.values()].some((state) => state === "connected");
 	}
 
-	imu(sample: ImuSample): void {
+	imu(sample: ImuSample, snapshot: DeviceSnapshot): void {
 		const device = this.#devices.get(sample.deviceId);
 		const index = Number(sample.trackerId.slice(sample.deviceId.length + 1));
 		const sensor = device?.sensors[index];
-		if (!sensor) return;
+		if (!device || !sensor) return;
+
+		const tracker = snapshot.trackers.find((item) => item.trackerId === sample.trackerId);
+		const signalStrength = tracker?.sensorRssi ?? tracker?.rssi;
+		if (
+			signalStrength !== undefined &&
+			Number.isFinite(signalStrength) &&
+			device.signalStrengths[index] !== signalStrength
+		) {
+			const clampedSignalStrength = Math.max(-127, Math.min(127, Math.round(signalStrength)));
+			device.signalStrengths[index] = signalStrength;
+			sensor
+				.sendSignalStrength(clampedSignalStrength)
+				.catch((err) => error(["backend", "slimevr"], `Failed to send signal strength: ${String(err)}`));
+		}
 
 		const { rotation, acceleration } = sample;
 		sensor

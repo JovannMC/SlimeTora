@@ -83,7 +83,7 @@ export class SlimeVRConnection {
 
 		if (!this.#udp) return;
 
-		if (device.registeredImuCount === snapshot.imuCount && !device.initializing) this.#udp.imu(sample);
+		if (device.registeredImuCount === snapshot.imuCount && !device.initializing) this.#udp.imu(sample, snapshot);
 		else void this.#initializeUdp(device);
 	}
 
@@ -156,7 +156,7 @@ export class SlimeVRConnection {
 
 			device.registeredImuCount = snapshot.imuCount;
 			if (device.battery) udp.battery(device.battery);
-			for (const sample of device.latest.values()) udp.imu(sample);
+			for (const sample of device.latest.values()) udp.imu(sample, device.snapshot);
 		} catch (error) {
 			if (!isCurrent()) return;
 			device.registeredImuCount = undefined;
